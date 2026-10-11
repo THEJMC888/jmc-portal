@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, PlaySquare, Users, Sparkles, BookOpen, LogOut, ChevronRight, NotebookPen } from "lucide-react";
+import { LayoutDashboard, PlaySquare, Users, Sparkles, BookOpen, LogOut, ChevronRight, NotebookPen, Wind } from "lucide-react";
 import { clsx } from "clsx";
 import BrandLogo from "./BrandLogo";
 
@@ -26,6 +26,7 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   { label: "Journal", href: "/journal", icon: NotebookPen },
+  { label: "Meditations", href: "/meditations", icon: Wind },
   { label: "Community", href: "/community", icon: Users, comingSoon: true },
 ];
 

@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, PlaySquare, BookOpen, Sparkles, Users } from "lucide-react";
+import { LayoutDashboard, PlaySquare, NotebookPen, Sparkles, Wind } from "lucide-react";
 
 const MOBILE_NAV = [
   { label: "Home", href: "/dashboard", icon: LayoutDashboard },
   { label: "Library", href: "/library", icon: PlaySquare },
-  { label: "Statements", href: "/statements", icon: BookOpen },
+  { label: "Journal", href: "/journal", icon: NotebookPen },
   { label: "Vision", href: "/vision", icon: Sparkles },
-  { label: "Community", href: "/community", icon: Users, comingSoon: true },
+  { label: "Meditations", href: "/meditations", icon: Wind },
 ];
 
 export default function MobileNav() {
