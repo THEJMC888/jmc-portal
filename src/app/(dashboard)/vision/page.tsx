@@ -907,7 +907,8 @@ export default function VisionPage() {
   const onCanvasMouseUp = () => { dragRef.current = null; };
 
   // ─── Touch support ─────────────────────────────────────────────────────────
-  const toVirtualTouch = (touch: Touch): { x: number; y: number } => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const toVirtualTouch = (touch: any): { x: number; y: number } => {
     if (!outerRef.current) return { x: 0, y: 0 };
     const rect = outerRef.current.getBoundingClientRect();
     const sc = rect.width / VW;

@@ -55,10 +55,12 @@ function useDictation(onWord: (text: string) => void) {
     rec.continuous = true;
     rec.interimResults = false;
     rec.lang = "en-US";
-    rec.onresult = (e: SpeechRecognitionEvent) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    rec.onresult = (e: any) => {
       const transcript = Array.from(e.results)
         .slice(e.resultIndex)
-        .map((r) => r[0].transcript)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((r: any) => r[0].transcript)
         .join(" ");
       onWord(transcript + " ");
     };
