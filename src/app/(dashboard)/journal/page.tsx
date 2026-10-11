@@ -38,7 +38,8 @@ async function whisperTranscribe(dataUrl: string, apiKey: string): Promise<strin
 function useDictation(onWord: (text: string) => void) {
   const [listening, setListening] = useState(false);
   const [supported] = useState(() => typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window));
-  const recRef = useRef<InstanceType<typeof window.SpeechRecognition> | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recRef = useRef<any>(null);
 
   const toggle = useCallback(() => {
     if (!supported) { alert("Live dictation requires Chrome or Edge."); return; }
@@ -49,7 +50,8 @@ function useDictation(onWord: (text: string) => void) {
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
-    const rec = new SR() as InstanceType<typeof window.SpeechRecognition>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rec = new SR() as any;
     rec.continuous = true;
     rec.interimResults = false;
     rec.lang = "en-US";
