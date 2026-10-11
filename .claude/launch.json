@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "illuminate-app",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "export PATH=\"$HOME/.nvm/versions/node/v24.16.0/bin:$PATH\" && npm run dev"],
+      "port": 3000
+    }
+  ]
+}

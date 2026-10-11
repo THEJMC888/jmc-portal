@@ -1,0 +1,369 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Google Fonts — core brand + vision editor set 1 */
+@import url("https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Noto+Serif+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Syne:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Montserrat:wght@400;600;700;800&family=Raleway:wght@300;400;600;700&family=Oswald:wght@400;600;700&family=Dancing+Script:wght@400;600;700&family=Cinzel:wght@400;600;700;900&family=Bebas+Neue&display=swap");
+
+/* Google Fonts — vision editor set 2 (expanded) */
+@import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Lora:ital,wght@0,400;0,600;0,700;1,400;1,600&family=EB+Garamond:ital,wght@0,400;0,700;1,400;1,700&family=Spectral:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Yeseva+One&family=Italiana&family=Abril+Fatface&family=Alfa+Slab+One&family=Great+Vibes&family=Sacramento&family=Satisfy&family=Pacifico&family=Poppins:wght@400;600;700;800&family=Inter:wght@400;600;700&family=Josefin+Sans:ital,wght@0,400;0,600;0,700;1,400&family=Tenor+Sans&display=swap");
+
+:root {
+  /* Exact Journeymen Collective brand palette */
+  --background: #020408;
+  --surface: #08254d;
+  --surface-2: #0a2a58;
+  --surface-hover: #0d3268;
+  --border: rgba(194, 159, 96, 0.15);
+  --navy: #053372;
+  --navy-dark: #08254d;
+  --gold: #c29f60;
+  --gold-light: #d4b47a;
+  --green: #1d7458;
+  --green-dark: #0b4b32;
+  --cream: #ded3c8;
+  --muted: rgba(222, 211, 200, 0.5);
+  --text: #ded3c8;
+  /* Quantum consciousness palette */
+  --void-deep: #020408;
+  --teal: #00c8f0;
+  --teal-glow: rgba(0, 200, 240, 0.18);
+  --teal-dim: rgba(0, 180, 220, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* ─── Quantum void — living animated background ─── */
+
+/* Base dark color lives on html; body is transparent so pseudo-elements show through */
+html {
+  background-color: var(--void-deep);
+}
+
+body {
+  position: relative;
+  background-color: transparent;
+  color: var(--cream);
+  /* Avenir Book — system font on Apple devices, Nunito as web fallback */
+  font-family: "Avenir", "Nunito", "Century Gothic", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+/* ─── Typography system ─── */
+
+/* H1 — Lora Medium */
+h1, .h1 {
+  font-family: "Lora", Georgia, serif;
+  font-weight: 500;
+  color: var(--cream);
+}
+
+/* H2 — Syne Regular */
+h2, .h2 {
+  font-family: "Syne", system-ui, sans-serif;
+  font-weight: 400;
+  color: var(--cream);
+}
+
+/* H3 — Lora Bold */
+h3, .h3 {
+  font-family: "Lora", Georgia, serif;
+  font-weight: 700;
+  color: var(--cream);
+}
+
+/* H4 — Syne Regular */
+h4, .h4 {
+  font-family: "Syne", system-ui, sans-serif;
+  font-weight: 400;
+  color: var(--cream);
+}
+
+/* H5 — Syne Bold All Caps */
+h5, .h5 {
+  font-family: "Syne", system-ui, sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--cream);
+}
+
+/* Custom scrollbar — brand navy */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--navy);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold);
+}
+
+/* Gold gradient text */
+.gold-text {
+  background: linear-gradient(135deg, #c29f60, #e8d4a0, #c29f60);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Gold glow */
+.gold-glow {
+  box-shadow: 0 0 30px rgba(194, 159, 96, 0.12);
+}
+
+/* Brand label — Syne Bold All Caps (H5 style) */
+.label {
+  font-family: "Syne", system-ui, sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-size: 0.7rem;
+  color: var(--gold);
+}
+
+/* Vision Video — Ken Burns pan/zoom variants */
+@keyframes kenBurns0 {
+  from { transform: scale(1) translate(0, 0); }
+  to   { transform: scale(1.16) translate(-2.5%, -1.5%); }
+}
+@keyframes kenBurns1 {
+  from { transform: scale(1) translate(0, 0); }
+  to   { transform: scale(1.16) translate(2.5%, -1.5%); }
+}
+@keyframes kenBurns2 {
+  from { transform: scale(1) translate(0, 0); }
+  to   { transform: scale(1.12) translate(-1.5%, 2%); }
+}
+@keyframes kenBurns3 {
+  from { transform: scale(1) translate(0, 0); }
+  to   { transform: scale(1.12) translate(1.5%, 1.5%); }
+}
+
+/* Vision text entrance */
+@keyframes visionFadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Quantum void animations ─── */
+@keyframes quantum-nebula {
+  0%   { transform: scale(1)    translate(0,      0); }
+  25%  { transform: scale(1.03) translate(1.8%,   0.7%); }
+  50%  { transform: scale(0.98) translate(-1.2%,  1.8%); }
+  75%  { transform: scale(1.02) translate(0.8%,  -1.4%); }
+  100% { transform: scale(1.04) translate(-1.8%,  0.4%); }
+}
+
+@keyframes particle-drift {
+  from { background-position: 0 0,       130px 90px,  210px 160px,  55px 210px; }
+  to   { background-position: 280px 280px, 410px 370px, 490px 440px, 335px 490px; }
+}
+
+@keyframes consciousness-pulse {
+  0%,  100% { box-shadow: 0 0 0 1px rgba(194,159,96,0.2),  0 0 20px rgba(194,159,96,0.07); }
+  50%        { box-shadow: 0 0 0 1px rgba(194,159,96,0.42), 0 0 40px rgba(194,159,96,0.18); }
+}
+
+@keyframes teal-pulse {
+  0%,  100% { box-shadow: 0 0 12px rgba(0,200,240,0.08), 0 0 0 1px rgba(0,200,240,0.14); }
+  50%        { box-shadow: 0 0 32px rgba(0,200,240,0.22), 0 0 0 1px rgba(0,200,240,0.32); }
+}
+
+/* ─── Floating glass — light from above, shadow below ─── */
+.glass {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(8, 24, 70, 0.18) 20%,
+    rgba(3, 9, 28, 0.28) 100%
+  );
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  border-right: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 4px 16px rgba(0, 0, 0, 0.4),
+    0 16px 48px rgba(0, 0, 0, 0.3);
+}
+
+.glass-dark {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(2, 6, 20, 0.35) 100%
+  );
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  border-right: 1px solid rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 24px 64px rgba(0, 0, 0, 0.35);
+}
+
+/* ─── Luxury card — floating glass panel ─── */
+.card-luxury {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.07) 0%,
+    rgba(6, 18, 55, 0.2) 18%,
+    rgba(3, 8, 26, 0.32) 100%
+  );
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+    0 2px 8px rgba(0, 0, 0, 0.45),
+    0 10px 32px rgba(0, 0, 0, 0.4),
+    0 28px 72px rgba(0, 0, 0, 0.28),
+    0 0 16px rgba(0, 140, 210, 0.05);
+  transition:
+    transform 0.28s cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 0.28s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.card-luxury:hover {
+  transform: translateY(-5px) scale(1.008);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+    0 4px 14px rgba(0, 0, 0, 0.55),
+    0 18px 52px rgba(0, 0, 0, 0.5),
+    0 44px 96px rgba(0, 0, 0, 0.35),
+    0 0 40px rgba(0, 170, 240, 0.1);
+}
+
+/* ─── Quantum card — elevated teal-edge glass ─── */
+.card-quantum {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(0, 22, 60, 0.22) 18%,
+    rgba(2, 5, 22, 0.36) 100%
+  );
+  backdrop-filter: blur(22px) saturate(200%);
+  -webkit-backdrop-filter: blur(22px) saturate(200%);
+  border-radius: 16px;
+  border-top: 1px solid rgba(0, 210, 255, 0.3);
+  border-left: 1px solid rgba(0, 200, 240, 0.18);
+  border-right: 1px solid rgba(0, 150, 200, 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+  box-shadow:
+    inset 0 1px 0 rgba(0, 210, 255, 0.15),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+    0 4px 14px rgba(0, 0, 0, 0.5),
+    0 12px 40px rgba(0, 0, 0, 0.4),
+    0 32px 80px rgba(0, 0, 0, 0.3),
+    0 0 30px rgba(0, 180, 240, 0.1);
+  transition:
+    transform 0.28s cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 0.28s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.card-quantum:hover {
+  transform: translateY(-5px) scale(1.008);
+  box-shadow:
+    inset 0 1px 0 rgba(0, 220, 255, 0.22),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+    0 6px 18px rgba(0, 0, 0, 0.55),
+    0 22px 60px rgba(0, 0, 0, 0.5),
+    0 52px 100px rgba(0, 0, 0, 0.35),
+    0 0 60px rgba(0, 200, 240, 0.18);
+}
+
+/* Utility — breathing gold glow */
+.consciousness-pulse {
+  animation: consciousness-pulse 3.5s ease-in-out infinite;
+}
+
+/* Utility — teal synaptic edge pulse */
+.teal-pulse {
+  animation: teal-pulse 3s ease-in-out infinite;
+}
+
+/* ─── Gold glow ring (active states) ─── */
+.gold-ring {
+  box-shadow: 0 0 0 1px rgba(194,159,96,0.35), 0 0 16px rgba(194,159,96,0.15);
+}
+
+/* ─── Shimmer animation for luxury accents ─── */
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.shimmer {
+  background: linear-gradient(90deg, #c29f60 0%, #e8d4a0 40%, #c29f60 60%, #a8875a 100%);
+  background-size: 200% auto;
+  animation: shimmer 3s linear infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Futuristic scan line (subtle texture) ─── */
+.scanline {
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.03) 2px,
+    rgba(0,0,0,0.03) 4px
+  );
+}
+
+/* ─── Fade-in-up entrance animation ─── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s ease both;
+}
+.animate-fade-in-up-delay-1 { animation-delay: 0.08s; }
+.animate-fade-in-up-delay-2 { animation-delay: 0.16s; }
+.animate-fade-in-up-delay-3 { animation-delay: 0.24s; }
+
+/* ─── Glow line separator ─── */
+.glow-line {
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(194,159,96,0.4), transparent);
+}
+
+/* ─── Statement textarea placeholder ─── */
+textarea::placeholder {
+  color: rgba(222, 211, 200, 0.32);
+  font-style: italic;
+}
+textarea:focus::placeholder {
+  color: rgba(222, 211, 200, 0.22);
+}
+
+/* ─── Mobile touch target sizing ─── */
+@media (max-width: 767px) {
+  button, a, [role="button"] {
+    min-height: 44px;
+  }
+  /* Override for small inline elements */
+  .no-min-h button, .no-min-h a {
+    min-height: unset;
+  }
+}
