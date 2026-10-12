@@ -119,8 +119,8 @@ export default function LoginPage() {
             WebkitBackdropFilter: "blur(32px) saturate(220%)",
             borderTop: "2px solid rgba(255,255,255,0.48)",
             borderLeft: "1px solid rgba(255,255,255,0.22)",
-            borderRight: "1px solid rgba(0,0,0,0.6)",
-            borderBottom: "2px solid rgba(0,0,0,0.9)",
+            borderRight: "1.5px solid rgba(194,159,96,0.18)",
+            borderBottom: "2px solid rgba(194,159,96,0.12)",
             boxShadow: [
               /* specular top-face highlights — glass catching overhead light */
               "inset 0 4px 0 rgba(255,255,255,0.28)",
@@ -131,6 +131,9 @@ export default function LoginPage() {
               /* inner bottom + right cave shadow */
               "inset 0 -4px 10px rgba(0,0,0,0.7)",
               "inset -2px 0 6px rgba(0,0,0,0.3)",
+              /* right-side cast shadow for definition */
+              "6px 0 18px rgba(0,0,0,0.55)",
+              "10px 0 30px rgba(0,0,0,0.35)",
               /* stacked cast layers — 24px of visible thickness */
               "0 2px 0 rgba(0,0,0,0.95)",
               "0 4px 0 rgba(0,0,0,0.88)",
