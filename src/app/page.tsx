@@ -165,16 +165,18 @@ export default function LoginPage() {
           >
             {mode === "signin" ? "Welcome back" : "Create your account"}
           </h2>
-          <p
-            style={{
-              fontFamily: "Avenir, Nunito, system-ui, sans-serif",
-              color: "rgba(222,211,200,0.55)",
-              fontSize: "0.875rem",
-              marginBottom: "1.75rem",
-            }}
-          >
-            {mode === "signin" ? "Enter the portal to clarity." : "Your private space awaits."}
-          </p>
+          {mode !== "signin" && (
+            <p
+              style={{
+                fontFamily: "Avenir, Nunito, system-ui, sans-serif",
+                color: "rgba(222,211,200,0.55)",
+                fontSize: "0.875rem",
+                marginBottom: "1.75rem",
+              }}
+            >
+              Your private space awaits.
+            </p>
+          )}
 
           {notice && (
             <p className="mb-4 text-sm rounded-lg px-4 py-3" style={{ color: "#86efac", background: "rgba(134,239,172,0.08)", border: "1px solid rgba(134,239,172,0.2)" }}>

@@ -45,21 +45,18 @@ export default function QuantumBackground() {
         cx + Math.cos(a) * len, cy + Math.sin(a) * len
       );
 
-      // All stops use rgb() — fully opaque, zero chance of a visible boundary
-      grad.addColorStop(0.00, `rgb(1,5,12)`);
-      grad.addColorStop(0.12, `rgb(${2 + Math.round(w5 * 3)},${8  + Math.round(w5 * 10)},${22 + Math.round(w5 * 14)})`);
-      grad.addColorStop(0.28, `rgb(${4 + Math.round(w2 * 6)},${28 + Math.round(w1 * 32)},${85 + Math.round(w1 * 48)})`);
-
-      // Mid — most visible variance, swings between teal, blue-green, deep navy
-      grad.addColorStop(0.50, `rgb(
-        ${3  + Math.round(w3 * 7)},
-        ${35 + Math.round(w2 * 55 + w4 * 20)},
-        ${58 + Math.round(w1 * 32 - w3 * 22)}
-      )`.replace(/\s+/g, ""));
-
-      grad.addColorStop(0.72, `rgb(${5 + Math.round(w3 * 7)},${65 + Math.round(w4 * 35)},${40 + Math.round(w5 * 18)})`);
-      grad.addColorStop(0.88, `rgb(${3 + Math.round(w1 * 4)},${40 + Math.round(w2 * 16)},${25 + Math.round(w2 * 10)})`);
-      grad.addColorStop(1.00, `rgb(1,7,11)`);
+      // Brand palette: dark navy top (#08254D), dark forest green bottom (#0B4B32)
+      // All rgb() — no alpha, no edges possible
+      grad.addColorStop(0.00, `rgb(2,6,14)`);
+      grad.addColorStop(0.12, `rgb(${3 + Math.round(w5 * 2)},${10 + Math.round(w5 * 8)},${24 + Math.round(w5 * 10)})`);
+      // Navy zone — #08254D is (8,37,77), allow gentle pulse
+      grad.addColorStop(0.28, `rgb(${6 + Math.round(w2 * 4)},${28 + Math.round(w1 * 14)},${62 + Math.round(w1 * 20)})`);
+      // Mid transition — subtle shift, stays dark
+      grad.addColorStop(0.50, `rgb(${5 + Math.round(w3 * 4)},${32 + Math.round(w2 * 14 + w4 * 8)},${48 + Math.round(w1 * 12 - w3 * 8)})`);
+      // Green zone — #0B4B32 is (11,75,50), allow gentle pulse
+      grad.addColorStop(0.72, `rgb(${7 + Math.round(w3 * 4)},${52 + Math.round(w4 * 18)},${34 + Math.round(w5 * 10)})`);
+      grad.addColorStop(0.88, `rgb(${5 + Math.round(w1 * 3)},${38 + Math.round(w2 * 10)},${24 + Math.round(w2 * 8)})`);
+      grad.addColorStop(1.00, `rgb(2,8,10)`);
 
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, W, H);
