@@ -39,7 +39,7 @@
 
 /* Base dark color lives on html; body is transparent so pseudo-elements show through */
 html {
-  background: linear-gradient(160deg, #08254D 0%, #040d1c 50%, #0B4B32 100%);
+  background: #020408;
   min-height: 100%;
 }
 
