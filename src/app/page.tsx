@@ -114,19 +114,32 @@ export default function LoginPage() {
         <div
           className="rounded-2xl p-8"
           style={{
-            background: "linear-gradient(160deg, rgba(12,48,100,0.97) 0%, rgba(6,20,52,0.99) 60%, rgba(3,10,28,1) 100%)",
-            border: "1px solid rgba(194,159,96,0.25)",
+            background: "linear-gradient(170deg, rgba(22,62,124,0.96) 0%, rgba(10,30,76,0.98) 40%, rgba(4,12,36,1) 100%)",
+            backdropFilter: "blur(24px) saturate(180%)",
+            WebkitBackdropFilter: "blur(24px) saturate(180%)",
+            borderTop: "1px solid rgba(255,255,255,0.22)",
+            borderLeft: "1px solid rgba(255,255,255,0.1)",
+            borderRight: "1px solid rgba(0,0,0,0.45)",
+            borderBottom: "1px solid rgba(0,0,0,0.65)",
             boxShadow: [
-              "0 2px 0 rgba(255,255,255,0.06)",           /* top highlight edge */
-              "0 -1px 0 rgba(0,0,0,0.6)",                 /* bottom shadow edge */
-              "0 20px 60px rgba(0,0,0,0.7)",              /* deep drop shadow */
-              "0 8px 30px rgba(0,0,0,0.5)",               /* mid drop shadow */
-              "0 2px 8px rgba(0,0,0,0.4)",                /* near shadow */
-              "inset 0 1px 0 rgba(255,255,255,0.1)",      /* inner top bevel */
-              "inset 0 -1px 0 rgba(0,0,0,0.4)",           /* inner bottom bevel */
-              "inset 1px 0 0 rgba(255,255,255,0.05)",     /* inner left bevel */
-              "inset -1px 0 0 rgba(0,0,0,0.3)",           /* inner right bevel */
-              "0 0 0 1px rgba(194,159,96,0.08)",          /* subtle gold halo */
+              /* glass top-edge catch light */
+              "inset 0 2px 0 rgba(255,255,255,0.18)",
+              "inset 0 1px 0 rgba(255,255,255,0.28)",
+              /* inner bottom shadow */
+              "inset 0 -2px 0 rgba(0,0,0,0.5)",
+              /* visible thickness — stacked cast layers */
+              "0 2px 0 rgba(0,0,0,0.75)",
+              "0 4px 0 rgba(0,0,0,0.6)",
+              "0 6px 0 rgba(0,0,0,0.45)",
+              "0 8px 0 rgba(0,0,0,0.3)",
+              /* drop shadows for height above page */
+              "0 10px 20px rgba(0,0,0,0.65)",
+              "0 20px 50px rgba(0,0,0,0.55)",
+              "0 40px 90px rgba(0,0,0,0.4)",
+              /* gold halo glow */
+              "0 0 80px rgba(194,159,96,0.06)",
+              /* crisp dark outline */
+              "0 0 0 1px rgba(0,0,0,0.5)",
             ].join(", "),
           }}
         >
@@ -312,14 +325,12 @@ export default function LoginPage() {
                   : "linear-gradient(160deg, #D4B47A 0%, #C29F60 40%, #A8884A 100%)",
                 color: "#06183A",
                 boxShadow: loading ? "none" : [
-                  "0 1px 0 rgba(255,255,255,0.35)",         /* top highlight */
-                  "0 -1px 0 rgba(0,0,0,0.5)",              /* bottom shadow edge */
-                  "0 6px 0 rgba(80,55,15,0.9)",            /* deep cast shadow */
-                  "0 8px 20px rgba(0,0,0,0.6)",            /* ambient drop */
-                  "0 4px 40px rgba(194,159,96,0.35)",      /* gold glow */
-                  "0 2px 12px rgba(194,159,96,0.25)",      /* near glow */
-                  "inset 0 1px 0 rgba(255,255,255,0.3)",   /* inner top bevel */
-                  "inset 0 -2px 0 rgba(0,0,0,0.25)",      /* inner bottom shadow */
+                  "inset 0 1px 0 rgba(255,255,255,0.35)",  /* inner top bevel */
+                  "inset 0 -2px 0 rgba(0,0,0,0.2)",        /* inner bottom shadow */
+                  "0 4px 16px rgba(0,0,0,0.5)",            /* near drop */
+                  "0 8px 32px rgba(0,0,0,0.4)",            /* ambient drop */
+                  "0 4px 40px rgba(194,159,96,0.4)",       /* gold glow */
+                  "0 2px 12px rgba(194,159,96,0.3)",       /* near gold glow */
                 ].join(", "),
                 textShadow: "0 1px 2px rgba(0,0,0,0.2)",
               }}
@@ -339,11 +350,9 @@ export default function LoginPage() {
                 if (!loading) {
                   (e.currentTarget as HTMLElement).style.transform = "translateY(2px)";
                   (e.currentTarget as HTMLElement).style.boxShadow = [
-                    "0 0 0 rgba(255,255,255,0)",
-                    "0 2px 0 rgba(80,55,15,0.9)",
-                    "0 3px 10px rgba(0,0,0,0.5)",
-                    "0 2px 20px rgba(194,159,96,0.2)",
                     "inset 0 1px 3px rgba(0,0,0,0.2)",
+                    "0 2px 8px rgba(0,0,0,0.4)",
+                    "0 2px 20px rgba(194,159,96,0.2)",
                   ].join(", ");
                 }
               }}
