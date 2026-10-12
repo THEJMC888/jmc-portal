@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import QuantumBackground from "@/components/QuantumBackground";
+import HieroglyphRain from "@/components/HieroglyphRain";
 import { AuthProvider } from "@/lib/auth";
 
 export const metadata: Metadata = {
@@ -21,6 +22,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="min-h-screen text-white antialiased">
         <QuantumBackground />
+        <HieroglyphRain />
         <AuthProvider>
           <div style={{ position: "relative", zIndex: 1 }}>
             {children}

@@ -53,9 +53,7 @@ export default function LoginPage() {
   return (
     <main
       className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
-      style={{
-        background: "linear-gradient(160deg, #08254D 0%, #040d1c 50%, #0B4B32 100%)",
-      }}
+      style={{ background: "transparent" }}
     >
       {/* Soft radial glow */}
       <div
