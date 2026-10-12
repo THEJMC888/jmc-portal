@@ -1,31 +1,53 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
+import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
-  const handleLogin = async (e: React.FormEvent) => {
+  // Redirect if already signed in
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.replace("/dashboard");
+    });
+  }, [router]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setNotice("");
 
-    // TODO: Replace with real Supabase auth
-    if (email && password) {
-      await new Promise((r) => setTimeout(r, 800));
-      router.push("/dashboard");
+    if (mode === "signin") {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setError(error.message);
+        setLoading(false);
+      } else {
+        router.push("/dashboard");
+      }
     } else {
-      setError("Please enter your email and password.");
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        setError(error.message);
+        setLoading(false);
+      } else {
+        setNotice("Check your email to confirm your account, then sign in.");
+        setMode("signin");
+        setLoading(false);
+      }
     }
-    setLoading(false);
   };
 
   return (
@@ -57,12 +79,10 @@ export default function LoginPage() {
       <div className="relative w-full max-w-md">
         {/* Logo & Brand Identity */}
         <div className="text-center mb-10">
-          {/* Logo mark */}
           <div className="flex justify-center mb-5">
             <BrandLogo size="lg" showText={false} />
           </div>
-
-          {/* White text lockup PNG */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <div className="flex justify-center mb-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -71,8 +91,6 @@ export default function LoginPage() {
               style={{ width: 260, height: "auto", objectFit: "contain" }}
             />
           </div>
-
-          {/* Portal label */}
           <p
             style={{
               fontFamily: "Syne, system-ui, sans-serif",
@@ -86,14 +104,13 @@ export default function LoginPage() {
           >
             Member Portal
           </p>
-
           <div
             className="mx-auto w-14 h-px mt-4"
             style={{ background: "linear-gradient(to right, transparent, #C29F60, transparent)" }}
           />
         </div>
 
-        {/* Login Card */}
+        {/* Login / Sign-up Card */}
         <div
           className="rounded-2xl p-8"
           style={{
@@ -102,7 +119,6 @@ export default function LoginPage() {
             boxShadow: "0 8px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(194,159,96,0.05)",
           }}
         >
-          {/* H2 — Syne Regular */}
           <h2
             style={{
               fontFamily: "Syne, system-ui, sans-serif",
@@ -112,7 +128,7 @@ export default function LoginPage() {
               marginBottom: "0.25rem",
             }}
           >
-            Welcome back
+            {mode === "signin" ? "Welcome back" : "Create your account"}
           </h2>
           <p
             style={{
@@ -122,12 +138,17 @@ export default function LoginPage() {
               marginBottom: "1.75rem",
             }}
           >
-            Enter the portal to clarity.
+            {mode === "signin" ? "Enter the portal to clarity." : "Your private space awaits."}
           </p>
 
-          <form onSubmit={handleLogin} className="space-y-5">
+          {notice && (
+            <p className="mb-4 text-sm rounded-lg px-4 py-3" style={{ color: "#86efac", background: "rgba(134,239,172,0.08)", border: "1px solid rgba(134,239,172,0.2)" }}>
+              {notice}
+            </p>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              {/* H5 label — Syne Bold All Caps */}
               <label
                 htmlFor="email"
                 className="block mb-2"
@@ -183,6 +204,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
+                  minLength={mode === "signup" ? 8 : undefined}
                   className="w-full rounded-lg px-4 py-3 pr-12 text-sm transition-all focus:outline-none"
                   style={{
                     background: "rgba(4,13,28,0.7)",
@@ -203,6 +225,11 @@ export default function LoginPage() {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              {mode === "signup" && (
+                <p style={{ fontFamily: "Avenir, Nunito, system-ui, sans-serif", fontSize: "0.72rem", color: "rgba(222,211,200,0.35)", marginTop: "0.4rem" }}>
+                  Minimum 8 characters
+                </p>
+              )}
             </div>
 
             {error && (
@@ -211,7 +238,6 @@ export default function LoginPage() {
               </p>
             )}
 
-            {/* CTA — Syne Bold, gold */}
             <button
               type="submit"
               disabled={loading}
@@ -227,16 +253,16 @@ export default function LoginPage() {
                 boxShadow: loading ? "none" : "0 4px 24px rgba(194,159,96,0.3)",
               }}
             >
-              {loading ? "Signing in..." : "Sign In >"}
+              {loading ? (mode === "signin" ? "Signing in..." : "Creating account...") : (mode === "signin" ? "Sign In >" : "Create Account >")}
             </button>
           </form>
 
           <div
-            className="mt-6 pt-6 text-center"
+            className="mt-6 pt-6 text-center space-y-3"
             style={{ borderTop: "1px solid rgba(194,159,96,0.1)" }}
           >
-            <a
-              href="mailto:hello@thejourneymencollective.com"
+            <button
+              onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setError(""); setNotice(""); }}
               style={{
                 fontFamily: "Syne, system-ui, sans-serif",
                 fontWeight: 700,
@@ -244,13 +270,16 @@ export default function LoginPage() {
                 letterSpacing: "0.1em",
                 fontSize: "0.65rem",
                 color: "rgba(194,159,96,0.6)",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
                 transition: "color 0.2s",
               }}
               onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#C29F60")}
               onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "rgba(194,159,96,0.6)")}
             >
-              Need Help? Contact Us &gt;
-            </a>
+              {mode === "signin" ? "New member? Create account >" : "Already have an account? Sign in >"}
+            </button>
           </div>
         </div>
 

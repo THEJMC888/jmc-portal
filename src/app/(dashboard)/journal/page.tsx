@@ -122,7 +122,7 @@ function deleteEntry(id: string) {
 }
 
 // ─── Supabase sync helpers ────────────────────────────────────────────────────
-async function syncToSupabase(entry: JournalEntry) {
+async function syncToSupabase(entry: JournalEntry, userId: string) {
   await supabase.from("journal_entries").upsert({
     id: entry.id,
     date: entry.date,
@@ -130,6 +130,7 @@ async function syncToSupabase(entry: JournalEntry) {
     text: entry.text,
     created_at: entry.createdAt,
     updated_at: entry.updatedAt,
+    user_id: userId,
   });
 }
 
@@ -409,29 +410,34 @@ export default function JournalPage() {
   const videoRec = useRecorder("video");
   const audioUploadRef = useRef<HTMLInputElement>(null);
   const videoUploadRef = useRef<HTMLInputElement>(null);
+  const userIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
     setList(loadList());
-    fetchFromSupabase().then(async (remoteEntries) => {
-      const remoteMap = new Map(remoteEntries.map((e) => [e.id, e]));
-      // Pull remote → local (remote wins if newer)
-      remoteEntries.forEach((remote) => {
-        const local = loadEntry(remote.id);
-        if (!local || remote.updatedAt > local.updatedAt) {
-          saveEntry({ ...remote, media: local?.media ?? [] });
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      userIdRef.current = user.id;
+      fetchFromSupabase().then(async (remoteEntries) => {
+        const remoteMap = new Map(remoteEntries.map((e) => [e.id, e]));
+        // Pull remote → local (remote wins if newer)
+        remoteEntries.forEach((remote) => {
+          const local = loadEntry(remote.id);
+          if (!local || remote.updatedAt > local.updatedAt) {
+            saveEntry({ ...remote, media: local?.media ?? [] });
+          }
+        });
+        // Push local → remote (entries not yet in Supabase)
+        const localList = loadList();
+        for (const item of localList) {
+          if (!remoteMap.has(item.id)) {
+            const entry = loadEntry(item.id);
+            if (entry) await syncToSupabase(entry, user.id).catch(() => {});
+          }
         }
-      });
-      // Push local → remote (entries not yet in Supabase)
-      const localList = loadList();
-      for (const item of localList) {
-        if (!remoteMap.has(item.id)) {
-          const entry = loadEntry(item.id);
-          if (entry) await syncToSupabase(entry).catch(() => {});
-        }
-      }
-      setList(loadList());
-    }).catch(() => {});
+        setList(loadList());
+      }).catch(() => {});
+    });
   }, []);
 
   const openEntry = useCallback((id: string) => {
@@ -457,7 +463,7 @@ export default function JournalPage() {
     saveTimer.current = setTimeout(() => {
       saveEntry(e);
       setList(loadList());
-      syncToSupabase(e).catch(() => {});
+      syncToSupabase(e, userIdRef.current ?? "").catch(() => {});
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     }, 500);

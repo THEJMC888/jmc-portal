@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, PlaySquare, Users, Sparkles, BookOpen, LogOut, ChevronRight, NotebookPen, Wind } from "lucide-react";
 import { clsx } from "clsx";
 import BrandLogo from "./BrandLogo";
+import { supabase } from "@/lib/supabase";
 
 interface NavChild { label: string; href: string; icon: React.ElementType; }
 interface NavItem {
@@ -32,6 +33,12 @@ const NAV_ITEMS: NavItem[] = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push("/");
+  };
 
   return (
     <aside
@@ -253,19 +260,23 @@ export default function Sidebar() {
           </div>
         </div>
 
-        <Link
-          href="/"
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
+        <button
+          onClick={handleSignOut}
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all w-full"
           style={{
             color: "rgba(222,211,200,0.4)",
             fontFamily: "Syne, system-ui, sans-serif",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            textAlign: "left",
           }}
           onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#DED3C8")}
           onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "rgba(222,211,200,0.4)")}
         >
           <LogOut className="w-4 h-4" />
           Sign out
-        </Link>
+        </button>
       </div>
     </aside>
   );

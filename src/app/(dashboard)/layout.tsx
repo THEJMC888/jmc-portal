@@ -1,17 +1,37 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import FlowerOfLife from "@/components/FlowerOfLife";
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace("/");
+    }
+  }, [user, loading, router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div
+          className="w-10 h-10 rounded-full border-2 animate-spin"
+          style={{ borderColor: "rgba(194,159,96,0.3)", borderTopColor: "#C29F60" }}
+        />
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
   return (
-    <div
-      className="flex min-h-screen"
-      style={{ background: "transparent" }}
-    >
+    <div className="flex min-h-screen" style={{ background: "transparent" }}>
       <Sidebar />
       <MobileNav />
       <main className="flex-1 md:ml-64 min-h-screen relative">
