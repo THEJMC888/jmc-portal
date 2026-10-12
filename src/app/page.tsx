@@ -329,12 +329,12 @@ export default function LoginPage() {
                 letterSpacing: "0.14em",
                 fontSize: "0.8rem",
                 background: loading
-                  ? "linear-gradient(180deg, #A8916A 0%, #8A7450 50%, #A8916A 100%)"
-                  : "linear-gradient(180deg, #C8B07A 0%, #B89860 22%, #9A7C44 46%, #B09058 68%, #C4A870 88%, #CEB87E 100%)",
+                  ? "linear-gradient(180deg, #B89A58 0%, #987A38 50%, #B89A58 100%)"
+                  : "linear-gradient(180deg, #DEC272 0%, #C8A04C 20%, #A07A28 44%, #BE9642 66%, #D4B462 86%, #E0C878 100%)",
                 color: "#08203A",
                 border: "none",
-                borderTop: "1px solid rgba(220,195,140,0.45)",
-                borderBottom: "1px solid rgba(30,18,0,0.6)",
+                borderTop: "1px solid rgba(240,215,150,0.5)",
+                borderBottom: "1px solid rgba(30,15,0,0.65)",
                 boxShadow: loading ? "none" : [
                   "inset 0 1px 0 rgba(240,220,170,0.4)",
                   "inset 1px 0 0 rgba(220,195,140,0.12)",
@@ -351,13 +351,13 @@ export default function LoginPage() {
               }}
               onMouseEnter={(e) => {
                 if (!loading) {
-                  (e.currentTarget as HTMLElement).style.background = "linear-gradient(180deg, #D4BC86 0%, #C4A46C 22%, #A6884E 46%, #BCA064 68%, #D0B47C 88%, #DAC48A 100%)";
+                  (e.currentTarget as HTMLElement).style.background = "linear-gradient(180deg, #EACE7E 0%, #D4AC58 20%, #AC8430 44%, #CCA24E 66%, #E0C06E 86%, #ECD484 100%)";
                   (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
                 }
               }}
               onMouseLeave={(e) => {
                 if (!loading) {
-                  (e.currentTarget as HTMLElement).style.background = "linear-gradient(180deg, #C8B07A 0%, #B89860 22%, #9A7C44 46%, #B09058 68%, #C4A870 88%, #CEB87E 100%)";
+                  (e.currentTarget as HTMLElement).style.background = "linear-gradient(180deg, #DEC272 0%, #C8A04C 20%, #A07A28 44%, #BE9642 66%, #D4B462 86%, #E0C878 100%)";
                   (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
                 }
               }}
