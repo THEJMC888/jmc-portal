@@ -329,43 +329,35 @@ export default function LoginPage() {
                 letterSpacing: "0.14em",
                 fontSize: "0.8rem",
                 background: loading
-                  ? "linear-gradient(180deg, #B8975A 0%, #9A7A3A 50%, #B8975A 100%)"
-                  : "linear-gradient(180deg, #F0D888 0%, #D4AA52 12%, #B88830 30%, #8A6010 48%, #AA8030 62%, #D0A850 78%, #EED080 90%, #F8E898 100%)",
-                color: "#2A1400",
+                  ? "linear-gradient(180deg, #A8916A 0%, #8A7450 50%, #A8916A 100%)"
+                  : "linear-gradient(180deg, #C8B07A 0%, #B89860 22%, #9A7C44 46%, #B09058 68%, #C4A870 88%, #CEB87E 100%)",
+                color: "#08203A",
                 border: "none",
-                borderTop: "1px solid rgba(255,240,160,0.6)",
-                borderBottom: "1px solid rgba(60,30,0,0.8)",
+                borderTop: "1px solid rgba(220,195,140,0.45)",
+                borderBottom: "1px solid rgba(30,18,0,0.6)",
                 boxShadow: loading ? "none" : [
-                  /* specular top highlight — very bright, narrow */
-                  "inset 0 2px 0 rgba(255,248,200,0.7)",
-                  "inset 0 1px 0 rgba(255,255,255,0.5)",
-                  /* left edge light catch */
-                  "inset 1px 0 0 rgba(255,240,160,0.25)",
-                  /* right edge shadow */
-                  "inset -1px 0 0 rgba(0,0,0,0.3)",
-                  /* inner bottom shadow */
-                  "inset 0 -2px 4px rgba(0,0,0,0.4)",
-                  /* stacked cast shadow — button thickness */
-                  "0 2px 0 rgba(40,20,0,0.95)",
-                  "0 4px 0 rgba(40,20,0,0.8)",
-                  "0 6px 0 rgba(40,20,0,0.6)",
-                  "0 8px 0 rgba(40,20,0,0.4)",
-                  /* ambient drop + gold glow */
-                  "0 10px 20px rgba(0,0,0,0.7)",
-                  "0 6px 40px rgba(194,159,60,0.5)",
-                  "0 2px 16px rgba(194,159,60,0.35)",
+                  "inset 0 1px 0 rgba(240,220,170,0.4)",
+                  "inset 1px 0 0 rgba(220,195,140,0.12)",
+                  "inset -1px 0 0 rgba(0,0,0,0.2)",
+                  "inset 0 -2px 4px rgba(0,0,0,0.25)",
+                  "0 2px 0 rgba(20,12,0,0.85)",
+                  "0 4px 0 rgba(20,12,0,0.65)",
+                  "0 6px 0 rgba(20,12,0,0.4)",
+                  "0 8px 0 rgba(20,12,0,0.2)",
+                  "0 10px 20px rgba(0,0,0,0.6)",
+                  "0 4px 30px rgba(194,159,96,0.25)",
                 ].join(", "),
-                textShadow: "0 1px 2px rgba(0,0,0,0.35), 0 -1px 0 rgba(255,220,100,0.15)",
+                textShadow: "0 1px 2px rgba(0,0,0,0.3)",
               }}
               onMouseEnter={(e) => {
                 if (!loading) {
-                  (e.currentTarget as HTMLElement).style.background = "linear-gradient(180deg, #F8E898 0%, #DCBA5C 12%, #C09438 30%, #966818 48%, #B88838 62%, #D8B058 78%, #F0D880 90%, #FFF0A8 100%)";
+                  (e.currentTarget as HTMLElement).style.background = "linear-gradient(180deg, #D4BC86 0%, #C4A46C 22%, #A6884E 46%, #BCA064 68%, #D0B47C 88%, #DAC48A 100%)";
                   (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
                 }
               }}
               onMouseLeave={(e) => {
                 if (!loading) {
-                  (e.currentTarget as HTMLElement).style.background = "linear-gradient(180deg, #F0D888 0%, #D4AA52 12%, #B88830 30%, #8A6010 48%, #AA8030 62%, #D0A850 78%, #EED080 90%, #F8E898 100%)";
+                  (e.currentTarget as HTMLElement).style.background = "linear-gradient(180deg, #C8B07A 0%, #B89860 22%, #9A7C44 46%, #B09058 68%, #C4A870 88%, #CEB87E 100%)";
                   (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
                 }
               }}
