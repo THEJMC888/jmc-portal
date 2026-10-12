@@ -206,8 +206,8 @@ export default function LoginPage() {
                 className="w-full rounded-lg px-4 py-3 text-sm transition-all focus:outline-none"
                 style={{
                   background: "rgba(1,4,14,0.9)",
-                  border: "1px solid rgba(194,159,96,0.35)",
-                  borderTop: "1px solid rgba(194,159,96,0.2)",
+                  border: "1.5px solid rgba(194,159,96,0.38)",
+                  borderTop: "1.5px solid rgba(194,159,96,0.22)",
                   color: "#DED3C8",
                   fontFamily: "Avenir, Nunito, system-ui, sans-serif",
                   boxShadow: [
@@ -217,8 +217,8 @@ export default function LoginPage() {
                   ].join(", "),
                 }}
                 onFocus={(e) => {
-                  e.target.style.border = "1px solid rgba(194,159,96,0.7)";
-                  e.target.style.borderTop = "1px solid rgba(194,159,96,0.45)";
+                  e.target.style.border = "1.5px solid rgba(194,159,96,0.75)";
+                  e.target.style.borderTop = "1.5px solid rgba(194,159,96,0.5)";
                   e.target.style.boxShadow = [
                     "inset 0 2px 8px rgba(0,0,0,0.75)",
                     "inset 0 1px 4px rgba(0,0,0,0.55)",
@@ -227,8 +227,8 @@ export default function LoginPage() {
                   ].join(", ");
                 }}
                 onBlur={(e) => {
-                  e.target.style.border = "1px solid rgba(194,159,96,0.35)";
-                  e.target.style.borderTop = "1px solid rgba(194,159,96,0.2)";
+                  e.target.style.border = "1.5px solid rgba(194,159,96,0.38)";
+                  e.target.style.borderTop = "1.5px solid rgba(194,159,96,0.22)";
                   e.target.style.boxShadow = [
                     "inset 0 2px 8px rgba(0,0,0,0.75)",
                     "inset 0 1px 4px rgba(0,0,0,0.55)",
@@ -265,8 +265,8 @@ export default function LoginPage() {
                   className="w-full rounded-lg px-4 py-3 pr-12 text-sm transition-all focus:outline-none"
                   style={{
                     background: "rgba(1,4,14,0.9)",
-                    border: "1px solid rgba(194,159,96,0.35)",
-                    borderTop: "1px solid rgba(194,159,96,0.2)",
+                    border: "1.5px solid rgba(194,159,96,0.38)",
+                    borderTop: "1.5px solid rgba(194,159,96,0.22)",
                     color: "#DED3C8",
                     fontFamily: "Avenir, Nunito, system-ui, sans-serif",
                     boxShadow: [
@@ -276,8 +276,8 @@ export default function LoginPage() {
                     ].join(", "),
                   }}
                   onFocus={(e) => {
-                    e.target.style.border = "1px solid rgba(194,159,96,0.7)";
-                    e.target.style.borderTop = "1px solid rgba(194,159,96,0.45)";
+                    e.target.style.border = "1.5px solid rgba(194,159,96,0.75)";
+                    e.target.style.borderTop = "1.5px solid rgba(194,159,96,0.5)";
                     e.target.style.boxShadow = [
                       "inset 0 2px 8px rgba(0,0,0,0.75)",
                       "inset 0 1px 4px rgba(0,0,0,0.55)",
@@ -286,8 +286,8 @@ export default function LoginPage() {
                     ].join(", ");
                   }}
                   onBlur={(e) => {
-                    e.target.style.border = "1px solid rgba(194,159,96,0.35)";
-                    e.target.style.borderTop = "1px solid rgba(194,159,96,0.2)";
+                    e.target.style.border = "1.5px solid rgba(194,159,96,0.38)";
+                    e.target.style.borderTop = "1.5px solid rgba(194,159,96,0.22)";
                     e.target.style.boxShadow = [
                       "inset 0 2px 8px rgba(0,0,0,0.75)",
                       "inset 0 1px 4px rgba(0,0,0,0.55)",
