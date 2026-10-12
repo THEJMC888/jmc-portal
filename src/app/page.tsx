@@ -120,7 +120,7 @@ export default function LoginPage() {
             borderTop: "2px solid rgba(255,255,255,0.48)",
             borderLeft: "1px solid rgba(255,255,255,0.22)",
             borderRight: "1.5px solid rgba(194,159,96,0.18)",
-            borderBottom: "2px solid rgba(194,159,96,0.12)",
+            borderBottom: "1.5px solid rgba(160,165,175,0.7)",
             boxShadow: [
               /* specular top-face highlights — glass catching overhead light */
               "inset 0 4px 0 rgba(255,255,255,0.28)",
