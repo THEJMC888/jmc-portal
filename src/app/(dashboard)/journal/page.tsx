@@ -171,35 +171,57 @@ function formatBytes(b: number) {
 }
 
 // ─── Shared depth styles ──────────────────────────────────────────────────────
+const CARD_SHADOW = [
+  "inset 0 3px 0 rgba(255,255,255,0.22)",
+  "inset 0 1px 0 rgba(255,255,255,0.38)",
+  "inset 2px 0 0 rgba(255,255,255,0.06)",
+  "inset 0 -3px 8px rgba(0,0,0,0.55)",
+  "inset -2px 0 5px rgba(0,0,0,0.25)",
+  "0 2px 0 rgba(0,0,0,0.90)","0 4px 0 rgba(0,0,0,0.75)","0 6px 0 rgba(0,0,0,0.58)",
+  "0 8px 0 rgba(0,0,0,0.42)","0 10px 0 rgba(0,0,0,0.28)","0 12px 0 rgba(0,0,0,0.16)",
+  "0 14px 0 rgba(0,0,0,0.08)","0 16px 0 rgba(0,0,0,0.04)",
+  "0 20px 28px rgba(0,0,0,0.75)","0 38px 65px rgba(0,0,0,0.58)",
+  "5px 0 16px rgba(0,0,0,0.45)","0 0 0 1px rgba(0,0,0,0.6)",
+].join(", ");
+
 const glassCard: React.CSSProperties = {
-  background: "linear-gradient(180deg, rgba(255,255,255,0.065) 0%, rgba(6,18,55,0.22) 18%, rgba(3,8,26,0.34) 100%)",
-  backdropFilter: "blur(22px) saturate(180%)",
-  WebkitBackdropFilter: "blur(22px) saturate(180%)",
-  borderTop: "1px solid rgba(255,255,255,0.18)",
-  borderLeft: "1px solid rgba(255,255,255,0.1)",
-  borderRight: "1px solid rgba(255,255,255,0.04)",
-  borderBottom: "1px solid rgba(0,0,0,0.4)",
-  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.45), 0 10px 32px rgba(0,0,0,0.4)",
+  background: "linear-gradient(175deg, rgba(255,255,255,0.09) 0%, rgba(20,55,130,0.28) 20%, rgba(6,18,55,0.48) 50%, rgba(3,8,26,0.68) 100%)",
+  backdropFilter: "blur(28px) saturate(200%)",
+  WebkitBackdropFilter: "blur(28px) saturate(200%)",
+  borderTop: "2px solid rgba(255,255,255,0.35)",
+  borderLeft: "1px solid rgba(255,255,255,0.18)",
+  borderRight: "1.5px solid rgba(194,159,96,0.15)",
+  borderBottom: "1.5px solid rgba(140,145,155,0.5)",
+  boxShadow: CARD_SHADOW,
 };
 const raisedBtn: React.CSSProperties = {
-  background: "linear-gradient(180deg, rgba(194,159,96,0.22) 0%, rgba(194,159,96,0.1) 100%)",
-  borderTop: "1px solid rgba(255,255,255,0.22)",
-  borderLeft: "1px solid rgba(255,255,255,0.12)",
-  borderRight: "1px solid rgba(0,0,0,0.15)",
-  borderBottom: "1px solid rgba(0,0,0,0.35)",
-  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.2), 0 2px 6px rgba(0,0,0,0.4)",
+  background: "linear-gradient(180deg, #DEC272 0%, #C8A04C 20%, #A07A28 44%, #BE9642 66%, #D4B462 86%, #E0C878 100%)",
+  border: "none",
+  color: "#2a1a05",
+  boxShadow: [
+    "inset 0 1px 0 rgba(240,220,170,0.4)",
+    "inset 0 -2px 4px rgba(0,0,0,0.25)",
+    "0 2px 0 rgba(20,12,0,0.85)","0 4px 0 rgba(20,12,0,0.65)",
+    "0 6px 0 rgba(20,12,0,0.40)","0 8px 0 rgba(20,12,0,0.20)",
+    "0 10px 20px rgba(0,0,0,0.60)","0 4px 30px rgba(194,159,96,0.25)",
+  ].join(", "),
   cursor: "pointer",
-  transition: "transform 0.18s cubic-bezier(0.23,1,0.32,1), box-shadow 0.18s",
+  transition: "transform 0.1s ease, box-shadow 0.1s ease",
 };
 const ghostBtn: React.CSSProperties = {
-  background: "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
-  borderTop: "1px solid rgba(255,255,255,0.14)",
-  borderLeft: "1px solid rgba(255,255,255,0.08)",
-  borderRight: "1px solid rgba(0,0,0,0.1)",
-  borderBottom: "1px solid rgba(0,0,0,0.28)",
-  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 2px 6px rgba(0,0,0,0.25)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)",
+  borderTop: "1.5px solid rgba(255,255,255,0.20)",
+  borderLeft: "1px solid rgba(255,255,255,0.12)",
+  borderRight: "1px solid rgba(0,0,0,0.18)",
+  borderBottom: "1.5px solid rgba(100,105,115,0.45)",
+  boxShadow: [
+    "inset 0 2px 0 rgba(255,255,255,0.12)",
+    "inset 0 -2px 6px rgba(0,0,0,0.35)",
+    "0 2px 0 rgba(0,0,0,0.70)","0 4px 0 rgba(0,0,0,0.45)",
+    "0 6px 0 rgba(0,0,0,0.22)","0 8px 12px rgba(0,0,0,0.50)",
+  ].join(", "),
   cursor: "pointer",
-  transition: "transform 0.18s cubic-bezier(0.23,1,0.32,1)",
+  transition: "transform 0.1s ease, box-shadow 0.1s ease",
 };
 
 // ─── MediaRecorder hook ───────────────────────────────────────────────────────

@@ -20,25 +20,79 @@ export default function VideoCard({ video, showCategory = true }: VideoCardProps
       <div
         className="rounded-2xl overflow-hidden flex flex-col"
         style={{
-          background: "linear-gradient(180deg, rgba(255,255,255,0.065) 0%, rgba(6,18,55,0.22) 18%, rgba(3,8,26,0.34) 100%)",
-          backdropFilter: "blur(20px) saturate(180%)",
-          WebkitBackdropFilter: "blur(20px) saturate(180%)",
-          borderTop: "1px solid rgba(255,255,255,0.18)",
-          borderLeft: "1px solid rgba(255,255,255,0.1)",
-          borderRight: "1px solid rgba(255,255,255,0.04)",
-          borderBottom: "1px solid rgba(0,0,0,0.4)",
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.45), 0 10px 32px rgba(0,0,0,0.4), 0 28px 72px rgba(0,0,0,0.28)",
+          background: "linear-gradient(175deg, rgba(255,255,255,0.09) 0%, rgba(20,55,130,0.28) 20%, rgba(6,18,55,0.48) 50%, rgba(3,8,26,0.68) 100%)",
+          backdropFilter: "blur(28px) saturate(200%)",
+          WebkitBackdropFilter: "blur(28px) saturate(200%)",
+          borderTop: "2px solid rgba(255,255,255,0.35)",
+          borderLeft: "1px solid rgba(255,255,255,0.18)",
+          borderRight: "1.5px solid rgba(194,159,96,0.15)",
+          borderBottom: "1.5px solid rgba(140,145,155,0.5)",
+          boxShadow: [
+            "inset 0 3px 0 rgba(255,255,255,0.22)",
+            "inset 0 1px 0 rgba(255,255,255,0.38)",
+            "inset 2px 0 0 rgba(255,255,255,0.06)",
+            "inset 0 -3px 8px rgba(0,0,0,0.55)",
+            "inset -2px 0 5px rgba(0,0,0,0.25)",
+            "0 2px 0 rgba(0,0,0,0.90)",
+            "0 4px 0 rgba(0,0,0,0.75)",
+            "0 6px 0 rgba(0,0,0,0.58)",
+            "0 8px 0 rgba(0,0,0,0.42)",
+            "0 10px 0 rgba(0,0,0,0.28)",
+            "0 12px 0 rgba(0,0,0,0.16)",
+            "0 14px 0 rgba(0,0,0,0.08)",
+            "0 16px 0 rgba(0,0,0,0.04)",
+            "0 20px 28px rgba(0,0,0,0.75)",
+            "0 38px 65px rgba(0,0,0,0.58)",
+            "5px 0 16px rgba(0,0,0,0.45)",
+            "0 0 0 1px rgba(0,0,0,0.6)",
+          ].join(", "),
           transition: "transform 0.28s cubic-bezier(0.23,1,0.32,1), box-shadow 0.28s cubic-bezier(0.23,1,0.32,1)",
         }}
         onMouseEnter={(e) => {
           const el = e.currentTarget as HTMLElement;
-          el.style.transform = "translateY(-5px) scale(1.008)";
-          el.style.boxShadow = "inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.15), 0 4px 14px rgba(0,0,0,0.55), 0 18px 52px rgba(0,0,0,0.5), 0 44px 96px rgba(0,0,0,0.35), 0 0 40px rgba(0,170,240,0.1)";
+          el.style.transform = "translateY(-4px)";
+          el.style.boxShadow = [
+            "inset 0 3px 0 rgba(255,255,255,0.28)",
+            "inset 0 1px 0 rgba(255,255,255,0.45)",
+            "inset 2px 0 0 rgba(255,255,255,0.08)",
+            "inset 0 -3px 8px rgba(0,0,0,0.55)",
+            "inset -2px 0 5px rgba(0,0,0,0.25)",
+            "0 2px 0 rgba(0,0,0,0.90)",
+            "0 4px 0 rgba(0,0,0,0.75)",
+            "0 6px 0 rgba(0,0,0,0.58)",
+            "0 8px 0 rgba(0,0,0,0.42)",
+            "0 10px 0 rgba(0,0,0,0.28)",
+            "0 12px 0 rgba(0,0,0,0.16)",
+            "0 14px 0 rgba(0,0,0,0.08)",
+            "0 16px 0 rgba(0,0,0,0.04)",
+            "0 26px 35px rgba(0,0,0,0.82)",
+            "0 46px 78px rgba(0,0,0,0.65)",
+            "5px 0 16px rgba(0,0,0,0.45)",
+            "0 0 0 1px rgba(0,0,0,0.6)",
+          ].join(", ");
         }}
         onMouseLeave={(e) => {
           const el = e.currentTarget as HTMLElement;
-          el.style.transform = "translateY(0) scale(1)";
-          el.style.boxShadow = "inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.45), 0 10px 32px rgba(0,0,0,0.4), 0 28px 72px rgba(0,0,0,0.28)";
+          el.style.transform = "translateY(0)";
+          el.style.boxShadow = [
+            "inset 0 3px 0 rgba(255,255,255,0.22)",
+            "inset 0 1px 0 rgba(255,255,255,0.38)",
+            "inset 2px 0 0 rgba(255,255,255,0.06)",
+            "inset 0 -3px 8px rgba(0,0,0,0.55)",
+            "inset -2px 0 5px rgba(0,0,0,0.25)",
+            "0 2px 0 rgba(0,0,0,0.90)",
+            "0 4px 0 rgba(0,0,0,0.75)",
+            "0 6px 0 rgba(0,0,0,0.58)",
+            "0 8px 0 rgba(0,0,0,0.42)",
+            "0 10px 0 rgba(0,0,0,0.28)",
+            "0 12px 0 rgba(0,0,0,0.16)",
+            "0 14px 0 rgba(0,0,0,0.08)",
+            "0 16px 0 rgba(0,0,0,0.04)",
+            "0 20px 28px rgba(0,0,0,0.75)",
+            "0 38px 65px rgba(0,0,0,0.58)",
+            "5px 0 16px rgba(0,0,0,0.45)",
+            "0 0 0 1px rgba(0,0,0,0.6)",
+          ].join(", ");
         }}
       >
         {/* Thumbnail */}
