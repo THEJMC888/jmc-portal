@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -29,7 +29,18 @@ export default function LoginPage() {
     setError("");
     setNotice("");
 
-    if (mode === "signin") {
+    if (mode === "forgot") {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+      if (error) {
+        setError(error.message);
+      } else {
+        setNotice("Check your email for a password reset link.");
+        setMode("signin");
+      }
+      setLoading(false);
+    } else if (mode === "signin") {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         setError(error.message);
@@ -163,9 +174,9 @@ export default function LoginPage() {
               marginBottom: "0.25rem",
             }}
           >
-            {mode === "signin" ? "Welcome back" : "Create your account"}
+            {mode === "signin" ? "Welcome back" : mode === "signup" ? "Create your account" : "Reset your password"}
           </h2>
-          {mode !== "signin" && (
+          {mode === "signup" && (
             <p
               style={{
                 fontFamily: "Avenir, Nunito, system-ui, sans-serif",
@@ -175,6 +186,18 @@ export default function LoginPage() {
               }}
             >
               Your private space awaits.
+            </p>
+          )}
+          {mode === "forgot" && (
+            <p
+              style={{
+                fontFamily: "Avenir, Nunito, system-ui, sans-serif",
+                color: "rgba(222,211,200,0.55)",
+                fontSize: "0.875rem",
+                marginBottom: "1.75rem",
+              }}
+            >
+              Enter your email and we&apos;ll send you a reset link.
             </p>
           )}
 
@@ -242,21 +265,44 @@ export default function LoginPage() {
               />
             </div>
 
-            <div>
-              <label
-                htmlFor="password"
-                className="block mb-2"
-                style={{
-                  fontFamily: "Syne, system-ui, sans-serif",
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.15em",
-                  fontSize: "0.65rem",
-                  color: "rgba(222,211,200,0.6)",
-                }}
-              >
-                Password
-              </label>
+            {mode !== "forgot" && <div>
+              <div className="flex items-center justify-between mb-2">
+                <label
+                  htmlFor="password"
+                  style={{
+                    fontFamily: "Syne, system-ui, sans-serif",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.15em",
+                    fontSize: "0.65rem",
+                    color: "rgba(222,211,200,0.6)",
+                  }}
+                >
+                  Password
+                </label>
+                {mode === "signin" && (
+                  <button
+                    type="button"
+                    onClick={() => { setMode("forgot"); setError(""); setNotice(""); }}
+                    style={{
+                      fontFamily: "Syne, system-ui, sans-serif",
+                      fontWeight: 600,
+                      fontSize: "0.6rem",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
+                      color: "rgba(194,159,96,0.5)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      transition: "color 0.2s",
+                    }}
+                    onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#C29F60")}
+                    onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "rgba(194,159,96,0.5)")}
+                  >
+                    Forgot password?
+                  </button>
+                )}
+              </div>
               <div className="relative">
                 <input
                   id="password"
@@ -314,6 +360,7 @@ export default function LoginPage() {
                 </p>
               )}
             </div>
+            </div>}
 
             {error && (
               <p className="text-sm rounded-lg px-4 py-3" style={{ color: "#f87171", background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)" }}>
@@ -382,7 +429,9 @@ export default function LoginPage() {
                 }
               }}
             >
-              {loading ? (mode === "signin" ? "Signing in..." : "Creating account...") : (mode === "signin" ? "Enter The Portal To Clarity" : "Create Account >")}
+              {loading
+                ? (mode === "forgot" ? "Sending..." : mode === "signin" ? "Signing in..." : "Creating account...")
+                : (mode === "forgot" ? "Send Reset Link >" : mode === "signin" ? "Enter The Portal To Clarity" : "Create Account >")}
             </button>
           </form>
 
@@ -391,7 +440,7 @@ export default function LoginPage() {
             style={{ borderTop: "1px solid rgba(194,159,96,0.1)" }}
           >
             <button
-              onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setError(""); setNotice(""); }}
+              onClick={() => { setMode(mode === "signup" ? "signin" : mode === "forgot" ? "signin" : "signup"); setError(""); setNotice(""); }}
               style={{
                 fontFamily: "Syne, system-ui, sans-serif",
                 fontWeight: 700,
@@ -407,7 +456,7 @@ export default function LoginPage() {
               onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#C29F60")}
               onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "rgba(194,159,96,0.6)")}
             >
-              {mode === "signin" ? "New member? Create account >" : "Already have an account? Sign in >"}
+              {mode === "signin" ? "New member? Create account >" : mode === "forgot" ? "< Back to sign in" : "Already have an account? Sign in >"}
             </button>
           </div>
         </div>
