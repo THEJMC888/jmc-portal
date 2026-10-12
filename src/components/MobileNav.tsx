@@ -27,17 +27,13 @@ export default function MobileNav() {
       }}
     >
       <div className="flex items-center justify-around px-2 pt-2 pb-3">
-        {MOBILE_NAV.map(({ label, href, icon: Icon, comingSoon }) => {
+        {MOBILE_NAV.map(({ label, href, icon: Icon }) => {
           const isActive = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
           return (
             <Link
               key={href}
-              href={comingSoon ? "#" : href}
+              href={href}
               className="flex flex-col items-center gap-1 px-3 py-1 rounded-xl transition-all"
-              style={{
-                opacity: comingSoon ? 0.35 : 1,
-                pointerEvents: comingSoon ? "none" : "auto",
-              }}
             >
               <div
                 className="flex items-center justify-center w-10 h-8 rounded-lg transition-all"
