@@ -114,32 +114,34 @@ export default function LoginPage() {
         <div
           className="rounded-2xl p-8"
           style={{
-            background: "linear-gradient(170deg, rgba(22,62,124,0.96) 0%, rgba(10,30,76,0.98) 40%, rgba(4,12,36,1) 100%)",
-            backdropFilter: "blur(24px) saturate(180%)",
-            WebkitBackdropFilter: "blur(24px) saturate(180%)",
-            borderTop: "1px solid rgba(255,255,255,0.22)",
-            borderLeft: "1px solid rgba(255,255,255,0.1)",
-            borderRight: "1px solid rgba(0,0,0,0.45)",
-            borderBottom: "1px solid rgba(0,0,0,0.65)",
+            background: "linear-gradient(175deg, rgba(35,90,168,0.97) 0%, rgba(20,55,120,0.99) 18%, rgba(8,22,65,1) 50%, rgba(3,9,28,1) 100%)",
+            backdropFilter: "blur(28px) saturate(200%)",
+            WebkitBackdropFilter: "blur(28px) saturate(200%)",
+            borderTop: "2px solid rgba(255,255,255,0.38)",
+            borderLeft: "1px solid rgba(255,255,255,0.18)",
+            borderRight: "1px solid rgba(0,0,0,0.55)",
+            borderBottom: "2px solid rgba(0,0,0,0.8)",
             boxShadow: [
-              /* glass top-edge catch light */
-              "inset 0 2px 0 rgba(255,255,255,0.18)",
-              "inset 0 1px 0 rgba(255,255,255,0.28)",
-              /* inner bottom shadow */
-              "inset 0 -2px 0 rgba(0,0,0,0.5)",
-              /* visible thickness — stacked cast layers */
-              "0 2px 0 rgba(0,0,0,0.75)",
-              "0 4px 0 rgba(0,0,0,0.6)",
-              "0 6px 0 rgba(0,0,0,0.45)",
-              "0 8px 0 rgba(0,0,0,0.3)",
-              /* drop shadows for height above page */
-              "0 10px 20px rgba(0,0,0,0.65)",
-              "0 20px 50px rgba(0,0,0,0.55)",
-              "0 40px 90px rgba(0,0,0,0.4)",
-              /* gold halo glow */
-              "0 0 80px rgba(194,159,96,0.06)",
+              /* bright glass inner bevel — top face catching light */
+              "inset 0 3px 0 rgba(255,255,255,0.22)",
+              "inset 0 1px 0 rgba(255,255,255,0.35)",
+              /* inner bottom cave shadow */
+              "inset 0 -3px 6px rgba(0,0,0,0.6)",
+              /* stacked cast layers — 16px of visible thickness */
+              "0 2px 0 rgba(0,0,0,0.92)",
+              "0 4px 0 rgba(0,0,0,0.82)",
+              "0 6px 0 rgba(0,0,0,0.72)",
+              "0 8px 0 rgba(0,0,0,0.62)",
+              "0 10px 0 rgba(0,0,0,0.5)",
+              "0 12px 0 rgba(0,0,0,0.38)",
+              "0 14px 0 rgba(0,0,0,0.26)",
+              "0 16px 0 rgba(0,0,0,0.14)",
+              /* soft drop shadows bleeding out from the thickness */
+              "0 18px 24px rgba(0,0,0,0.75)",
+              "0 30px 60px rgba(0,0,0,0.65)",
+              "0 60px 100px rgba(0,0,0,0.5)",
               /* crisp dark outline */
-              "0 0 0 1px rgba(0,0,0,0.5)",
+              "0 0 0 1px rgba(0,0,0,0.65)",
             ].join(", "),
           }}
         >
