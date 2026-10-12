@@ -380,7 +380,7 @@ export default function LoginPage() {
                 }
               }}
             >
-              {loading ? (mode === "signin" ? "Signing in..." : "Creating account...") : (mode === "signin" ? "Access The Portal Now" : "Create Account >")}
+              {loading ? (mode === "signin" ? "Signing in..." : "Creating account...") : (mode === "signin" ? "Enter The Portal To Clarity" : "Create Account >")}
             </button>
           </form>
 
