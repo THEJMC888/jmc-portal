@@ -114,9 +114,20 @@ export default function LoginPage() {
         <div
           className="rounded-2xl p-8"
           style={{
-            background: "linear-gradient(135deg, rgba(8,37,77,0.9), rgba(4,13,28,0.95))",
-            border: "1px solid rgba(194,159,96,0.2)",
-            boxShadow: "0 8px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(194,159,96,0.05)",
+            background: "linear-gradient(160deg, rgba(12,48,100,0.97) 0%, rgba(6,20,52,0.99) 60%, rgba(3,10,28,1) 100%)",
+            border: "1px solid rgba(194,159,96,0.25)",
+            boxShadow: [
+              "0 2px 0 rgba(255,255,255,0.06)",           /* top highlight edge */
+              "0 -1px 0 rgba(0,0,0,0.6)",                 /* bottom shadow edge */
+              "0 20px 60px rgba(0,0,0,0.7)",              /* deep drop shadow */
+              "0 8px 30px rgba(0,0,0,0.5)",               /* mid drop shadow */
+              "0 2px 8px rgba(0,0,0,0.4)",                /* near shadow */
+              "inset 0 1px 0 rgba(255,255,255,0.1)",      /* inner top bevel */
+              "inset 0 -1px 0 rgba(0,0,0,0.4)",           /* inner bottom bevel */
+              "inset 1px 0 0 rgba(255,255,255,0.05)",     /* inner left bevel */
+              "inset -1px 0 0 rgba(0,0,0,0.3)",           /* inner right bevel */
+              "0 0 0 1px rgba(194,159,96,0.08)",          /* subtle gold halo */
+            ].join(", "),
           }}
         >
           <h2
@@ -171,13 +182,37 @@ export default function LoginPage() {
                 placeholder="you@example.com"
                 className="w-full rounded-lg px-4 py-3 text-sm transition-all focus:outline-none"
                 style={{
-                  background: "rgba(4,13,28,0.7)",
-                  border: "1px solid rgba(194,159,96,0.2)",
+                  background: "rgba(1,5,16,0.85)",
+                  border: "1px solid rgba(0,0,0,0.6)",
+                  borderTop: "1px solid rgba(0,0,0,0.8)",
                   color: "#DED3C8",
                   fontFamily: "Avenir, Nunito, system-ui, sans-serif",
+                  boxShadow: [
+                    "inset 0 2px 6px rgba(0,0,0,0.7)",
+                    "inset 0 1px 3px rgba(0,0,0,0.5)",
+                    "inset 0 0 0 1px rgba(0,0,0,0.3)",
+                    "0 1px 0 rgba(255,255,255,0.04)",
+                  ].join(", "),
                 }}
-                onFocus={(e) => (e.target.style.borderColor = "rgba(194,159,96,0.5)")}
-                onBlur={(e) => (e.target.style.borderColor = "rgba(194,159,96,0.2)")}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "rgba(194,159,96,0.45)";
+                  e.target.style.boxShadow = [
+                    "inset 0 2px 6px rgba(0,0,0,0.7)",
+                    "inset 0 1px 3px rgba(0,0,0,0.5)",
+                    "inset 0 0 0 1px rgba(0,0,0,0.3)",
+                    "0 1px 0 rgba(255,255,255,0.04)",
+                    "0 0 0 2px rgba(194,159,96,0.12)",
+                  ].join(", ");
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "rgba(0,0,0,0.6)";
+                  e.target.style.boxShadow = [
+                    "inset 0 2px 6px rgba(0,0,0,0.7)",
+                    "inset 0 1px 3px rgba(0,0,0,0.5)",
+                    "inset 0 0 0 1px rgba(0,0,0,0.3)",
+                    "0 1px 0 rgba(255,255,255,0.04)",
+                  ].join(", ");
+                }}
                 required
               />
             </div>
@@ -207,13 +242,37 @@ export default function LoginPage() {
                   minLength={mode === "signup" ? 8 : undefined}
                   className="w-full rounded-lg px-4 py-3 pr-12 text-sm transition-all focus:outline-none"
                   style={{
-                    background: "rgba(4,13,28,0.7)",
-                    border: "1px solid rgba(194,159,96,0.2)",
+                    background: "rgba(1,5,16,0.85)",
+                    border: "1px solid rgba(0,0,0,0.6)",
+                    borderTop: "1px solid rgba(0,0,0,0.8)",
                     color: "#DED3C8",
                     fontFamily: "Avenir, Nunito, system-ui, sans-serif",
+                    boxShadow: [
+                      "inset 0 2px 6px rgba(0,0,0,0.7)",
+                      "inset 0 1px 3px rgba(0,0,0,0.5)",
+                      "inset 0 0 0 1px rgba(0,0,0,0.3)",
+                      "0 1px 0 rgba(255,255,255,0.04)",
+                    ].join(", "),
                   }}
-                  onFocus={(e) => (e.target.style.borderColor = "rgba(194,159,96,0.5)")}
-                  onBlur={(e) => (e.target.style.borderColor = "rgba(194,159,96,0.2)")}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = "rgba(194,159,96,0.45)";
+                    e.target.style.boxShadow = [
+                      "inset 0 2px 6px rgba(0,0,0,0.7)",
+                      "inset 0 1px 3px rgba(0,0,0,0.5)",
+                      "inset 0 0 0 1px rgba(0,0,0,0.3)",
+                      "0 1px 0 rgba(255,255,255,0.04)",
+                      "0 0 0 2px rgba(194,159,96,0.12)",
+                    ].join(", ");
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = "rgba(0,0,0,0.6)";
+                    e.target.style.boxShadow = [
+                      "inset 0 2px 6px rgba(0,0,0,0.7)",
+                      "inset 0 1px 3px rgba(0,0,0,0.5)",
+                      "inset 0 0 0 1px rgba(0,0,0,0.3)",
+                      "0 1px 0 rgba(255,255,255,0.04)",
+                    ].join(", ");
+                  }}
                   required
                 />
                 <button
@@ -241,19 +300,60 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-4 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 fontFamily: "Syne, system-ui, sans-serif",
                 fontWeight: 700,
                 textTransform: "uppercase",
-                letterSpacing: "0.12em",
+                letterSpacing: "0.14em",
                 fontSize: "0.8rem",
-                background: "linear-gradient(135deg, #C29F60, #D4B47A, #C29F60)",
-                color: "#08254D",
-                boxShadow: loading ? "none" : "0 4px 24px rgba(194,159,96,0.3)",
+                background: loading
+                  ? "linear-gradient(160deg, #A8894E, #B89860)"
+                  : "linear-gradient(160deg, #D4B47A 0%, #C29F60 40%, #A8884A 100%)",
+                color: "#06183A",
+                boxShadow: loading ? "none" : [
+                  "0 1px 0 rgba(255,255,255,0.35)",         /* top highlight */
+                  "0 -1px 0 rgba(0,0,0,0.5)",              /* bottom shadow edge */
+                  "0 6px 0 rgba(80,55,15,0.9)",            /* deep cast shadow */
+                  "0 8px 20px rgba(0,0,0,0.6)",            /* ambient drop */
+                  "0 4px 40px rgba(194,159,96,0.35)",      /* gold glow */
+                  "0 2px 12px rgba(194,159,96,0.25)",      /* near glow */
+                  "inset 0 1px 0 rgba(255,255,255,0.3)",   /* inner top bevel */
+                  "inset 0 -2px 0 rgba(0,0,0,0.25)",      /* inner bottom shadow */
+                ].join(", "),
+                textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) {
+                  (e.currentTarget as HTMLElement).style.background = "linear-gradient(160deg, #DEC080 0%, #CDA96A 40%, #B8924F 100%)";
+                  (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!loading) {
+                  (e.currentTarget as HTMLElement).style.background = "linear-gradient(160deg, #D4B47A 0%, #C29F60 40%, #A8884A 100%)";
+                  (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
+                }
+              }}
+              onMouseDown={(e) => {
+                if (!loading) {
+                  (e.currentTarget as HTMLElement).style.transform = "translateY(2px)";
+                  (e.currentTarget as HTMLElement).style.boxShadow = [
+                    "0 0 0 rgba(255,255,255,0)",
+                    "0 2px 0 rgba(80,55,15,0.9)",
+                    "0 3px 10px rgba(0,0,0,0.5)",
+                    "0 2px 20px rgba(194,159,96,0.2)",
+                    "inset 0 1px 3px rgba(0,0,0,0.2)",
+                  ].join(", ");
+                }
+              }}
+              onMouseUp={(e) => {
+                if (!loading) {
+                  (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
+                }
               }}
             >
-              {loading ? (mode === "signin" ? "Signing in..." : "Creating account...") : (mode === "signin" ? "Sign In >" : "Create Account >")}
+              {loading ? (mode === "signin" ? "Signing in..." : "Creating account...") : (mode === "signin" ? "Access The Portal Now" : "Create Account >")}
             </button>
           </form>
 
