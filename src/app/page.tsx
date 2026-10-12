@@ -114,34 +114,42 @@ export default function LoginPage() {
         <div
           className="rounded-2xl p-8"
           style={{
-            background: "linear-gradient(175deg, rgba(35,90,168,0.97) 0%, rgba(20,55,120,0.99) 18%, rgba(8,22,65,1) 50%, rgba(3,9,28,1) 100%)",
-            backdropFilter: "blur(28px) saturate(200%)",
-            WebkitBackdropFilter: "blur(28px) saturate(200%)",
-            borderTop: "2px solid rgba(255,255,255,0.38)",
-            borderLeft: "1px solid rgba(255,255,255,0.18)",
-            borderRight: "1px solid rgba(0,0,0,0.55)",
-            borderBottom: "2px solid rgba(0,0,0,0.8)",
+            background: "linear-gradient(175deg, rgba(45,108,195,0.98) 0%, rgba(28,72,148,0.99) 15%, rgba(10,26,78,1) 45%, rgba(3,9,28,1) 100%)",
+            backdropFilter: "blur(32px) saturate(220%)",
+            WebkitBackdropFilter: "blur(32px) saturate(220%)",
+            borderTop: "2px solid rgba(255,255,255,0.48)",
+            borderLeft: "1px solid rgba(255,255,255,0.22)",
+            borderRight: "1px solid rgba(0,0,0,0.6)",
+            borderBottom: "2px solid rgba(0,0,0,0.9)",
             boxShadow: [
-              /* bright glass inner bevel — top face catching light */
-              "inset 0 3px 0 rgba(255,255,255,0.22)",
-              "inset 0 1px 0 rgba(255,255,255,0.35)",
-              /* inner bottom cave shadow */
-              "inset 0 -3px 6px rgba(0,0,0,0.6)",
-              /* stacked cast layers — 16px of visible thickness */
-              "0 2px 0 rgba(0,0,0,0.92)",
-              "0 4px 0 rgba(0,0,0,0.82)",
-              "0 6px 0 rgba(0,0,0,0.72)",
-              "0 8px 0 rgba(0,0,0,0.62)",
-              "0 10px 0 rgba(0,0,0,0.5)",
-              "0 12px 0 rgba(0,0,0,0.38)",
-              "0 14px 0 rgba(0,0,0,0.26)",
-              "0 16px 0 rgba(0,0,0,0.14)",
-              /* soft drop shadows bleeding out from the thickness */
-              "0 18px 24px rgba(0,0,0,0.75)",
-              "0 30px 60px rgba(0,0,0,0.65)",
-              "0 60px 100px rgba(0,0,0,0.5)",
+              /* specular top-face highlights — glass catching overhead light */
+              "inset 0 4px 0 rgba(255,255,255,0.28)",
+              "inset 0 2px 0 rgba(255,255,255,0.42)",
+              "inset 0 1px 0 rgba(255,255,255,0.5)",
+              /* inner left edge light */
+              "inset 2px 0 0 rgba(255,255,255,0.08)",
+              /* inner bottom + right cave shadow */
+              "inset 0 -4px 10px rgba(0,0,0,0.7)",
+              "inset -2px 0 6px rgba(0,0,0,0.3)",
+              /* stacked cast layers — 24px of visible thickness */
+              "0 2px 0 rgba(0,0,0,0.95)",
+              "0 4px 0 rgba(0,0,0,0.88)",
+              "0 6px 0 rgba(0,0,0,0.80)",
+              "0 8px 0 rgba(0,0,0,0.72)",
+              "0 10px 0 rgba(0,0,0,0.62)",
+              "0 12px 0 rgba(0,0,0,0.52)",
+              "0 14px 0 rgba(0,0,0,0.42)",
+              "0 16px 0 rgba(0,0,0,0.32)",
+              "0 18px 0 rgba(0,0,0,0.22)",
+              "0 20px 0 rgba(0,0,0,0.14)",
+              "0 22px 0 rgba(0,0,0,0.08)",
+              "0 24px 0 rgba(0,0,0,0.04)",
+              /* large soft drop shadows */
+              "0 26px 30px rgba(0,0,0,0.85)",
+              "0 40px 70px rgba(0,0,0,0.7)",
+              "0 70px 120px rgba(0,0,0,0.55)",
               /* crisp dark outline */
-              "0 0 0 1px rgba(0,0,0,0.65)",
+              "0 0 0 1px rgba(0,0,0,0.75)",
             ].join(", "),
           }}
         >
@@ -197,35 +205,34 @@ export default function LoginPage() {
                 placeholder="you@example.com"
                 className="w-full rounded-lg px-4 py-3 text-sm transition-all focus:outline-none"
                 style={{
-                  background: "rgba(1,5,16,0.85)",
-                  border: "1px solid rgba(0,0,0,0.6)",
-                  borderTop: "1px solid rgba(0,0,0,0.8)",
+                  background: "rgba(1,4,14,0.9)",
+                  border: "1px solid rgba(194,159,96,0.35)",
+                  borderTop: "1px solid rgba(194,159,96,0.2)",
                   color: "#DED3C8",
                   fontFamily: "Avenir, Nunito, system-ui, sans-serif",
                   boxShadow: [
-                    "inset 0 2px 6px rgba(0,0,0,0.7)",
-                    "inset 0 1px 3px rgba(0,0,0,0.5)",
-                    "inset 0 0 0 1px rgba(0,0,0,0.3)",
-                    "0 1px 0 rgba(255,255,255,0.04)",
+                    "inset 0 2px 8px rgba(0,0,0,0.75)",
+                    "inset 0 1px 4px rgba(0,0,0,0.55)",
+                    "0 1px 0 rgba(194,159,96,0.08)",
                   ].join(", "),
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = "rgba(194,159,96,0.45)";
+                  e.target.style.border = "1px solid rgba(194,159,96,0.7)";
+                  e.target.style.borderTop = "1px solid rgba(194,159,96,0.45)";
                   e.target.style.boxShadow = [
-                    "inset 0 2px 6px rgba(0,0,0,0.7)",
-                    "inset 0 1px 3px rgba(0,0,0,0.5)",
-                    "inset 0 0 0 1px rgba(0,0,0,0.3)",
-                    "0 1px 0 rgba(255,255,255,0.04)",
-                    "0 0 0 2px rgba(194,159,96,0.12)",
+                    "inset 0 2px 8px rgba(0,0,0,0.75)",
+                    "inset 0 1px 4px rgba(0,0,0,0.55)",
+                    "0 0 0 2px rgba(194,159,96,0.14)",
+                    "0 0 12px rgba(194,159,96,0.1)",
                   ].join(", ");
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = "rgba(0,0,0,0.6)";
+                  e.target.style.border = "1px solid rgba(194,159,96,0.35)";
+                  e.target.style.borderTop = "1px solid rgba(194,159,96,0.2)";
                   e.target.style.boxShadow = [
-                    "inset 0 2px 6px rgba(0,0,0,0.7)",
-                    "inset 0 1px 3px rgba(0,0,0,0.5)",
-                    "inset 0 0 0 1px rgba(0,0,0,0.3)",
-                    "0 1px 0 rgba(255,255,255,0.04)",
+                    "inset 0 2px 8px rgba(0,0,0,0.75)",
+                    "inset 0 1px 4px rgba(0,0,0,0.55)",
+                    "0 1px 0 rgba(194,159,96,0.08)",
                   ].join(", ");
                 }}
                 required
@@ -257,35 +264,34 @@ export default function LoginPage() {
                   minLength={mode === "signup" ? 8 : undefined}
                   className="w-full rounded-lg px-4 py-3 pr-12 text-sm transition-all focus:outline-none"
                   style={{
-                    background: "rgba(1,5,16,0.85)",
-                    border: "1px solid rgba(0,0,0,0.6)",
-                    borderTop: "1px solid rgba(0,0,0,0.8)",
+                    background: "rgba(1,4,14,0.9)",
+                    border: "1px solid rgba(194,159,96,0.35)",
+                    borderTop: "1px solid rgba(194,159,96,0.2)",
                     color: "#DED3C8",
                     fontFamily: "Avenir, Nunito, system-ui, sans-serif",
                     boxShadow: [
-                      "inset 0 2px 6px rgba(0,0,0,0.7)",
-                      "inset 0 1px 3px rgba(0,0,0,0.5)",
-                      "inset 0 0 0 1px rgba(0,0,0,0.3)",
-                      "0 1px 0 rgba(255,255,255,0.04)",
+                      "inset 0 2px 8px rgba(0,0,0,0.75)",
+                      "inset 0 1px 4px rgba(0,0,0,0.55)",
+                      "0 1px 0 rgba(194,159,96,0.08)",
                     ].join(", "),
                   }}
                   onFocus={(e) => {
-                    e.target.style.borderColor = "rgba(194,159,96,0.45)";
+                    e.target.style.border = "1px solid rgba(194,159,96,0.7)";
+                    e.target.style.borderTop = "1px solid rgba(194,159,96,0.45)";
                     e.target.style.boxShadow = [
-                      "inset 0 2px 6px rgba(0,0,0,0.7)",
-                      "inset 0 1px 3px rgba(0,0,0,0.5)",
-                      "inset 0 0 0 1px rgba(0,0,0,0.3)",
-                      "0 1px 0 rgba(255,255,255,0.04)",
-                      "0 0 0 2px rgba(194,159,96,0.12)",
+                      "inset 0 2px 8px rgba(0,0,0,0.75)",
+                      "inset 0 1px 4px rgba(0,0,0,0.55)",
+                      "0 0 0 2px rgba(194,159,96,0.14)",
+                      "0 0 12px rgba(194,159,96,0.1)",
                     ].join(", ");
                   }}
                   onBlur={(e) => {
-                    e.target.style.borderColor = "rgba(0,0,0,0.6)";
+                    e.target.style.border = "1px solid rgba(194,159,96,0.35)";
+                    e.target.style.borderTop = "1px solid rgba(194,159,96,0.2)";
                     e.target.style.boxShadow = [
-                      "inset 0 2px 6px rgba(0,0,0,0.7)",
-                      "inset 0 1px 3px rgba(0,0,0,0.5)",
-                      "inset 0 0 0 1px rgba(0,0,0,0.3)",
-                      "0 1px 0 rgba(255,255,255,0.04)",
+                      "inset 0 2px 8px rgba(0,0,0,0.75)",
+                      "inset 0 1px 4px rgba(0,0,0,0.55)",
+                      "0 1px 0 rgba(194,159,96,0.08)",
                     ].join(", ");
                   }}
                   required
@@ -323,38 +329,55 @@ export default function LoginPage() {
                 letterSpacing: "0.14em",
                 fontSize: "0.8rem",
                 background: loading
-                  ? "linear-gradient(160deg, #A8894E, #B89860)"
-                  : "linear-gradient(160deg, #D4B47A 0%, #C29F60 40%, #A8884A 100%)",
-                color: "#06183A",
+                  ? "linear-gradient(180deg, #B8975A 0%, #9A7A3A 50%, #B8975A 100%)"
+                  : "linear-gradient(180deg, #F0D888 0%, #D4AA52 12%, #B88830 30%, #8A6010 48%, #AA8030 62%, #D0A850 78%, #EED080 90%, #F8E898 100%)",
+                color: "#2A1400",
+                border: "none",
+                borderTop: "1px solid rgba(255,240,160,0.6)",
+                borderBottom: "1px solid rgba(60,30,0,0.8)",
                 boxShadow: loading ? "none" : [
-                  "inset 0 1px 0 rgba(255,255,255,0.35)",  /* inner top bevel */
-                  "inset 0 -2px 0 rgba(0,0,0,0.2)",        /* inner bottom shadow */
-                  "0 4px 16px rgba(0,0,0,0.5)",            /* near drop */
-                  "0 8px 32px rgba(0,0,0,0.4)",            /* ambient drop */
-                  "0 4px 40px rgba(194,159,96,0.4)",       /* gold glow */
-                  "0 2px 12px rgba(194,159,96,0.3)",       /* near gold glow */
+                  /* specular top highlight — very bright, narrow */
+                  "inset 0 2px 0 rgba(255,248,200,0.7)",
+                  "inset 0 1px 0 rgba(255,255,255,0.5)",
+                  /* left edge light catch */
+                  "inset 1px 0 0 rgba(255,240,160,0.25)",
+                  /* right edge shadow */
+                  "inset -1px 0 0 rgba(0,0,0,0.3)",
+                  /* inner bottom shadow */
+                  "inset 0 -2px 4px rgba(0,0,0,0.4)",
+                  /* stacked cast shadow — button thickness */
+                  "0 2px 0 rgba(40,20,0,0.95)",
+                  "0 4px 0 rgba(40,20,0,0.8)",
+                  "0 6px 0 rgba(40,20,0,0.6)",
+                  "0 8px 0 rgba(40,20,0,0.4)",
+                  /* ambient drop + gold glow */
+                  "0 10px 20px rgba(0,0,0,0.7)",
+                  "0 6px 40px rgba(194,159,60,0.5)",
+                  "0 2px 16px rgba(194,159,60,0.35)",
                 ].join(", "),
-                textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                textShadow: "0 1px 2px rgba(0,0,0,0.35), 0 -1px 0 rgba(255,220,100,0.15)",
               }}
               onMouseEnter={(e) => {
                 if (!loading) {
-                  (e.currentTarget as HTMLElement).style.background = "linear-gradient(160deg, #DEC080 0%, #CDA96A 40%, #B8924F 100%)";
+                  (e.currentTarget as HTMLElement).style.background = "linear-gradient(180deg, #F8E898 0%, #DCBA5C 12%, #C09438 30%, #966818 48%, #B88838 62%, #D8B058 78%, #F0D880 90%, #FFF0A8 100%)";
                   (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
                 }
               }}
               onMouseLeave={(e) => {
                 if (!loading) {
-                  (e.currentTarget as HTMLElement).style.background = "linear-gradient(160deg, #D4B47A 0%, #C29F60 40%, #A8884A 100%)";
+                  (e.currentTarget as HTMLElement).style.background = "linear-gradient(180deg, #F0D888 0%, #D4AA52 12%, #B88830 30%, #8A6010 48%, #AA8030 62%, #D0A850 78%, #EED080 90%, #F8E898 100%)";
                   (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
                 }
               }}
               onMouseDown={(e) => {
                 if (!loading) {
-                  (e.currentTarget as HTMLElement).style.transform = "translateY(2px)";
+                  (e.currentTarget as HTMLElement).style.transform = "translateY(4px)";
                   (e.currentTarget as HTMLElement).style.boxShadow = [
-                    "inset 0 1px 3px rgba(0,0,0,0.2)",
-                    "0 2px 8px rgba(0,0,0,0.4)",
-                    "0 2px 20px rgba(194,159,96,0.2)",
+                    "inset 0 2px 6px rgba(0,0,0,0.5)",
+                    "inset 0 1px 0 rgba(255,248,200,0.3)",
+                    "0 1px 0 rgba(40,20,0,0.9)",
+                    "0 2px 8px rgba(0,0,0,0.5)",
+                    "0 2px 20px rgba(194,159,60,0.25)",
                   ].join(", ");
                 }
               }}
