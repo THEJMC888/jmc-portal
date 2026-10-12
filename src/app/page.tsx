@@ -359,7 +359,6 @@ export default function LoginPage() {
                   Minimum 8 characters
                 </p>
               )}
-            </div>
             </div>}
 
             {error && (
