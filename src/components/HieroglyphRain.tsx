@@ -1,8 +1,6 @@
 "use client";
-
 import { useEffect, useRef } from "react";
 
-// Egyptian hieroglyphics — verified to render in Noto Sans Egyptian Hieroglyphs
 const GLYPHS = [
   "𓀀","𓀈","𓀘","𓀠","𓀨","𓀰","𓁐","𓁸",
   "𓂀","𓂈","𓂸","𓃠","𓃰","𓄈","𓄠","𓄨",
@@ -13,11 +11,19 @@ const GLYPHS = [
   "𓋘","𓋠","☥",
 ];
 
-const COL_WIDTH  = 24;
-const ROW_HEIGHT = 24;
-const TAIL_LEN   = 18;
-const FRAME_MS   = 70;
-const MAX_ALPHA  = 0.32; // visible gold against dark background
+const COL_WIDTH  = 16;
+const ROW_HEIGHT = 18;
+const FONT_SIZE  = 12;
+const TAIL_LEN   = 24;
+const FRAME_MS   = 50;
+const BG_ALPHA   = 0.045;
+
+interface GlowSpot {
+  col: number;
+  row: number;
+  life: number;
+  maxLife: number;
+}
 
 export default function HieroglyphRain() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -30,33 +36,54 @@ export default function HieroglyphRain() {
 
     let rafId: number;
     let cols: number;
-    let rows: number;
+    let visRows: number;
+    let totalRows: number;
     let grid: string[][];
-    let heads: number[];   // fractional row position of each column's head
-    let speeds: number[];  // rows-per-frame, varies per column
+    let heads: number[];
+    let speeds: number[];
+    let glowSpots: GlowSpot[] = [];
+
+    const rng = () => GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
 
     const init = () => {
       canvas.width  = window.innerWidth;
       canvas.height = window.innerHeight;
-      cols  = Math.ceil(canvas.width  / COL_WIDTH)  + 1;
-      rows  = Math.ceil(canvas.height / ROW_HEIGHT) + TAIL_LEN + 4;
+      cols      = Math.ceil(canvas.width  / COL_WIDTH)  + 1;
+      visRows   = Math.ceil(canvas.height / ROW_HEIGHT) + 1;
+      totalRows = visRows + TAIL_LEN + 4;
 
       grid   = Array.from({ length: cols }, () =>
-        Array.from({ length: rows }, () => GLYPHS[Math.floor(Math.random() * GLYPHS.length)])
+        Array.from({ length: totalRows }, () => rng())
       );
-      heads  = Array.from({ length: cols }, () => -Math.random() * TAIL_LEN * 2);
-      speeds = Array.from({ length: cols }, () => 0.18 + Math.random() * 0.28);
+      heads  = Array.from({ length: cols }, () => -(Math.random() * TAIL_LEN * 3));
+      speeds = Array.from({ length: cols }, () => 0.15 + Math.random() * 0.25);
+      glowSpots = [];
     };
 
     init();
 
-    // Shimmer — randomly mutate glyphs to simulate the Matrix "changing code" look
+    // Shimmer — mutate chars continuously for the "changing code" feel
     const shimmer = setInterval(() => {
       if (!grid) return;
-      const c = Math.floor(Math.random() * cols);
-      const r = Math.floor(Math.random() * rows);
-      grid[c][r] = GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
-    }, 60);
+      for (let i = 0; i < 4; i++) {
+        const c = Math.floor(Math.random() * cols);
+        const r = Math.floor(Math.random() * totalRows);
+        grid[c][r] = rng();
+      }
+    }, 40);
+
+    // Spawn random illuminated glow blobs — the bright oval streaks from the reference
+    const glowSpawner = setInterval(() => {
+      if (glowSpots.length < 10 && Math.random() < 0.7) {
+        const life = 35 + Math.floor(Math.random() * 45);
+        glowSpots.push({
+          col: Math.floor(Math.random() * cols),
+          row: Math.floor(Math.random() * visRows),
+          life,
+          maxLife: life,
+        });
+      }
+    }, 250);
 
     let last = 0;
     const draw = (now: number) => {
@@ -65,46 +92,83 @@ export default function HieroglyphRain() {
       last = now;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.font = `15px "Noto Sans Egyptian Hieroglyphs", serif`;
+      ctx.font = `${FONT_SIZE}px "Noto Sans Egyptian Hieroglyphs", serif`;
       ctx.textAlign = "center";
+      ctx.shadowBlur = 0;
 
+      // Layer 1: Ambient background — dim grid fills the entire screen
+      ctx.fillStyle = `rgba(160, 130, 75, ${BG_ALPHA})`;
       for (let c = 0; c < cols; c++) {
-        const head = heads[c];
-        const headRow = Math.floor(head);
+        for (let r = 0; r < visRows; r++) {
+          ctx.fillText(grid[c][r], c * COL_WIDTH + COL_WIDTH / 2, r * ROW_HEIGHT);
+        }
+      }
+
+      // Layer 2: Active falling streams with bright heads and fading tails
+      for (let c = 0; c < cols; c++) {
+        const headRow = Math.floor(heads[c]);
 
         for (let t = 0; t < TAIL_LEN; t++) {
           const r = headRow - t;
-          if (r < 0) continue;
           const y = r * ROW_HEIGHT;
-          if (y > canvas.height) continue;
+          if (y < -ROW_HEIGHT || y > canvas.height) continue;
+          if (r < 0 || r >= totalRows) continue;
 
-          // Quadratic fade so the tail drops off quickly
-          const fade  = Math.pow(1 - t / TAIL_LEN, 2);
-          const alpha = fade * MAX_ALPHA;
-
-          const glyph = grid[c][r % rows] ?? "𓂀";
+          const fade = Math.pow(1 - t / TAIL_LEN, 2.5);
 
           if (t === 0) {
-            // Head — warmest and brightest
-            ctx.fillStyle = `rgba(235, 205, 145, ${Math.min(alpha * 4, 0.45)})`;
-          } else if (t <= 2) {
-            ctx.fillStyle = `rgba(215, 180, 115, ${alpha * 2})`;
+            ctx.shadowColor = "rgba(220, 185, 120, 0.9)";
+            ctx.shadowBlur = 20;
+            ctx.fillStyle = `rgba(252, 232, 172, ${Math.min(fade * 1.1, 0.88)})`;
+          } else if (t <= 3) {
+            ctx.shadowColor = "rgba(210, 175, 110, 0.6)";
+            ctx.shadowBlur = 12;
+            ctx.fillStyle = `rgba(228, 198, 138, ${fade * 0.72})`;
+          } else if (t <= 9) {
+            ctx.shadowColor = "rgba(194, 159, 96, 0.3)";
+            ctx.shadowBlur = 5;
+            ctx.fillStyle = `rgba(205, 168, 102, ${fade * 0.52})`;
           } else {
-            ctx.fillStyle = `rgba(194, 159, 96, ${alpha})`;
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = `rgba(185, 148, 85, ${fade * 0.38})`;
           }
 
-          ctx.fillText(glyph, c * COL_WIDTH + COL_WIDTH / 2, y);
+          ctx.fillText(grid[c][r % totalRows], c * COL_WIDTH + COL_WIDTH / 2, y);
         }
 
-        // Advance head
         heads[c] += speeds[c];
-
-        // Reset off-screen column with a random delay above the top
-        if (heads[c] - TAIL_LEN > rows) {
-          heads[c]  = -Math.floor(Math.random() * TAIL_LEN * 3);
-          speeds[c] = 0.18 + Math.random() * 0.28;
+        if (heads[c] - TAIL_LEN > totalRows) {
+          heads[c]  = -(Math.random() * TAIL_LEN * 2);
+          speeds[c] = 0.15 + Math.random() * 0.25;
         }
       }
+
+      // Layer 3: Glow blobs — the bright illuminated ovals from the reference image
+      for (let i = glowSpots.length - 1; i >= 0; i--) {
+        const spot = glowSpots[i];
+        const lifeFrac = spot.life / spot.maxLife;
+        const intensity = Math.sin(lifeFrac * Math.PI); // bell: 0 → peak → 0
+
+        for (let dr = -4; dr <= 4; dr++) {
+          const r = spot.row + dr;
+          if (r < 0 || r >= totalRows) continue;
+          const y = r * ROW_HEIGHT;
+          if (y < 0 || y > canvas.height) continue;
+
+          const distFade = 1 - Math.abs(dr) / 5;
+          const alpha = intensity * distFade * 0.72;
+
+          ctx.shadowColor = "rgba(225, 190, 125, 0.85)";
+          ctx.shadowBlur = 22 * intensity * distFade;
+          ctx.fillStyle = `rgba(248, 220, 158, ${alpha})`;
+          ctx.fillText(grid[spot.col][r % totalRows], spot.col * COL_WIDTH + COL_WIDTH / 2, y);
+        }
+
+        spot.life--;
+        if (spot.life <= 0) glowSpots.splice(i, 1);
+      }
+
+      ctx.shadowBlur = 0;
     };
 
     rafId = requestAnimationFrame(draw);
@@ -113,6 +177,7 @@ export default function HieroglyphRain() {
     return () => {
       cancelAnimationFrame(rafId);
       clearInterval(shimmer);
+      clearInterval(glowSpawner);
       window.removeEventListener("resize", init);
     };
   }, []);
