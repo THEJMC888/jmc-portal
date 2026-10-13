@@ -82,6 +82,19 @@ export default function Sidebar() {
         </Link>
       </div>
 
+      {/* Branded glass panel wrapping Portal label + nav */}
+      <div style={{
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        minHeight: 0,
+        background: "linear-gradient(180deg, rgba(8,37,77,0.27) 0%, rgba(8,32,64,0.28) 45%, rgba(11,75,50,0.22) 80%, rgba(8,30,54,0.26) 100%)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
+        borderTop: "1px solid rgba(194,159,96,0.07)",
+        borderBottom: "1px solid rgba(194,159,96,0.05)",
+      }}>
+
       {/* Portal label */}
       <div className="px-5 py-3">
         <div className="flex items-center gap-2">
@@ -96,8 +109,8 @@ export default function Sidebar() {
               textTransform: "uppercase",
               letterSpacing: "0.18em",
               fontSize: "0.6rem",
-              color: "rgba(194,159,96,0.55)",
-              textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+              color: "rgba(194,159,96,0.65)",
+              textShadow: "0 1px 3px rgba(0,0,0,0.6)",
             }}
           >
             Portal
@@ -140,11 +153,8 @@ export default function Sidebar() {
                         color: "rgba(222,211,200,0.75)",
                         fontFamily: "Syne, system-ui, sans-serif",
                         fontWeight: 400,
-                        border: "1px solid rgba(255,255,255,0.04)",
-                        background: "rgba(1,4,18,0.32)",
-                        backdropFilter: "blur(8px)",
-                        WebkitBackdropFilter: "blur(8px)",
-                        textShadow: "0 1px 4px rgba(0,0,0,0.7)",
+                        border: "1px solid transparent",
+                        textShadow: "0 1px 3px rgba(0,0,0,0.6)",
                       }
                 }
                 onMouseEnter={(e) => {
@@ -156,7 +166,7 @@ export default function Sidebar() {
                 onMouseLeave={(e) => {
                   if (!isGroupActive && !item.comingSoon) {
                     (e.currentTarget as HTMLElement).style.color = "rgba(222,211,200,0.75)";
-                    (e.currentTarget as HTMLElement).style.background = "rgba(1,4,18,0.32)";
+                    (e.currentTarget as HTMLElement).style.background = "transparent";
                   }
                 }}
               >
@@ -227,6 +237,8 @@ export default function Sidebar() {
           );
         })}
       </nav>
+
+      </div>{/* end branded glass panel */}
 
       {/* Bottom divider */}
       <div className="px-5 py-2">
