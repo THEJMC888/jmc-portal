@@ -283,6 +283,7 @@ export default function LoginPage() {
                 {mode === "signin" && (
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={() => { setMode("forgot"); setError(""); setNotice(""); }}
                     style={{
                       fontFamily: "Syne, system-ui, sans-serif",
