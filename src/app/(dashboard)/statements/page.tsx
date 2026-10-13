@@ -304,7 +304,7 @@ const raisedGoldBtn = {
 const raisedGoldBtnPrimary = {
   background: "linear-gradient(180deg, #DEC272 0%, #C8A04C 20%, #A07A28 44%, #BE9642 66%, #D4B462 86%, #E0C878 100%)",
   border: "none",
-  color: "#2a1a05",
+  color: "#08203A",
   boxShadow: BTN_SHADOW,
   cursor: "pointer",
   transition: "transform 0.1s ease, box-shadow 0.1s ease",

@@ -197,7 +197,7 @@ const glassCard: React.CSSProperties = {
 const raisedBtn: React.CSSProperties = {
   background: "linear-gradient(180deg, #DEC272 0%, #C8A04C 20%, #A07A28 44%, #BE9642 66%, #D4B462 86%, #E0C878 100%)",
   border: "none",
-  color: "#2a1a05",
+  color: "#08203A",
   boxShadow: [
     "inset 0 1px 0 rgba(240,220,170,0.4)",
     "inset 0 -2px 4px rgba(0,0,0,0.25)",
