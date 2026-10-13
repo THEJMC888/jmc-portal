@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
+import PhotoSlideshow from "@/components/PhotoSlideshow";
 import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
@@ -66,26 +67,29 @@ export default function LoginPage() {
       className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
       style={{ background: "transparent" }}
     >
-      {/* Soft radial glow */}
+      {/* Awe-inspiring nature photo slideshow */}
+      <PhotoSlideshow interval={7000} transitionMs={2500} />
+
+      {/* Dark cinematic overlay — keeps card + logo readable */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background:
-            "radial-gradient(ellipse 70% 60% at 50% 45%, rgba(29,116,88,0.12), transparent 70%), radial-gradient(ellipse 50% 40% at 50% 50%, rgba(194,159,96,0.06), transparent)",
+          background: "linear-gradient(180deg, rgba(2,5,18,0.52) 0%, rgba(2,5,18,0.38) 45%, rgba(2,5,18,0.58) 100%)",
+          zIndex: 1,
         }}
       />
 
-      {/* Brand accent lines */}
-      <div
-        className="absolute top-0 left-0 right-0 h-px"
-        style={{ background: "linear-gradient(to right, transparent, rgba(194,159,96,0.4), transparent)" }}
-      />
-      <div
-        className="absolute bottom-0 left-0 right-0 h-px"
-        style={{ background: "linear-gradient(to right, transparent, rgba(194,159,96,0.4), transparent)" }}
-      />
+      {/* Soft radial glow + brand accents + card — all above the overlay */}
+      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 2 }}>
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "radial-gradient(ellipse 70% 60% at 50% 45%, rgba(29,116,88,0.12), transparent 70%), radial-gradient(ellipse 50% 40% at 50% 50%, rgba(194,159,96,0.06), transparent)",
+        }} />
+        <div className="absolute top-0 left-0 right-0 h-px" style={{ background: "linear-gradient(to right, transparent, rgba(194,159,96,0.4), transparent)" }} />
+        <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(to right, transparent, rgba(194,159,96,0.4), transparent)" }} />
+      </div>
 
-      <div className="relative w-full max-w-md">
+      <div className="relative w-full max-w-md" style={{ zIndex: 2 }}>
         {/* Logo & Brand Identity */}
         <div className="text-center mb-10">
           <div className="flex justify-center mb-5">

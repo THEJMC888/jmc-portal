@@ -6,6 +6,7 @@ import { LayoutDashboard, PlaySquare, Users, Sparkles, BookOpen, LogOut, Chevron
 import { clsx } from "clsx";
 import BrandLogo from "./BrandLogo";
 import { supabase } from "@/lib/supabase";
+import PhotoSlideshow from "./PhotoSlideshow";
 
 interface NavChild { label: string; href: string; icon: React.ElementType; }
 interface NavItem {
@@ -42,9 +43,8 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="fixed top-0 left-0 h-full w-64 hidden md:flex flex-col z-40"
+      className="fixed top-0 left-0 h-full w-64 hidden md:flex flex-col z-40 overflow-hidden"
       style={{
-        background: "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(4,12,40,0.28) 15%, rgba(2,5,18,0.38) 100%)",
         backdropFilter: "blur(32px) saturate(200%)",
         WebkitBackdropFilter: "blur(32px) saturate(200%)",
         borderTop: "none",
@@ -52,6 +52,19 @@ export default function Sidebar() {
         boxShadow: "inset -1px 0 0 rgba(255,255,255,0.06), 4px 0 40px rgba(0,0,0,0.6), 12px 0 80px rgba(0,0,0,0.4)",
       }}
     >
+      {/* Ethereal nature photo background */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
+        <PhotoSlideshow interval={9000} transitionMs={3000} />
+        {/* Dark gradient overlay — top lighter, bottom heavier for readability */}
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "linear-gradient(180deg, rgba(2,5,18,0.60) 0%, rgba(2,6,22,0.72) 40%, rgba(1,4,16,0.82) 70%, rgba(1,3,12,0.90) 100%)",
+        }} />
+      </div>
+
+      {/* Nav content — sits above the photo */}
+      <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+
       {/* Logo */}
       <div
         className="px-4 py-4"
@@ -278,6 +291,8 @@ export default function Sidebar() {
           Sign out
         </button>
       </div>
+
+      </div>{/* end nav content wrapper */}
     </aside>
   );
 }
