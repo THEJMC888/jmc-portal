@@ -647,7 +647,6 @@ export default function JournalPage() {
             fontFamily: "Syne, system-ui, sans-serif",
             fontSize: 11, fontWeight: 700,
             letterSpacing: "0.08em", textTransform: "uppercase",
-            color: "#C29F60",
           }}
           onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
@@ -769,7 +768,6 @@ export default function JournalPage() {
                       fontFamily: "Syne, system-ui, sans-serif",
                       fontSize: 12, fontWeight: 700,
                       letterSpacing: "0.1em", textTransform: "uppercase",
-                      color: "#C29F60",
                     }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
