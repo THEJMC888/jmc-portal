@@ -82,17 +82,13 @@ export default function Sidebar() {
         </Link>
       </div>
 
-      {/* Branded glass panel wrapping Portal label + nav */}
+      {/* Branded glass panel wrapping Portal label + nav — subtle 10% scrim */}
       <div style={{
         flex: 1,
         display: "flex",
         flexDirection: "column",
         minHeight: 0,
-        background: "linear-gradient(180deg, rgba(8,37,77,0.27) 0%, rgba(8,32,64,0.28) 45%, rgba(11,75,50,0.22) 80%, rgba(8,30,54,0.26) 100%)",
-        backdropFilter: "blur(10px)",
-        WebkitBackdropFilter: "blur(10px)",
-        borderTop: "1px solid rgba(194,159,96,0.07)",
-        borderBottom: "1px solid rgba(194,159,96,0.05)",
+        background: "rgba(2,6,22,0.10)",
       }}>
 
       {/* Portal label */}

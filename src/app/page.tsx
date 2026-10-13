@@ -127,7 +127,7 @@ export default function LoginPage() {
         <div
           className="rounded-2xl p-8"
           style={{
-            background: "linear-gradient(175deg, rgba(45,108,195,0.98) 0%, rgba(28,72,148,0.99) 15%, rgba(10,26,78,1) 45%, rgba(3,9,28,1) 100%)",
+            background: "linear-gradient(175deg, rgba(45,108,195,0.55) 0%, rgba(28,72,148,0.60) 15%, rgba(10,26,78,0.70) 45%, rgba(3,9,28,0.78) 100%)",
             backdropFilter: "blur(32px) saturate(220%)",
             WebkitBackdropFilter: "blur(32px) saturate(220%)",
             borderTop: "2px solid rgba(255,255,255,0.48)",
