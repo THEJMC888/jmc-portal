@@ -58,7 +58,7 @@ export default function Sidebar() {
         {/* Dark gradient overlay — top lighter, bottom heavier for readability */}
         <div style={{
           position: "absolute", inset: 0,
-          background: "linear-gradient(180deg, rgba(2,5,18,0.60) 0%, rgba(2,6,22,0.72) 40%, rgba(1,4,16,0.82) 70%, rgba(1,3,12,0.90) 100%)",
+          background: "linear-gradient(180deg, rgba(2,5,18,0.45) 0%, rgba(2,6,22,0.55) 40%, rgba(1,4,16,0.68) 70%, rgba(1,3,12,0.80) 100%)",
         }} />
       </div>
 

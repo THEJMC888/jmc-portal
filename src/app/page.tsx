@@ -74,7 +74,7 @@ export default function LoginPage() {
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: "linear-gradient(180deg, rgba(2,5,18,0.52) 0%, rgba(2,5,18,0.38) 45%, rgba(2,5,18,0.58) 100%)",
+          background: "linear-gradient(180deg, rgba(2,5,18,0.42) 0%, rgba(2,5,18,0.28) 45%, rgba(2,5,18,0.48) 100%)",
           zIndex: 1,
         }}
       />
