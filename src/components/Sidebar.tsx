@@ -96,7 +96,8 @@ export default function Sidebar() {
               textTransform: "uppercase",
               letterSpacing: "0.18em",
               fontSize: "0.6rem",
-              color: "rgba(194,159,96,0.4)",
+              color: "rgba(194,159,96,0.55)",
+              textShadow: "0 1px 4px rgba(0,0,0,0.8)",
             }}
           >
             Portal
@@ -136,10 +137,14 @@ export default function Sidebar() {
                         boxShadow: "0 0 18px rgba(0,200,240,0.15), inset 0 0 14px rgba(0,140,220,0.06)",
                       }
                     : {
-                        color: "rgba(222,211,200,0.55)",
+                        color: "rgba(222,211,200,0.75)",
                         fontFamily: "Syne, system-ui, sans-serif",
                         fontWeight: 400,
-                        border: "1px solid transparent",
+                        border: "1px solid rgba(255,255,255,0.04)",
+                        background: "rgba(1,4,18,0.32)",
+                        backdropFilter: "blur(8px)",
+                        WebkitBackdropFilter: "blur(8px)",
+                        textShadow: "0 1px 4px rgba(0,0,0,0.7)",
                       }
                 }
                 onMouseEnter={(e) => {
@@ -150,8 +155,8 @@ export default function Sidebar() {
                 }}
                 onMouseLeave={(e) => {
                   if (!isGroupActive && !item.comingSoon) {
-                    (e.currentTarget as HTMLElement).style.color = "rgba(222,211,200,0.55)";
-                    (e.currentTarget as HTMLElement).style.background = "transparent";
+                    (e.currentTarget as HTMLElement).style.color = "rgba(222,211,200,0.75)";
+                    (e.currentTarget as HTMLElement).style.background = "rgba(1,4,18,0.32)";
                   }
                 }}
               >
