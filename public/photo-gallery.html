@@ -9,31 +9,35 @@
   .eyebrow{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.25em;color:var(--gold);margin-bottom:6px}
   h1{font-size:1.4rem;font-weight:400;margin:0 0 6px}
   .sub{font-size:.78rem;color:var(--muted)}
-  .bucket{margin-bottom:48px}
+  .bucket{margin-bottom:56px}
   .bucket-header{display:flex;align-items:center;gap:14px;margin-bottom:16px}
   .bucket-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.2em;color:var(--gold);white-space:nowrap}
   .bucket-time{font-size:.65rem;color:var(--muted);white-space:nowrap}
   .bucket-rule{flex:1;height:1px;background:linear-gradient(to right,rgba(194,159,96,0.25),transparent)}
-  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .sub-label{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.18em;color:rgba(194,159,96,0.4);margin:18px 0 10px}
+  .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
   @media(max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}}
-  .card{position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:#08254d;aspect-ratio:16/10}
+  .card{position:relative;border-radius:6px;overflow:hidden;border:1px solid var(--border);background:#08254d;aspect-ratio:16/10}
+  .card.macro{border-color:rgba(194,159,96,0.35);aspect-ratio:1/1}
   .card img{width:100%;height:100%;object-fit:cover;display:block}
-  .num{position:absolute;top:6px;left:7px;font-size:.55rem;font-weight:700;letter-spacing:.1em;color:#fff;background:rgba(0,0,0,0.65);border-radius:3px;padding:2px 5px}
+  .num{position:absolute;top:5px;left:6px;font-size:.5rem;font-weight:700;letter-spacing:.1em;color:#fff;background:rgba(0,0,0,0.65);border-radius:3px;padding:2px 4px}
+  .macro-badge{position:absolute;top:5px;right:6px;font-size:.45rem;font-weight:700;letter-spacing:.1em;color:var(--gold);background:rgba(0,0,0,0.65);border-radius:3px;padding:2px 4px}
 </style>
 
 <header>
   <p class="eyebrow">The Journeymen Collective™</p>
-  <h1>Slideshow Photo Library — Time of Day</h1>
-  <p class="sub">200 photos across 4 buckets. The app shows whichever bucket matches the user's local clock. Tell me any numbers to remove.</p>
+  <h1>Slideshow Photo Library — 300 Photos</h1>
+  <p class="sub">75 per bucket (50 landscape + 25 macro). The app shows whichever bucket matches your local clock. Tell me any codes to remove (e.g. "M3", "AM12").</p>
 </header>
 
 <!-- MORNING -->
 <div class="bucket">
   <div class="bucket-header">
     <span class="bucket-label">🌅 Morning</span>
-    <span class="bucket-time">5am – 11am</span>
+    <span class="bucket-time">5am – 11am · 75 photos</span>
     <div class="bucket-rule"></div>
   </div>
+  <p class="sub-label">Landscape</p>
   <div class="grid">
     <div class="card"><img src="https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">M1</div></div>
     <div class="card"><img src="https://images.unsplash.com/photo-1519414442781-fbd745c5b497?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">M2</div></div>
@@ -86,15 +90,44 @@
     <div class="card"><img src="https://images.unsplash.com/photo-1784034925516-fdd864ebec6a?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">M49</div></div>
     <div class="card"><img src="https://images.unsplash.com/photo-1621959721891-d297dfd9d6ee?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">M50</div></div>
   </div>
+  <p class="sub-label">Macro Close-ups — dew drops · spider webs</p>
+  <div class="grid">
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1528901326763-e9bbffd31784?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM1</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1535963743569-591629ea26a7?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM2</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1708868746540-3c284d774a12?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM3</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1586137612512-89151eb84f6b?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM4</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1667230153474-656728c864fa?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM5</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1714136559173-3c641a361803?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM6</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1676299530501-86eb1402db14?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM7</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1471879832106-c7ab9e0cee23?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM8</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1595763399894-5049284277af?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM9</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1641752198346-4ee9e5663138?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM10</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1659490298800-98f29e4ebc51?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM11</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1697681327674-08ad351d0ce0?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM12</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1519386580179-76c3decd9497?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM13</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1604149370100-2cf3be3bc845?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM14</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1683305292083-871b2667f076?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM15</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1472212712724-0f9997e1fe6b?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM16</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1681408930528-fc433fec9de3?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM17</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1615571186728-6380450a3995?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM18</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1574717072421-64b8b3f2d92e?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM19</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1605116188625-8522bf02d10f?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM20</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1446582186851-3fe172f6acb9?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM21</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1602503326529-555e4e93cf2e?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM22</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1594322306174-03fa5d4d3e84?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM23</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1655173730827-a561f8f06fc1?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM24</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1540134857315-a1269df28bd2?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">MM25</div><div class="macro-badge">MACRO</div></div>
+  </div>
 </div>
 
 <!-- AFTERNOON -->
 <div class="bucket">
   <div class="bucket-header">
     <span class="bucket-label">☀️ Afternoon</span>
-    <span class="bucket-time">11am – 5pm</span>
+    <span class="bucket-time">11am – 5pm · 75 photos</span>
     <div class="bucket-rule"></div>
   </div>
+  <p class="sub-label">Landscape</p>
   <div class="grid">
     <div class="card"><img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">A1</div></div>
     <div class="card"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">A2</div></div>
@@ -147,15 +180,44 @@
     <div class="card"><img src="https://images.unsplash.com/photo-1507281736509-c6289f1ea0f8?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">A49</div></div>
     <div class="card"><img src="https://images.unsplash.com/photo-1589405858862-2ac9cbb41321?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">A50</div></div>
   </div>
+  <p class="sub-label">Macro Close-ups — flowers · insects · leaves</p>
+  <div class="grid">
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1680593433523-ec06d41b727c?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM1</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1680593423637-7bb28271261d?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM2</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1606239923522-ba948694caac?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM3</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1606239923559-3075e59a5928?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM4</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1606239923593-951f27a92500?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM5</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1558601284-4efa12d623c8?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM6</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1787516929229-e1c98f4d9af2?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM7</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1790512278349-d4706bb37702?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM8</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1778507320313-63c75e08ac75?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM9</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1654127039389-bc352446747b?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM10</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1705954780871-9d260bd03445?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM11</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1686436776250-d544a658180c?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM12</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1686436776451-fcfa906aee5e?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM13</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1686436775543-f7e866963795?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM14</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1649656909369-617620472119?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM15</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1668595989709-53b3dd90fe27?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM16</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1688245090283-8713dec7dedd?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM17</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1687646341866-ab50be563fab?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM18</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1687646340701-431a1b2c6b0a?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM19</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1612454001981-ec4f7eed5cc8?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM20</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1577922895982-43519a24dda7?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM21</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1613303179355-564f87b055a7?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM22</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1564632720996-d3bf0b286a56?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM23</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1542991214-df0aa5950676?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM24</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1574002332972-fd2e0f7f1ea9?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">AM25</div><div class="macro-badge">MACRO</div></div>
+  </div>
 </div>
 
 <!-- EVENING -->
 <div class="bucket">
   <div class="bucket-header">
     <span class="bucket-label">🌄 Evening</span>
-    <span class="bucket-time">5pm – 9pm</span>
+    <span class="bucket-time">5pm – 9pm · 75 photos</span>
     <div class="bucket-rule"></div>
   </div>
+  <p class="sub-label">Landscape</p>
   <div class="grid">
     <div class="card"><img src="https://images.unsplash.com/photo-1542159919831-40fb0656b45a?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">E1</div></div>
     <div class="card"><img src="https://images.unsplash.com/photo-1510784722466-f2aa9c52fff6?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">E2</div></div>
@@ -204,9 +266,37 @@
     <div class="card"><img src="https://images.unsplash.com/photo-1704739410998-564ae85cc537?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">E45</div></div>
     <div class="card"><img src="https://images.unsplash.com/photo-1786029492041-29db4fe6f845?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">E46</div></div>
     <div class="card"><img src="https://images.unsplash.com/photo-1643727230494-84671df76705?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">E47</div></div>
-    <div class="card"><img src="https://images.unsplash.com/photo-1784560273013-7c18e962bd85?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">E48</div></div>
+    <div class="card"><img src="https://images.unsplash.com/photo-1788048837604-6e6203c0d67a?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">E48 ✓</div></div>
     <div class="card"><img src="https://images.unsplash.com/photo-1773569576077-f76da1c580cd?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">E49</div></div>
-    <div class="card"><img src="https://images.unsplash.com/photo-1762694777885-1349f9a31700?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">E50</div></div>
+    <div class="card"><img src="https://images.unsplash.com/photo-1775409525364-882ad7f969ee?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">E50 ✓</div></div>
+  </div>
+  <p class="sub-label">Macro Close-ups — golden hour petals · warm bokeh</p>
+  <div class="grid">
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1533146756442-5d16052ce856?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM1</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1773937825835-9ba3ea348bd2?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM2</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1774177272281-4fad536653e7?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM3</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1790011486359-fa2459ec02ab?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM4</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1783484682750-f1d56e77a6fb?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM5</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1788667976884-6cc852c8ece0?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM6</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1776499303653-c5941a0f5a9f?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM7</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1633091787531-80a0b617c1c1?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM8</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1632496896130-5870ad4690de?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM9</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1770664945386-d24b6101606b?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM10</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1767134586057-d91c70081494?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM11</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1693926214217-a5b142927e8c?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM12</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1655372114771-979861ac09a2?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM13</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1718286898855-773f3bf71e1a?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM14</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1609425400033-1f0685b12fc4?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM15</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1786639971170-807395238b31?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM16</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1787939046908-ba42c50f8397?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM17</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1443632826930-7e5bc4aa7fa0?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM18</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1434941837317-6b4af8fb81d8?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM19</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1614590474556-801972bd1b93?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM20</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1773041456791-7663b1076d4b?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM21</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1759915995248-80a7d6e2bc19?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM22</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1779804352084-633184d9966b?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM23</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1774177272281-7c4a4de74ed7?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM24</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1701402276738-b167cdbf6c40?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">EM25</div><div class="macro-badge">MACRO</div></div>
   </div>
 </div>
 
@@ -214,9 +304,10 @@
 <div class="bucket">
   <div class="bucket-header">
     <span class="bucket-label">🌙 Night</span>
-    <span class="bucket-time">9pm – 5am</span>
+    <span class="bucket-time">9pm – 5am · 75 photos</span>
     <div class="bucket-rule"></div>
   </div>
+  <p class="sub-label">Landscape</p>
   <div class="grid">
     <div class="card"><img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">N1</div></div>
     <div class="card"><img src="https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">N2</div></div>
@@ -268,5 +359,33 @@
     <div class="card"><img src="https://images.unsplash.com/photo-1606230144598-ed5d503a4c43?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">N48</div></div>
     <div class="card"><img src="https://images.unsplash.com/photo-1566052356702-c255c7af3521?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">N49</div></div>
     <div class="card"><img src="https://images.unsplash.com/photo-1639980473038-82cf8e1ea142?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">N50</div></div>
+  </div>
+  <p class="sub-label">Macro Close-ups — dark bokeh · mushrooms · night flora</p>
+  <div class="grid">
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1501420264597-23296a7e6a46?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM1</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1524365126677-6eee8c5b62b1?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM2</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1729006810084-8514a6946aa7?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM3</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1692520883642-c3ef47319d21?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM4</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1512500095137-fd9415c49384?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM5</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1545081962-97ccf33e0131?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM6</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1663940137269-867f21e1a3a2?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM7</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1775153899138-6445e5a90225?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM8</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1759190094895-557ae4864f69?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM9</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1652091705632-0755a239a186?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM10</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1572277915715-fc1143c34501?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM11</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1532596085007-6ffd0776bdd0?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM12</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1603531049729-213a881243ae?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM13</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1663940137134-717419b75c3c?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM14</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1629277910650-07546caa6414?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM15</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1548048211-357ddb2c920f?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM16</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1570976481082-4b019b19a750?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM17</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1572197316318-2fb744caf405?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM18</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1570977042406-8fba157deca0?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM19</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1610975324450-0758f58478df?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM20</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1665138322499-0fea4b394100?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM21</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1473773621872-5ab40eaa5b39?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM22</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1558616629-899031969d5e?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM23</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1572471997738-2df38ebd14be?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM24</div><div class="macro-badge">MACRO</div></div>
+    <div class="card macro"><img src="https://images.unsplash.com/photo-1542417938-e59c0a54102b?auto=format&fit=crop&w=400&q=70" loading="lazy"><div class="num">NM25</div><div class="macro-badge">MACRO</div></div>
   </div>
 </div>
