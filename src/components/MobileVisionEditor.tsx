@@ -315,8 +315,9 @@ export default function MobileVisionEditor() {
 
   return (
     <div style={{
-      display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden",
-      background: "#02070f", position: "relative",
+      display: "flex", flexDirection: "column", overflow: "hidden",
+      background: "#02070f",
+      position: "fixed", inset: 0, zIndex: 60,
     }}>
 
       {/* ── Top bar ────────────────────────────────────────────────────────── */}

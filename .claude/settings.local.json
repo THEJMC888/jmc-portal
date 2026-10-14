@@ -57,7 +57,20 @@
       "Bash(ssh-keygen -t ed25519 -C \"rng@thejourneymencollective.com\" -f ~/.ssh/github_jmc -N \"\")",
       "Bash(cat ~/.ssh/github_jmc.pub)",
       "Bash(git commit -m 'Fix TypeScript SpeechRecognition type error for Vercel build *)",
-      "Bash(git commit -m 'Fix all TypeScript build errors for Vercel deployment *)"
+      "Bash(git commit -m 'Fix all TypeScript build errors for Vercel deployment *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git commit -m 'Remove redundant \\(dashboard\\)/page.tsx that broke Vercel build tracing *)",
+      "Bash(git commit -m 'Add Meditations to navigation and create placeholder page *)",
+      "Bash(git commit -m 'Fix TypeScript error in MobileNav after removing comingSoon items *)",
+      "Bash(git commit -m 'Add Supabase Auth + protected routes + user-scoped journal sync *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://jmc-portal.vercel.app/\")",
+      "Bash(curl -s \"https://jmc-portal.vercel.app/\")",
+      "Bash(python3 -m http.server 8899)",
+      "Bash(echo \"PID=$!\")",
+      "Bash(git commit -m 'feat: time-of-day photo slideshow with 200 photos across 4 buckets *)",
+      "Bash(git commit -m 'Expand slideshow to 300 photos: 75 per bucket \\(50 landscape + 25 macro\\) *)",
+      "Bash(git commit -m 'Replace 7 macro photos: MM23 MM25 AM12 AM14 AM16 AM18 AM19 *)",
+      "Bash(git commit -m 'Replace 9 macro photos for more variety \\(MM25, AM1-3, AM9, AM13, AM15, AM17, NM8\\) *)"
     ]
   }
 }

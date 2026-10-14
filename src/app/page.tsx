@@ -68,7 +68,7 @@ export default function LoginPage() {
       style={{ background: "transparent" }}
     >
       {/* Awe-inspiring nature photo slideshow */}
-      <PhotoSlideshow interval={7000} transitionMs={2500} />
+      <PhotoSlideshow interval={60000} transitionMs={2500} />
 
       {/* Dark cinematic overlay — keeps card + logo readable */}
       <div

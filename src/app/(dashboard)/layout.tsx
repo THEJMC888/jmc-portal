@@ -59,7 +59,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <img src="/logo-text-white.png" alt="The Journeymen Collective" style={{ height: 18, objectFit: "contain" }} />
           <div style={{ width: 30 }} />
         </div>
-        <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-8 pb-24 md:pb-8 relative">
+        <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-8 relative">
           {children}
         </div>
       </main>

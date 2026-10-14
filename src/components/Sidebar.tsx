@@ -54,7 +54,7 @@ export default function Sidebar() {
     >
       {/* Ethereal nature photo background */}
       <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
-        <PhotoSlideshow interval={9000} transitionMs={3000} />
+        <PhotoSlideshow interval={60000} transitionMs={2500} />
         {/* Dark gradient overlay — top lighter, bottom heavier for readability */}
         <div style={{
           position: "absolute", inset: 0,

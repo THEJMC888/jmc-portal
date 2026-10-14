@@ -333,7 +333,7 @@ interface Props {
   transitionMs?: number;
 }
 
-export default function PhotoSlideshow({ interval = 7000, transitionMs = 2500 }: Props) {
+export default function PhotoSlideshow({ interval = 60000, transitionMs = 2500 }: Props) {
   const [photos] = useState<string[]>(() => BUCKETS[getTimeBucket()]);
   const [idx, setIdx] = useState(0);
   const [fading, setFading] = useState(false);

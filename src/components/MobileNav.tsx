@@ -1,77 +1,201 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { LayoutDashboard, PlaySquare, NotebookPen, Sparkles, Wind } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  LayoutDashboard, PlaySquare, NotebookPen, Sparkles,
+  Wind, Users, X, Menu, LogOut,
+} from "lucide-react";
+import { clsx } from "clsx";
+import { supabase } from "@/lib/supabase";
 
-const MOBILE_NAV = [
-  { label: "Home", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Library", href: "/library", icon: PlaySquare },
-  { label: "Journal", href: "/journal", icon: NotebookPen },
-  { label: "Vision", href: "/vision", icon: Sparkles },
+const NAV_ITEMS = [
+  { label: "Dashboard",   href: "/dashboard",   icon: LayoutDashboard },
+  { label: "Video Library", href: "/library",   icon: PlaySquare },
+  { label: "Vision Video", href: "/vision",     icon: Sparkles },
+  { label: "Journal",     href: "/journal",     icon: NotebookPen },
   { label: "Meditations", href: "/meditations", icon: Wind },
+  { label: "Community",   href: "/community",   icon: Users, comingSoon: true },
 ];
 
-export default function MobileNav() {
-  const pathname = usePathname();
-
+export function MobileMenuButton({ onClick }: { onClick: () => void }) {
   return (
-    <nav
-      className="fixed bottom-0 left-0 right-0 md:hidden z-50"
+    <button
+      onClick={onClick}
+      aria-label="Open menu"
       style={{
-        background: "rgba(4,13,28,0.85)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        borderTop: "1px solid rgba(194,159,96,0.18)",
-        paddingBottom: "env(safe-area-inset-bottom)",
+        background: "none", border: "none", cursor: "pointer",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        width: 36, height: 36, borderRadius: 8,
+        color: "rgba(222,211,200,0.75)",
+        padding: 4,
       }}
     >
-      <div className="flex items-center justify-around px-2 pt-2 pb-3">
-        {MOBILE_NAV.map(({ label, href, icon: Icon }) => {
-          const isActive = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
-          return (
-            <Link
-              key={href}
-              href={href}
-              className="flex flex-col items-center gap-1 px-3 py-1 rounded-xl transition-all"
-            >
-              <div
-                className="flex items-center justify-center w-10 h-8 rounded-lg transition-all"
-                style={
-                  isActive
-                    ? {
-                        background: "linear-gradient(135deg, rgba(194,159,96,0.22), rgba(194,159,96,0.08))",
-                        boxShadow: "0 0 12px rgba(194,159,96,0.25), inset 0 1px 0 rgba(194,159,96,0.2)",
-                      }
-                    : { background: "transparent" }
-                }
-              >
-                <Icon
+      <Menu size={22} />
+    </button>
+  );
+}
+
+export default function MobileNav() {
+  const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
+
+  // Close drawer on route change
+  useEffect(() => { setOpen(false); }, [pathname]);
+
+  const handleSignOut = async () => {
+    setOpen(false);
+    await supabase.auth.signOut();
+    router.push("/");
+  };
+
+  return (
+    <>
+      {/* Hamburger button — placed in the mobile top bar via layout */}
+      <button
+        onClick={() => setOpen(true)}
+        aria-label="Open menu"
+        className="md:hidden"
+        style={{
+          background: "none", border: "none", cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          width: 36, height: 36, borderRadius: 8,
+          color: "rgba(222,211,200,0.75)",
+          padding: 4,
+          position: "fixed", top: 10, right: 12, zIndex: 55,
+        }}
+      >
+        <Menu size={22} />
+      </button>
+
+      {/* Backdrop */}
+      {open && (
+        <div
+          onClick={() => setOpen(false)}
+          className="md:hidden"
+          style={{
+            position: "fixed", inset: 0, zIndex: 70,
+            background: "rgba(2,4,12,0.65)",
+            backdropFilter: "blur(4px)",
+            WebkitBackdropFilter: "blur(4px)",
+          }}
+        />
+      )}
+
+      {/* Drawer */}
+      <nav
+        className="md:hidden"
+        style={{
+          position: "fixed", top: 0, right: 0, bottom: 0,
+          width: 260, zIndex: 80,
+          background: "linear-gradient(180deg, rgba(4,13,38,0.97) 0%, rgba(2,6,22,0.99) 100%)",
+          backdropFilter: "blur(32px) saturate(200%)",
+          WebkitBackdropFilter: "blur(32px) saturate(200%)",
+          borderLeft: "1px solid rgba(194,159,96,0.18)",
+          boxShadow: "-8px 0 40px rgba(0,0,0,0.6)",
+          transform: open ? "translateX(0)" : "translateX(100%)",
+          transition: "transform 0.28s cubic-bezier(0.23,1,0.32,1)",
+          display: "flex", flexDirection: "column",
+          paddingBottom: "env(safe-area-inset-bottom)",
+        }}
+      >
+        {/* Drawer header */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "14px 16px",
+          borderBottom: "1px solid rgba(194,159,96,0.12)",
+        }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-mark.png" alt="" style={{ width: 28, height: 28, borderRadius: "50%" }} />
+          <span style={{
+            fontFamily: "Syne, system-ui, sans-serif",
+            fontWeight: 700, textTransform: "uppercase",
+            letterSpacing: "0.18em", fontSize: "0.6rem",
+            color: "rgba(194,159,96,0.65)",
+          }}>
+            Portal
+          </span>
+          <button
+            onClick={() => setOpen(false)}
+            style={{
+              background: "none", border: "none", cursor: "pointer",
+              color: "rgba(222,211,200,0.45)", padding: 4,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Nav items */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "12px 10px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {NAV_ITEMS.map(({ label, href, icon: Icon, comingSoon }) => {
+              const isActive = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
+              return (
+                <Link
+                  key={href}
+                  href={comingSoon ? "#" : href}
+                  className={clsx(comingSoon && "pointer-events-none")}
                   style={{
-                    width: 18,
-                    height: 18,
-                    color: isActive ? "#C29F60" : "rgba(222,211,200,0.45)",
-                    transition: "color 0.2s",
+                    display: "flex", alignItems: "center", gap: 12,
+                    padding: "12px 14px", borderRadius: 10,
+                    fontFamily: "Syne, system-ui, sans-serif",
+                    fontSize: "0.88rem", fontWeight: isActive ? 700 : 400,
+                    textDecoration: "none",
+                    opacity: comingSoon ? 0.35 : 1,
+                    transition: "all 0.15s",
+                    ...(isActive ? {
+                      background: "linear-gradient(135deg, rgba(194,159,96,0.15), rgba(194,159,96,0.06))",
+                      border: "1px solid rgba(194,159,96,0.22)",
+                      color: "#C29F60",
+                      boxShadow: "0 0 12px rgba(194,159,96,0.1)",
+                    } : {
+                      background: "transparent",
+                      border: "1px solid transparent",
+                      color: "rgba(222,211,200,0.7)",
+                    }),
                   }}
-                />
-              </div>
-              <span
-                style={{
-                  fontFamily: "Syne, system-ui, sans-serif",
-                  fontSize: "0.58rem",
-                  fontWeight: isActive ? 700 : 400,
-                  letterSpacing: "0.06em",
-                  textTransform: "uppercase",
-                  color: isActive ? "#C29F60" : "rgba(222,211,200,0.4)",
-                  transition: "color 0.2s",
-                }}
-              >
-                {label}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
+                >
+                  <Icon size={18} style={{ flexShrink: 0 }} />
+                  <span style={{ flex: 1 }}>{label}</span>
+                  {comingSoon && (
+                    <span style={{
+                      fontFamily: "Syne, system-ui, sans-serif", fontWeight: 700,
+                      textTransform: "uppercase", letterSpacing: "0.1em",
+                      fontSize: "0.5rem", color: "rgba(194,159,96,0.4)",
+                    }}>
+                      Soon
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Sign out */}
+        <div style={{ padding: "10px 10px 14px", borderTop: "1px solid rgba(194,159,96,0.1)" }}>
+          <button
+            onClick={handleSignOut}
+            style={{
+              display: "flex", alignItems: "center", gap: 12,
+              width: "100%", padding: "11px 14px", borderRadius: 10,
+              background: "none", border: "1px solid transparent", cursor: "pointer",
+              fontFamily: "Syne, system-ui, sans-serif", fontSize: "0.88rem", fontWeight: 400,
+              color: "rgba(222,211,200,0.4)", textAlign: "left",
+              transition: "color 0.15s",
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#DED3C8"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(222,211,200,0.4)"; }}
+          >
+            <LogOut size={16} style={{ flexShrink: 0 }} />
+            Sign out
+          </button>
+        </div>
+      </nav>
+    </>
   );
 }

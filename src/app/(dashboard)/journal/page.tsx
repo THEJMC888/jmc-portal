@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import {
   NotebookPen, Plus, Mic, MicOff, Video, VideoOff,
   Upload, Play, Pause, Trash2, Check, X, ChevronLeft,
-  FileText, Loader,
+  FileText, Loader, Image, LayoutList, BookOpen,
 } from "lucide-react";
 import { useMobile } from "@/hooks/useMobile";
 import { supabase } from "@/lib/supabase";
@@ -79,7 +79,7 @@ function useDictation(onWord: (text: string) => void) {
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface JournalMedia {
   id: string;
-  type: "audio" | "video";
+  type: "audio" | "video" | "image";
   name: string;
   dataUrl: string;
   duration: number; // seconds
@@ -426,12 +426,14 @@ export default function JournalPage() {
   const [entry, setEntry] = useState<JournalEntry | null>(null);
   const [saved, setSaved] = useState(false);
   const [showList, setShowList] = useState(true); // mobile toggle
+  const [viewMode, setViewMode] = useState<"list" | "feed">("list");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const audioRec = useRecorder("audio");
   const videoRec = useRecorder("video");
   const audioUploadRef = useRef<HTMLInputElement>(null);
   const videoUploadRef = useRef<HTMLInputElement>(null);
+  const photoUploadRef = useRef<HTMLInputElement>(null);
   const userIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -596,6 +598,27 @@ export default function JournalPage() {
     e.target.value = "";
   };
 
+  // ── Photo upload ──
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    files.forEach((file) => {
+      if (file.size > 20 * 1024 * 1024) { alert(`${file.name} is too large (max 20 MB).`); return; }
+      const reader = new FileReader();
+      reader.onload = () => {
+        addMedia({
+          id: uid(), type: "image",
+          name: file.name,
+          dataUrl: reader.result as string,
+          duration: 0, size: file.size,
+          createdAt: new Date().toISOString(),
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = "";
+  };
+
   if (!mounted) return null;
 
   const isRecordingAudio = audioRec.state === "recording";
@@ -638,6 +661,21 @@ export default function JournalPage() {
             <Check size={11} /> Saved
           </div>
         )}
+        {/* Feed / List toggle */}
+        <button
+          onClick={() => setViewMode((m) => m === "list" ? "feed" : "list")}
+          title={viewMode === "list" ? "Blog feed view" : "List view"}
+          style={{
+            ...ghostBtn,
+            display: "flex", alignItems: "center", gap: 5,
+            padding: "7px 12px", borderRadius: 7,
+            fontFamily: "Syne, system-ui, sans-serif",
+            fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+            color: viewMode === "feed" ? "#C29F60" : "rgba(222,211,200,0.6)",
+          }}
+        >
+          {viewMode === "list" ? <><BookOpen size={12} /> Feed</> : <><LayoutList size={12} /> List</>}
+        </button>
         <button
           onClick={createEntry}
           style={{
@@ -655,8 +693,69 @@ export default function JournalPage() {
         </button>
       </header>
 
-      {/* ── Body ── */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "row", overflow: "hidden" }}>
+      {/* ── Feed view ── */}
+      {viewMode === "feed" && (
+        <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "20px 16px" : "36px 44px", maxWidth: 860, margin: "0 auto", width: "100%" }}>
+          {list.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "60px 20px" }}>
+              <NotebookPen size={32} color="rgba(0,200,240,0.2)" style={{ marginBottom: 12 }} />
+              <p style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 13, color: "rgba(222,211,200,0.35)" }}>
+                No entries yet. Tap &ldquo;New Entry&rdquo; to begin.
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
+              {list.map((item) => {
+                const fullEntry = loadEntry(item.id);
+                if (!fullEntry) return null;
+                const photos = fullEntry.media.filter((m) => m.type === "image");
+                return (
+                  <article key={item.id} style={{
+                    ...glassCard,
+                    borderRadius: 16,
+                    padding: "28px 32px",
+                    position: "relative",
+                    overflow: "hidden",
+                    cursor: "pointer",
+                  }}
+                    onClick={() => { setViewMode("list"); openEntry(item.id); }}
+                  >
+                    <div style={{ position: "absolute", top: 0, left: "10%", right: "10%", height: 1, background: "linear-gradient(to right, transparent, rgba(0,200,240,0.35), transparent)" }} />
+                    <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "#00c8f0", marginBottom: 8 }}>
+                      {formatDate(item.date)}
+                    </div>
+                    <h2 style={{ fontFamily: "Lora, Georgia, serif", fontSize: 22, fontWeight: 600, color: "#DED3C8", marginBottom: 16, lineHeight: 1.2 }}>
+                      {fullEntry.title || <span style={{ fontStyle: "italic", opacity: 0.45 }}>Untitled</span>}
+                    </h2>
+                    {fullEntry.text && (
+                      <p style={{ fontFamily: "Lora, Georgia, serif", fontSize: 14, color: "rgba(222,211,200,0.8)", lineHeight: 1.85, whiteSpace: "pre-wrap", marginBottom: photos.length ? 20 : 0 }}>
+                        {fullEntry.text}
+                      </p>
+                    )}
+                    {photos.length > 0 && (
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))", gap: 6, marginTop: 16 }}>
+                        {photos.map((p) => (
+                          <div key={p.id} style={{ borderRadius: 6, overflow: "hidden", aspectRatio: "1", background: "rgba(0,0,0,0.3)" }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={p.dataUrl} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div style={{ marginTop: 20, display: "flex", alignItems: "center", gap: 12, opacity: 0.45 }}>
+                      {fullEntry.media.filter(m => m.type === "audio").length > 0 && <span style={{ fontFamily: "Syne, sans-serif", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "#00c8f0" }}>{fullEntry.media.filter(m => m.type === "audio").length} audio</span>}
+                      {fullEntry.media.filter(m => m.type === "video").length > 0 && <span style={{ fontFamily: "Syne, sans-serif", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "#C29F60" }}>{fullEntry.media.filter(m => m.type === "video").length} video</span>}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Body (list mode) ── */}
+      {viewMode === "list" && <div style={{ flex: 1, display: "flex", flexDirection: "row", overflow: "hidden" }}>
 
         {/* Entry list */}
         {(!isMobile || showList) && (
@@ -984,6 +1083,62 @@ export default function JournalPage() {
                   </div>
                 </MediaSection>
 
+                {/* ── Photos section ── */}
+                <MediaSection title="Photos" icon={<Image size={12} color="#a78bfa" />} accentColor="#a78bfa">
+                  <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+                    <button
+                      onClick={() => photoUploadRef.current?.click()}
+                      style={{
+                        ...ghostBtn,
+                        display: "flex", alignItems: "center", gap: 6,
+                        padding: "7px 14px", borderRadius: 7,
+                        fontFamily: "Syne, system-ui, sans-serif",
+                        fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+                        color: "#a78bfa",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <Upload size={12} /> Add Photos
+                    </button>
+                    <input
+                      ref={photoUploadRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      style={{ display: "none" }}
+                      onChange={handlePhotoUpload}
+                    />
+                  </div>
+                  {/* Photo grid */}
+                  {entry.media.filter((m) => m.type === "image").length > 0 && (
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))",
+                      gap: 8,
+                    }}>
+                      {entry.media.filter((m) => m.type === "image").map((item) => (
+                        <div key={item.id} style={{ position: "relative", borderRadius: 8, overflow: "hidden", aspectRatio: "1", background: "rgba(0,0,0,0.3)" }}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={item.dataUrl} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                          <button
+                            onClick={() => removeMedia(item.id)}
+                            style={{
+                              position: "absolute", top: 4, right: 4,
+                              width: 20, height: 20, borderRadius: "50%",
+                              background: "rgba(0,0,0,0.65)",
+                              border: "1px solid rgba(255,255,255,0.15)",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              cursor: "pointer", padding: 0,
+                            }}
+                          >
+                            <X size={10} color="#ff6b6b" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </MediaSection>
+
                 {/* ── Video section ── */}
                 <MediaSection title="Video" icon={<Video size={12} color="#C29F60" />} accentColor="#C29F60">
                   <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
@@ -1064,7 +1219,7 @@ export default function JournalPage() {
             )}
           </main>
         )}
-      </div>
+      </div>}
 
       <style>{`
         @keyframes pulse {
