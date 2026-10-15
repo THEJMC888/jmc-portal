@@ -1200,11 +1200,13 @@ export default function MobileVisionEditor() {
               <div style={{ display: "flex", gap: 5, marginBottom: 12, overflowX: "auto" }}>
                 {(Object.keys(PORTAL_PHOTO_BUCKETS) as PortalPhotoBucket[]).map((b) => (
                   <button key={b} onClick={() => setJmcBucket(b)} style={{
-                    flexShrink: 0, padding: "5px 12px", borderRadius: 16, cursor: "pointer",
+                    flexShrink: 0, padding: "5px 10px 6px", borderRadius: 0, cursor: "pointer",
                     fontFamily: "Syne, sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-                    background: jmcBucket === b ? "rgba(194,159,96,0.22)" : "rgba(255,255,255,0.04)",
-                    color: jmcBucket === b ? "#C29F60" : "rgba(222,211,200,0.6)",
-                    border: jmcBucket === b ? "1px solid rgba(194,159,96,0.4)" : "1px solid rgba(255,255,255,0.06)",
+                    background: "transparent",
+                    border: "none",
+                    borderBottom: jmcBucket === b ? "1px solid rgba(194,159,96,0.55)" : "1px solid transparent",
+                    color: jmcBucket === b ? "rgba(194,159,96,0.9)" : "rgba(222,211,200,0.4)",
+                    transition: "color 0.15s, border-bottom-color 0.15s",
                   } as React.CSSProperties}>
                     {BUCKET_LABELS[b]}
                   </button>

@@ -2447,12 +2447,16 @@ export default function VisionPage() {
                       key={b}
                       onClick={() => setJmcBucket(b)}
                       style={{
-                        padding: "3px 8px", borderRadius: 4, cursor: "pointer", fontSize: 8,
+                        padding: "3px 8px 4px", borderRadius: 0, cursor: "pointer", fontSize: 8,
                         fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700,
-                        letterSpacing: "0.08em", textTransform: "uppercase",
-                        background: jmcBucket === b ? "rgba(194,159,96,0.18)" : "transparent",
-                        border: `1px solid ${jmcBucket === b ? "rgba(194,159,96,0.35)" : "rgba(194,159,96,0.1)"}`,
-                        color: jmcBucket === b ? "#C29F60" : "rgba(222,211,200,0.35)",
+                        letterSpacing: "0.1em", textTransform: "uppercase",
+                        background: "transparent",
+                        border: "none",
+                        borderBottom: jmcBucket === b
+                          ? "1px solid rgba(194,159,96,0.55)"
+                          : "1px solid transparent",
+                        color: jmcBucket === b ? "rgba(194,159,96,0.9)" : "rgba(222,211,200,0.28)",
+                        transition: "color 0.15s, border-bottom-color 0.15s",
                       }}
                     >
                       {BUCKET_LABELS[b]} ({PORTAL_PHOTO_BUCKETS[b].length})
