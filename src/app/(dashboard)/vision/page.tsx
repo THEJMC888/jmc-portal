@@ -616,6 +616,7 @@ export default function VisionPage() {
   const [photoLibTab, setPhotoLibTab] = useState<"jmc" | "personal">("jmc");
   const [jmcBucket, setJmcBucket] = useState<PortalPhotoBucket>("morning");
   const [jmcLoadingId, setJmcLoadingId] = useState<string | null>(null);
+  const [controlTab, setControlTab] = useState<"bg" | "style" | "music" | "photos">("bg");
 
   // ─── Refs ────────────────────────────────────────────────────────────────
   const outerRef = useRef<HTMLDivElement>(null);
@@ -778,6 +779,11 @@ export default function VisionPage() {
     setVisionList([...newList]);
     if (id === currentIdRef.current) openVision(newList[0].id);
   }, [openVision]);
+
+  // Auto-switch to style tab when an element is selected
+  useEffect(() => {
+    if (selElId) setControlTab("style");
+  }, [selElId]);
 
   // ─── Keyboard shortcuts ────────────────────────────────────────────────────
   useEffect(() => {
@@ -1722,7 +1728,11 @@ export default function VisionPage() {
         </div>
       )}
 
-      {/* Slide Duration */}
+    </div>
+  );
+
+  const renderMusicPanel = () => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div>
         <Label>Slide Duration</Label>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -1738,30 +1748,28 @@ export default function VisionPage() {
           <span style={{ fontSize: 11, color: "rgba(222,211,200,0.5)", fontFamily: "Syne,system-ui,sans-serif" }}>seconds per slide</span>
         </div>
       </div>
-
-      {/* Background Music */}
       <div>
         <Label>Background Music</Label>
         {vision.musicDataUrl ? (
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <div style={{
-              flex: 1, display: "flex", alignItems: "center", gap: 6, padding: "8px 10px",
-              borderRadius: 6, background: "rgba(194,159,96,0.1)", border: "1px solid rgba(194,159,96,0.25)",
+              flex: 1, display: "flex", alignItems: "center", gap: 6, padding: "10px 14px",
+              borderRadius: 6, background: "rgba(194,159,96,0.08)", border: "1px solid rgba(194,159,96,0.22)",
             }}>
-              <Music size={12} style={{ color: "#C29F60", flexShrink: 0 }} />
-              <span style={{ fontSize: 11, color: "#C29F60", fontFamily: "Syne,system-ui,sans-serif", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <Music size={14} style={{ color: "#C29F60", flexShrink: 0 }} />
+              <span style={{ fontSize: 12, color: "#C29F60", fontFamily: "Syne,system-ui,sans-serif", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {vision.musicName}
               </span>
             </div>
             <button onClick={() => save((v) => ({ ...v, musicDataUrl: undefined, musicName: undefined }))}
-              style={{ padding: "8px", borderRadius: 6, border: "1px solid rgba(255,107,107,0.3)", background: "transparent", color: "rgba(255,107,107,0.7)", cursor: "pointer" }}>
-              <X size={12} />
+              style={{ padding: "10px", borderRadius: 6, border: "1px solid rgba(255,107,107,0.3)", background: "transparent", color: "rgba(255,107,107,0.7)", cursor: "pointer" }}>
+              <X size={14} />
             </button>
           </div>
         ) : (
-          <button onClick={() => audioRef.current?.click()} style={{ ...secondaryBtnStyle, padding: "12px 0", flexDirection: "column", gap: 6 }}>
-            <Music size={14} />
-            <span style={{ fontSize: 11 }}>Add Background Music</span>
+          <button onClick={() => audioRef.current?.click()} style={{ ...secondaryBtnStyle, padding: "28px 0", flexDirection: "column", gap: 10 }}>
+            <Music size={20} />
+            <span style={{ fontSize: 12 }}>Add Background Music</span>
           </button>
         )}
       </div>
@@ -2148,13 +2156,14 @@ export default function VisionPage() {
           </div>
         </div>
 
-        {/* ── Canvas area ── */}
+        {/* ── Canvas + stacked controls ── */}
         <div style={{
           order: isMobile ? 1 : undefined, flex: isMobile ? "none" : 1,
           display: "flex", flexDirection: "column", minWidth: 0,
-          padding: isMobile ? "8px" : "10px 18px 14px", gap: 8,
           background: isMobile ? "transparent" : "rgba(0,0,0,0.3)",
         }}>
+          {/* ── Upper section: toolbar + canvas ── */}
+          <div style={{ flexShrink: 0, padding: isMobile ? "8px" : "10px 18px 8px", display: "flex", flexDirection: "column", gap: 8 }}>
           {/* Toolbar */}
           <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
             <button onClick={addTextEl} style={{
@@ -2245,7 +2254,7 @@ export default function VisionPage() {
             style={{
               position: "relative",
               aspectRatio: "16/9",
-              maxHeight: isMobile ? undefined : "calc(100vh - 130px)",
+              maxHeight: isMobile ? undefined : "calc(48vh)",
               alignSelf: "center",
               width: "100%",
               overflow: "hidden",
@@ -2365,217 +2374,195 @@ export default function VisionPage() {
             )}
           </div>
 
-          {/* Hint */}
+          </div>{/* end upper section (toolbar + canvas) */}
+
+          {/* ── Control tab bar (desktop only) ── */}
           {!isMobile && (
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", fontFamily: "Syne,system-ui,sans-serif", textAlign: "center", flexShrink: 0 }}>
-              Double-click text to edit · Drag to move · Corner handles to resize
+            <div style={{
+              display: "flex", flexShrink: 0,
+              borderTop: "1px solid rgba(194,159,96,0.1)",
+              borderBottom: "1px solid rgba(0,0,0,0.35)",
+              background: "rgba(4,13,28,0.55)",
+              padding: "0 18px",
+            }}>
+              {([
+                { id: "bg",     label: "Background" },
+                { id: "style",  label: "Style" },
+                { id: "music",  label: "Music" },
+                { id: "photos", label: "Photos" },
+              ] as const).map(({ id, label }) => (
+                <button
+                  key={id}
+                  onClick={() => setControlTab(id)}
+                  style={{
+                    padding: "9px 16px 8px",
+                    background: "transparent", border: "none",
+                    borderBottom: controlTab === id ? "2px solid rgba(194,159,96,0.65)" : "2px solid transparent",
+                    cursor: "pointer",
+                    fontFamily: "Syne,system-ui,sans-serif", fontSize: 9, fontWeight: 700,
+                    letterSpacing: "0.1em", textTransform: "uppercase",
+                    color: controlTab === id ? "rgba(194,159,96,0.9)" : "rgba(222,211,200,0.3)",
+                    transition: "color 0.15s, border-bottom-color 0.15s",
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           )}
-        </div>
 
-        {/* ── Properties panel (desktop only) ── */}
-        {!isMobile && (
-          <div style={{
-            width: 210, flexShrink: 0,
-            borderLeft: "1px solid rgba(194,159,96,0.1)",
-            background: "rgba(4,13,28,0.7)",
-            overflowY: "auto", padding: 12,
-            display: "flex", flexDirection: "column",
-          }}>
-            {renderProps()}
+          {/* ── Control panel content (desktop only) ── */}
+          {!isMobile && (
+            <div style={{ flex: 1, overflowY: "auto", padding: "14px 18px 18px" }}>
+              {controlTab === "bg" && renderBgProps()}
+              {controlTab === "style" && (
+                selEl ? renderElProps(selEl) : (
+                  <div style={{ textAlign: "center", padding: "40px 0", color: "rgba(222,211,200,0.25)", fontSize: 11, fontFamily: "Syne,system-ui,sans-serif", letterSpacing: "0.06em" }}>
+                    Select an element on the canvas to edit its style
+                  </div>
+                )
+              )}
+              {controlTab === "music" && renderMusicPanel()}
+              {controlTab === "photos" && (
+                <div>
 
             {/* ── Photo Library ── */}
-            <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid rgba(194,159,96,0.1)" }}>
-              {/* Header */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                <span style={{
-                  fontSize: 10, fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700,
-                  letterSpacing: "0.14em", color: "#C29F60", textTransform: "uppercase",
-                }}>
-                  Photo Library
-                </span>
-                <label style={{ cursor: "pointer" }}>
-                  <input
-                    ref={photoMultiRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleMultiPhotoUpload}
-                    style={{ display: "none" }}
-                  />
-                  <button
-                    onClick={() => photoMultiRef.current?.click()}
-                    title="Upload photos"
-                    style={{
+              {/* Header row */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                  <div style={{ display: "flex", gap: 0 }}>
+                    {(["jmc", "personal"] as const).map((tab) => (
+                      <button key={tab} onClick={() => setPhotoLibTab(tab)} style={{
+                        padding: "4px 14px 5px", background: "transparent", border: "none",
+                        borderBottom: photoLibTab === tab ? "1px solid rgba(194,159,96,0.55)" : "1px solid transparent",
+                        cursor: "pointer", fontFamily: "Syne,system-ui,sans-serif", fontSize: 9,
+                        fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+                        color: photoLibTab === tab ? "rgba(194,159,96,0.9)" : "rgba(222,211,200,0.3)",
+                        transition: "color 0.15s, border-bottom-color 0.15s",
+                      }}>
+                        {tab === "jmc" ? "Portal (300)" : "Personal"}
+                      </button>
+                    ))}
+                  </div>
+                  <label style={{ cursor: "pointer" }}>
+                    <input ref={photoMultiRef} type="file" accept="image/*" multiple onChange={handleMultiPhotoUpload} style={{ display: "none" }} />
+                    <button onClick={() => photoMultiRef.current?.click()} style={{
                       display: "flex", alignItems: "center", gap: 4,
-                      padding: "3px 8px", borderRadius: 4, cursor: "pointer",
+                      padding: "4px 10px", borderRadius: 4, cursor: "pointer",
                       background: "rgba(194,159,96,0.08)", border: "1px solid rgba(194,159,96,0.2)",
-                      color: "#C29F60", fontSize: 9,
-                      fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700, letterSpacing: "0.08em",
-                    }}
-                  >
-                    <ImagePlus size={10} /> Upload
-                  </button>
-                </label>
-              </div>
+                      color: "#C29F60", fontSize: 9, fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700, letterSpacing: "0.08em",
+                    }}>
+                      <ImagePlus size={10} /> Upload
+                    </button>
+                  </label>
+                </div>
 
-              {/* Tabs — JMC / Personal */}
-              <div style={{ display: "flex", gap: 3, marginBottom: 6 }}>
-                {(["jmc", "personal"] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setPhotoLibTab(tab)}
-                    style={{
-                      flex: 1, padding: "4px 0", borderRadius: 4, cursor: "pointer",
-                      background: photoLibTab === tab ? "rgba(194,159,96,0.13)" : "transparent",
-                      border: `1px solid ${photoLibTab === tab ? "rgba(194,159,96,0.28)" : "rgba(194,159,96,0.1)"}`,
-                      color: photoLibTab === tab ? "#C29F60" : "rgba(222,211,200,0.4)",
-                      fontSize: 9, fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700,
-                      letterSpacing: "0.1em", textTransform: "uppercase",
-                    }}
-                  >
-                    {tab === "jmc" ? "Portal (300)" : "Personal"}
-                  </button>
-                ))}
-              </div>
-
-              {/* Bucket tabs — only when JMC is active */}
-              {photoLibTab === "jmc" && (
-                <div style={{ display: "flex", gap: 2, marginBottom: 8, flexWrap: "wrap" }}>
-                  {(Object.keys(PORTAL_PHOTO_BUCKETS) as PortalPhotoBucket[]).map((b) => (
-                    <button
-                      key={b}
-                      onClick={() => setJmcBucket(b)}
-                      style={{
-                        padding: "3px 8px 4px", borderRadius: 0, cursor: "pointer", fontSize: 8,
+                {/* Bucket sub-tabs (JMC only) */}
+                {photoLibTab === "jmc" && (
+                  <div style={{ display: "flex", gap: 2, marginBottom: 10 }}>
+                    {(Object.keys(PORTAL_PHOTO_BUCKETS) as PortalPhotoBucket[]).map((b) => (
+                      <button key={b} onClick={() => setJmcBucket(b)} style={{
+                        padding: "3px 12px 4px", borderRadius: 0, cursor: "pointer", fontSize: 8,
                         fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700,
                         letterSpacing: "0.1em", textTransform: "uppercase",
-                        background: "transparent",
-                        border: "none",
-                        borderBottom: jmcBucket === b
-                          ? "1px solid rgba(194,159,96,0.55)"
-                          : "1px solid transparent",
+                        background: "transparent", border: "none",
+                        borderBottom: jmcBucket === b ? "1px solid rgba(194,159,96,0.55)" : "1px solid transparent",
                         color: jmcBucket === b ? "rgba(194,159,96,0.9)" : "rgba(222,211,200,0.28)",
                         transition: "color 0.15s, border-bottom-color 0.15s",
-                      }}
-                    >
-                      {BUCKET_LABELS[b]} ({PORTAL_PHOTO_BUCKETS[b].length})
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Personal upload hint */}
-              {photoLibTab === "personal" && photoLibrary.length === 0 && (
-                <div style={{
-                  padding: "18px 8px", textAlign: "center",
-                  color: "rgba(222,211,200,0.28)",
-                  fontSize: 10, fontFamily: "Syne,system-ui,sans-serif", lineHeight: 1.6,
-                }}>
-                  No photos yet.<br />Click Upload to add yours.
-                </div>
-              )}
-
-              {/* Photo grid */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-                {photoLibTab === "jmc"
-                  ? JMC_PHOTOS.filter((p) => p.bucket === jmcBucket).map((p) => (
-                    <div key={p.id} style={{ display: "flex", flexDirection: "column", gap: 2, opacity: jmcLoadingId && jmcLoadingId !== p.id ? 0.5 : 1, transition: "opacity 0.2s" }}>
-                      {/* Thumbnail — click sets as bg */}
-                      <button
-                        onClick={() => applyJmcPhoto(p.id, p.url)}
-                        title={`Set as background: ${p.label}`}
-                        style={{
-                          aspectRatio: "16/9", borderRadius: 4, overflow: "hidden",
-                          border: "1px solid rgba(194,159,96,0.15)", cursor: jmcLoadingId === p.id ? "wait" : "pointer",
-                          padding: 0, position: "relative", background: "#040d1c",
-                          transition: "transform 0.15s",
-                        }}
-                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1.03)"; }}
-                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={`${p.url}?w=200&q=60`} alt={p.label} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(to top, rgba(0,0,0,0.75), transparent)", padding: "10px 4px 3px" }}>
-                          <span style={{ fontSize: 7, fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.75)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                            {jmcLoadingId === p.id ? "Loading…" : p.label}
-                          </span>
-                        </div>
+                      }}>
+                        {BUCKET_LABELS[b]} ({PORTAL_PHOTO_BUCKETS[b].length})
                       </button>
-                      {/* Shape add buttons */}
-                      <div style={{ display: "flex", gap: 2 }}>
-                        {(["circle", "square", "rectangle"] as const).map((shape) => (
-                          <button
-                            key={shape}
-                            onClick={() => addJmcPhotoElement(p.id, p.url, shape)}
-                            title={`Add as ${shape}`}
-                            style={{
-                              flex: 1, fontSize: 10, padding: "2px 0", borderRadius: 3,
-                              background: "rgba(194,159,96,0.06)", border: "1px solid rgba(194,159,96,0.15)",
-                              color: "rgba(194,159,96,0.65)", cursor: "pointer",
-                            }}
-                          >
-                            {shape === "circle" ? "○" : shape === "square" ? "■" : "▭"}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))
-                  : photoLibrary.map((p) => (
-                    <div key={p.id} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                      {/* Thumbnail — click sets as bg */}
-                      <div style={{ position: "relative" }}>
+                    ))}
+                  </div>
+                )}
+
+                {/* Personal empty state */}
+                {photoLibTab === "personal" && photoLibrary.length === 0 && (
+                  <div style={{ padding: "24px 0", textAlign: "center", color: "rgba(222,211,200,0.28)", fontSize: 11, fontFamily: "Syne,system-ui,sans-serif", lineHeight: 1.7 }}>
+                    No personal photos yet.<br />Click Upload to add yours.
+                  </div>
+                )}
+
+                {/* Photo grid — wider auto-fill columns now that we have full width */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 8 }}>
+                  {photoLibTab === "jmc"
+                    ? JMC_PHOTOS.filter((p) => p.bucket === jmcBucket).map((p) => (
+                      <div key={p.id} style={{ display: "flex", flexDirection: "column", gap: 3, opacity: jmcLoadingId && jmcLoadingId !== p.id ? 0.45 : 1, transition: "opacity 0.2s" }}>
                         <button
-                          onClick={() => applyPhotoBackground(p.dataUrl)}
-                          title={p.name}
+                          onClick={() => applyJmcPhoto(p.id, p.url)}
+                          title={`Set as background: ${p.label}`}
                           style={{
-                            width: "100%", aspectRatio: "16/9", borderRadius: 4, overflow: "hidden",
-                            border: "1px solid rgba(194,159,96,0.15)", cursor: "pointer", padding: 0,
+                            aspectRatio: "16/9", borderRadius: 5, overflow: "hidden",
+                            border: "1px solid rgba(194,159,96,0.15)", cursor: jmcLoadingId === p.id ? "wait" : "pointer",
+                            padding: 0, position: "relative", background: "#040d1c",
                             transition: "transform 0.15s",
                           }}
                           onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1.03)"; }}
                           onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={p.dataUrl} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                          <img src={`${p.url}?w=200&q=60`} alt={p.label} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)", padding: "10px 5px 4px" }}>
+                            <span style={{ fontSize: 7, fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.75)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                              {jmcLoadingId === p.id ? "Loading…" : p.label}
+                            </span>
+                          </div>
                         </button>
-                        <button
-                          onClick={() => removePhoto(p.id)}
-                          title="Remove"
-                          style={{
-                            position: "absolute", top: 2, right: 2, width: 14, height: 14,
-                            borderRadius: "50%", background: "rgba(0,0,0,0.75)", border: "none",
-                            cursor: "pointer", color: "rgba(255,255,255,0.7)",
-                            display: "flex", alignItems: "center", justifyContent: "center", padding: 0,
-                          }}
-                        >
-                          <X size={8} />
-                        </button>
-                      </div>
-                      {/* Shape add buttons */}
-                      <div style={{ display: "flex", gap: 2 }}>
-                        {(["circle", "square", "rectangle"] as const).map((shape) => (
-                          <button
-                            key={shape}
-                            onClick={() => addPhotoElement(p.dataUrl, shape)}
-                            title={`Add as ${shape}`}
-                            style={{
+                        <div style={{ display: "flex", gap: 2 }}>
+                          {(["circle", "square", "rectangle"] as const).map((shape) => (
+                            <button key={shape} onClick={() => addJmcPhotoElement(p.id, p.url, shape)} title={`Add as ${shape}`} style={{
                               flex: 1, fontSize: 10, padding: "2px 0", borderRadius: 3,
                               background: "rgba(194,159,96,0.06)", border: "1px solid rgba(194,159,96,0.15)",
                               color: "rgba(194,159,96,0.65)", cursor: "pointer",
-                            }}
-                          >
-                            {shape === "circle" ? "○" : shape === "square" ? "■" : "▭"}
-                          </button>
-                        ))}
+                            }}>
+                              {shape === "circle" ? "○" : shape === "square" ? "■" : "▭"}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))
-                }
+                    ))
+                    : photoLibrary.map((p) => (
+                      <div key={p.id} style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                        <div style={{ position: "relative" }}>
+                          <button onClick={() => applyPhotoBackground(p.dataUrl)} title={p.name} style={{
+                            width: "100%", aspectRatio: "16/9", borderRadius: 5, overflow: "hidden",
+                            border: "1px solid rgba(194,159,96,0.15)", cursor: "pointer", padding: 0,
+                            transition: "transform 0.15s",
+                          }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1.03)"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={p.dataUrl} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                          </button>
+                          <button onClick={() => removePhoto(p.id)} title="Remove" style={{
+                            position: "absolute", top: 3, right: 3, width: 16, height: 16,
+                            borderRadius: "50%", background: "rgba(0,0,0,0.75)", border: "none",
+                            cursor: "pointer", color: "rgba(255,255,255,0.7)",
+                            display: "flex", alignItems: "center", justifyContent: "center", padding: 0,
+                          }}>
+                            <X size={9} />
+                          </button>
+                        </div>
+                        <div style={{ display: "flex", gap: 2 }}>
+                          {(["circle", "square", "rectangle"] as const).map((shape) => (
+                            <button key={shape} onClick={() => addPhotoElement(p.dataUrl, shape)} title={`Add as ${shape}`} style={{
+                              flex: 1, fontSize: 10, padding: "2px 0", borderRadius: 3,
+                              background: "rgba(194,159,96,0.06)", border: "1px solid rgba(194,159,96,0.15)",
+                              color: "rgba(194,159,96,0.65)", cursor: "pointer",
+                            }}>
+                              {shape === "circle" ? "○" : shape === "square" ? "■" : "▭"}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  }
+                </div>
               </div>
+              )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* ── Mobile Properties Bottom Sheet ── */}
