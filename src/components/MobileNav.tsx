@@ -5,18 +5,19 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, PlaySquare, NotebookPen, Sparkles,
-  Wind, Users, X, Menu, LogOut,
+  Wind, Users, X, Menu, LogOut, BookOpen,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { supabase } from "@/lib/supabase";
 
 const NAV_ITEMS = [
-  { label: "Dashboard",   href: "/dashboard",   icon: LayoutDashboard },
-  { label: "Video Library", href: "/library",   icon: PlaySquare },
-  { label: "Vision Video", href: "/vision",     icon: Sparkles },
-  { label: "Journal",     href: "/journal",     icon: NotebookPen },
-  { label: "Meditations", href: "/meditations", icon: Wind },
-  { label: "Community",   href: "/community",   icon: Users, comingSoon: true },
+  { label: "Dashboard",     href: "/dashboard",   icon: LayoutDashboard },
+  { label: "Video Library", href: "/library",     icon: PlaySquare },
+  { label: "Vision Video",  href: "/vision",      icon: Sparkles },
+  { label: "My Statements", href: "/statements",  icon: BookOpen },
+  { label: "Journal",       href: "/journal",     icon: NotebookPen },
+  { label: "Meditations",   href: "/meditations", icon: Wind },
+  { label: "Community",     href: "/community",   icon: Users, comingSoon: true },
 ];
 
 export function MobileMenuButton({ onClick }: { onClick: () => void }) {

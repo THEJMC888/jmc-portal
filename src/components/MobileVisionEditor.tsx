@@ -6,13 +6,14 @@ import {
   Play, Plus, Trash2, ChevronLeft, ChevronRight,
   AlignLeft, AlignCenter, AlignRight,
   X, Check, Image as ImageIcon, Pipette,
-  Type, Layers,
+  Type, Layers, Music, BookOpen, FolderOpen, LayoutTemplate, Copy,
 } from "lucide-react";
 import type { VisionVideo, VisionSlide, SlideElement, SlideBackground } from "@/types";
 
 // ── Storage keys (match desktop editor) ──────────────────────────────────────
-const VISIONS_LIST_KEY = "jmc_visions_list";
-const CURRENT_ID_KEY   = "jmc_current_vision_id";
+const VISIONS_LIST_KEY  = "jmc_visions_list";
+const CURRENT_ID_KEY    = "jmc_current_vision_id";
+const STATEMENTS_KEY    = "jmc_statements_v1";
 const visionKey = (id: string) => `jmc_vision_${id}`;
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -20,8 +21,105 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 const VW = 1600;
 const VH = 900;
 
+// ── JMC Photo Library (matches desktop) ─────────────────────────────────────
+const JMC_PHOTOS = [
+  { id: "jmc1",  url: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80", label: "Summit" },
+  { id: "jmc2",  url: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80", label: "Valley" },
+  { id: "jmc3",  url: "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&q=80", label: "Starfield" },
+  { id: "jmc4",  url: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800&q=80", label: "City" },
+  { id: "jmc5",  url: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=800&q=80", label: "Ocean" },
+  { id: "jmc6",  url: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=800&q=80", label: "Forest" },
+  { id: "jmc7",  url: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80", label: "Peaks" },
+  { id: "jmc8",  url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80", label: "Towers" },
+  { id: "jmc9",  url: "https://images.unsplash.com/photo-1497436072909-60f360e1d4b1?w=800&q=80", label: "Alpine" },
+  { id: "jmc10", url: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&q=80", label: "Tropical" },
+  { id: "jmc11", url: "https://images.unsplash.com/photo-1476611338391-6f395a0ebc7b?w=800&q=80", label: "Dusk" },
+  { id: "jmc12", url: "https://images.unsplash.com/photo-1541963463532-d68292c34b19?w=800&q=80", label: "Journey" },
+];
+
+// ── Statement categories ──────────────────────────────────────────────────────
+const STATEMENT_CATS = [
+  { id: "self",          label: "Self" },
+  { id: "relationships", label: "Relationships" },
+  { id: "family",        label: "Family" },
+  { id: "finances",      label: "Finances" },
+  { id: "health",        label: "Health" },
+  { id: "purpose",       label: "Purpose" },
+  { id: "mindset",       label: "Mindset" },
+];
+
+// ── Slide templates ───────────────────────────────────────────────────────────
+function makeTemplateElements(templateId: string): SlideElement[] {
+  if (templateId === "single") {
+    return [{
+      id: uid(), type: "text",
+      x: 80, y: 330, width: 1440, height: 240, zIndex: 1,
+      text: "I AM...", fontFamily: '"Lora", Georgia, serif',
+      fontSize: 96, fontWeight: "700", fontStyle: "normal",
+      color: "#ffffff", textAlign: "center", textShadow: true,
+    }];
+  }
+  if (templateId === "title-sub") {
+    return [
+      {
+        id: uid(), type: "text",
+        x: 80, y: 160, width: 1440, height: 140, zIndex: 1,
+        text: "MY VISION", fontFamily: "Syne, system-ui, sans-serif",
+        fontSize: 56, fontWeight: "700", fontStyle: "normal",
+        color: "#C29F60", textAlign: "center", textShadow: true,
+      },
+      {
+        id: uid(), type: "text",
+        x: 100, y: 360, width: 1400, height: 300, zIndex: 2,
+        text: "I AM creating the life I deserve.", fontFamily: '"Lora", Georgia, serif',
+        fontSize: 72, fontWeight: "400", fontStyle: "italic",
+        color: "#ffffff", textAlign: "center", textShadow: true,
+      },
+    ];
+  }
+  if (templateId === "three-lines") {
+    return [
+      {
+        id: uid(), type: "text",
+        x: 80, y: 180, width: 1440, height: 150, zIndex: 1,
+        text: "I AM strong", fontFamily: '"Lora", Georgia, serif',
+        fontSize: 72, fontWeight: "700", color: "#ffffff", textAlign: "center", textShadow: true,
+      },
+      {
+        id: uid(), type: "text",
+        x: 80, y: 380, width: 1440, height: 150, zIndex: 2,
+        text: "I AM focused", fontFamily: '"Lora", Georgia, serif',
+        fontSize: 72, fontWeight: "700", color: "#C29F60", textAlign: "center", textShadow: true,
+      },
+      {
+        id: uid(), type: "text",
+        x: 80, y: 580, width: 1440, height: 150, zIndex: 3,
+        text: "I AM unstoppable", fontFamily: '"Lora", Georgia, serif',
+        fontSize: 72, fontWeight: "700", color: "#ffffff", textAlign: "center", textShadow: true,
+      },
+    ];
+  }
+  if (templateId === "branded") {
+    return [
+      {
+        id: uid(), type: "text",
+        x: 80, y: 80, width: 1440, height: 80, zIndex: 1,
+        text: "THE JOURNEYMEN COLLECTIVE™", fontFamily: "Syne, system-ui, sans-serif",
+        fontSize: 32, fontWeight: "700", color: "rgba(194,159,96,0.75)", textAlign: "center", textShadow: true,
+      },
+      {
+        id: uid(), type: "text",
+        x: 80, y: 300, width: 1440, height: 300, zIndex: 2,
+        text: "I AM worthy of the life I envision.", fontFamily: '"Lora", Georgia, serif',
+        fontSize: 80, fontWeight: "700", fontStyle: "italic",
+        color: "#ffffff", textAlign: "center", textShadow: true,
+      },
+    ];
+  }
+  return [];
+}
+
 // ── Color palettes ────────────────────────────────────────────────────────────
-// Background solid colors: darks + rainbow spectrum
 const BG_COLORS = [
   "#000000", "#040d1c", "#08254D", "#0B4B32",
   "#1a1a2e", "#2d2d2d", "#533483", "#ffffff",
@@ -42,7 +140,6 @@ const BG_GRADIENTS = [
   { from: "#220055", to: "#000011", angle: 160, label: "Violet" },
 ];
 
-// Text colors: Roy G Biv spectrum + essentials + custom picker
 const TEXT_COLORS = [
   "#ffffff", "#000000",
   "#ff2020", "#ff7700", "#ffee00",
@@ -99,9 +196,8 @@ function bgStyle(bg: SlideBackground): React.CSSProperties {
   return { background: "#040d1c" };
 }
 
-type SheetMode = null | "bg" | "elements" | "text-edit";
+type SheetMode = null | "bg" | "elements" | "text-edit" | "templates" | "statements" | "visions" | "music" | "photos";
 
-// Reusable rainbow color row with custom picker — square boxes matching B/I/align buttons
 function ColorRow({
   current,
   onChange,
@@ -123,7 +219,6 @@ function ColorRow({
           }}
         />
       ))}
-      {/* Full-spectrum color picker square */}
       <div style={{
         width: size, height: size, borderRadius: 5, flexShrink: 0,
         background: "conic-gradient(red, yellow, lime, cyan, blue, magenta, red)",
@@ -151,17 +246,34 @@ export default function MobileVisionEditor() {
   const [editingEl, setEditingEl] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [allVisions, setAllVisions] = useState<{ id: string; title: string }[]>([]);
+  const [statements, setStatements] = useState<Record<string, { being: string; doing: string }>>({});
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState("");
+  const [photoLibTab, setPhotoLibTab] = useState<"jmc" | "personal">("jmc");
 
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const bgImgRef = useRef<HTMLInputElement>(null);
   const bgColorPickerRef = useRef<HTMLInputElement>(null);
+  const musicRef = useRef<HTMLInputElement>(null);
+  const photoUploadRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const { id, vision: v } = loadVision();
     setVision(v);
     setVisionId(id);
     setMounted(true);
+
+    try {
+      const listS = localStorage.getItem(VISIONS_LIST_KEY);
+      if (listS) setAllVisions(JSON.parse(listS));
+    } catch {}
+
+    try {
+      const stmS = localStorage.getItem(STATEMENTS_KEY);
+      if (stmS) setStatements(JSON.parse(stmS));
+    } catch {}
   }, []);
 
   const save = useCallback((updater: (v: VisionVideo) => VisionVideo) => {
@@ -176,6 +288,7 @@ export default function MobileVisionEditor() {
         const meta = { id: visionId, title: next.title, updatedAt: Date.now() };
         if (idx >= 0) list[idx] = meta; else list.unshift(meta);
         localStorage.setItem(VISIONS_LIST_KEY, JSON.stringify(list));
+        setAllVisions(list);
       } catch {}
       return next;
     });
@@ -262,6 +375,45 @@ export default function MobileVisionEditor() {
     reader.readAsDataURL(file);
   };
 
+  const handleMusicUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) { alert("Audio file too large (max 20 MB)."); return; }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      save((v) => ({ ...v, musicDataUrl: ev.target!.result as string, musicName: file.name }));
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  // Apply a JMC photo as background via URL → fetch → canvas → dataUrl
+  const applyJmcPhoto = async (photoUrl: string) => {
+    try {
+      const resp = await fetch(photoUrl);
+      const blob = await resp.blob();
+      const dataUrl = await new Promise<string>((res) => {
+        const reader = new FileReader();
+        reader.onload = () => res(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > 1920) { h = Math.round(h * 1920 / w); w = 1920; }
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+        updateBg({ type: "image", imageDataUrl: canvas.toDataURL("image/jpeg", 0.82) });
+        setSheet("bg");
+      };
+      img.src = dataUrl;
+    } catch {
+      updateBg({ type: "image", imageDataUrl: photoUrl });
+      setSheet("bg");
+    }
+  };
+
   const addTextEl = () => {
     const newEl: SlideElement = {
       id: uid(), type: "text",
@@ -309,9 +461,75 @@ export default function MobileVisionEditor() {
     setSheet("elements");
   };
 
+  const applyTemplate = (templateId: string) => {
+    const elements = makeTemplateElements(templateId);
+    save((v) => ({
+      ...v,
+      slides: v.slides.map((s, i) =>
+        i !== slideIdx ? s : { ...s, elements }
+      ),
+    }));
+    setSheet(null);
+  };
+
+  const addStatementAsText = (text: string) => {
+    if (!text.trim()) return;
+    const newEl: SlideElement = {
+      id: uid(), type: "text",
+      x: 80, y: 300, width: 1440, height: 300, zIndex: slide.elements.length + 1,
+      text: text.trim(), fontFamily: '"Lora", Georgia, serif',
+      fontSize: 64, fontWeight: "700", fontStyle: "italic",
+      color: "#ffffff", textAlign: "center", textShadow: true,
+    };
+    save((v) => ({
+      ...v,
+      slides: v.slides.map((s, i) =>
+        i !== slideIdx ? s : { ...s, elements: [...s.elements, newEl] }
+      ),
+    }));
+    setSheet("elements");
+  };
+
+  const switchVision = (id: string) => {
+    try {
+      const s = localStorage.getItem(visionKey(id));
+      if (!s) return;
+      const v = JSON.parse(s) as VisionVideo;
+      localStorage.setItem(CURRENT_ID_KEY, id);
+      setVision(v);
+      setVisionId(id);
+      setSlideIdx(0);
+      setSheet(null);
+    } catch {}
+  };
+
+  const createNewVision = () => {
+    const v = makeBlankVision();
+    localStorage.setItem(visionKey(v.id), JSON.stringify(v));
+    localStorage.setItem(CURRENT_ID_KEY, v.id);
+    const listS = localStorage.getItem(VISIONS_LIST_KEY);
+    const list: { id: string; title: string; updatedAt: number }[] = listS ? JSON.parse(listS) : [];
+    list.unshift({ id: v.id, title: v.title, updatedAt: Date.now() });
+    localStorage.setItem(VISIONS_LIST_KEY, JSON.stringify(list));
+    setAllVisions(list);
+    setVision(v);
+    setVisionId(v.id);
+    setSlideIdx(0);
+    setSheet(null);
+  };
+
   const PREVIEW_W = typeof window !== "undefined" ? Math.min(window.innerWidth - 28, 480) : 347;
   const PREVIEW_H = Math.round(PREVIEW_W * (VH / VW));
   const SCALE = PREVIEW_W / VW;
+
+  // ── Shared button style helpers ─────────────────────────────────────────────
+  const actionTabStyle = (active: boolean): React.CSSProperties => ({
+    flex: "0 0 auto", padding: "9px 14px",
+    background: "none", border: "none", cursor: "pointer",
+    borderBottom: active ? "2px solid #C29F60" : "2px solid transparent",
+    display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+    color: active ? "#C29F60" : "rgba(194,159,96,0.6)",
+  });
 
   return (
     <div style={{
@@ -329,28 +547,52 @@ export default function MobileVisionEditor() {
         borderBottom: "1px solid rgba(194,159,96,0.2)",
         flexShrink: 0, zIndex: 20,
       }}>
-        <div>
-          <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 15, color: "#DED3C8" }}>
-            {vision.title}
-          </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {editingTitle ? (
+            <input
+              autoFocus
+              value={titleDraft}
+              onChange={(e) => setTitleDraft(e.target.value)}
+              onBlur={() => {
+                if (titleDraft.trim()) save((v) => ({ ...v, title: titleDraft.trim() }));
+                setEditingTitle(false);
+              }}
+              onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+              style={{
+                background: "none", border: "none", outline: "none",
+                fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 15, color: "#DED3C8",
+                width: "100%",
+              }}
+            />
+          ) : (
+            <div
+              onClick={() => { setTitleDraft(vision.title); setEditingTitle(true); }}
+              style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 15, color: "#DED3C8", cursor: "text" }}
+            >
+              {vision.title}
+            </div>
+          )}
           <div style={{ fontFamily: "Syne, sans-serif", fontSize: 10, color: "rgba(194,159,96,0.85)", letterSpacing: "0.12em" }}>
             {slides.length} SLIDE{slides.length !== 1 ? "S" : ""}
+            {vision.musicName && <span style={{ marginLeft: 8 }}>♪ {vision.musicName}</span>}
           </div>
         </div>
-        <button
-          onClick={() => router.push("/vision/play")}
-          style={{
-            display: "flex", alignItems: "center", gap: 6,
-            padding: "8px 16px", borderRadius: 20,
-            background: "linear-gradient(135deg, #C29F60, #D4B47A)",
-            border: "none", cursor: "pointer",
-            fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 12,
-            color: "#08254D", letterSpacing: "0.08em",
-          }}
-        >
-          <Play size={12} fill="#08254D" />
-          PLAY
-        </button>
+        <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+          <button
+            onClick={() => router.push("/vision/play")}
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "8px 16px", borderRadius: 20,
+              background: "linear-gradient(135deg, #C29F60, #D4B47A)",
+              border: "none", cursor: "pointer",
+              fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 12,
+              color: "#08254D", letterSpacing: "0.08em",
+            }}
+          >
+            <Play size={12} fill="#08254D" />
+            PLAY
+          </button>
+        </div>
       </div>
 
       {/* ── Slide nav counter ───────────────────────────────────────────────── */}
@@ -378,7 +620,7 @@ export default function MobileVisionEditor() {
         </button>
       </div>
 
-      {/* ── Slide preview — framed with gold border ──────────────────────────── */}
+      {/* ── Slide preview ───────────────────────────────────────────────────── */}
       <div style={{
         flexShrink: 0,
         padding: "6px 14px 8px",
@@ -393,19 +635,15 @@ export default function MobileVisionEditor() {
             position: "relative",
             overflow: "hidden",
             borderRadius: 6,
-            // ← Gold frame — the key distinction
             border: "1.5px solid rgba(194,159,96,0.6)",
             boxShadow: "0 0 0 1px rgba(194,159,96,0.12), 0 6px 32px rgba(0,0,0,0.75), inset 0 0 0 1px rgba(194,159,96,0.06)",
           }}
         >
-          {/* Background */}
           <div style={{ position: "absolute", inset: 0, ...bgStyle(slide.background) }} />
-          {/* Image overlay */}
           {slide.background.type === "image" && (
             <div style={{ position: "absolute", inset: 0, background: `rgba(0,0,0,${slide.background.overlayOpacity ?? 0.35})` }} />
           )}
 
-          {/* Scaled elements */}
           {slide.elements.map((el) => (
             <div
               key={el.id}
@@ -446,7 +684,6 @@ export default function MobileVisionEditor() {
             </div>
           ))}
 
-          {/* Empty state hint */}
           {slide.elements.length === 0 && (
             <div style={{
               position: "absolute", inset: 0,
@@ -457,12 +694,11 @@ export default function MobileVisionEditor() {
                 BLANK SLIDE
               </div>
               <div style={{ fontFamily: "Lora, serif", fontStyle: "italic", fontSize: 11, color: "rgba(222,211,200,0.6)", textAlign: "center", padding: "0 20px" }}>
-                Tap Background or Text below to get started
+                Tap a button below to get started
               </div>
             </div>
           )}
 
-          {/* Swipe dots */}
           {slides.length > 1 && (
             <div style={{ position: "absolute", bottom: 7, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 5 }}>
               {slides.map((_, i) => (
@@ -524,7 +760,7 @@ export default function MobileVisionEditor() {
         </button>
       </div>
 
-      {/* ── Action bar ─────────────────────────────────────────────────────── */}
+      {/* ── Primary action bar ─────────────────────────────────────────────── */}
       <div style={{
         display: "flex", alignItems: "stretch",
         background: "rgba(4,13,28,0.92)",
@@ -535,21 +771,51 @@ export default function MobileVisionEditor() {
           { icon: <Layers size={17} />, label: "Background", action: () => setSheet(sheet === "bg" ? null : "bg") },
           { icon: <Type size={17} />, label: "Add Text", action: addTextEl },
           { icon: <ImageIcon size={17} />, label: "Elements", action: () => setSheet(sheet === "elements" ? null : "elements") },
+          { icon: <Copy size={17} />, label: "Duplicate", action: dupSlide },
           { icon: <Trash2 size={17} />, label: "Delete", action: deleteSlide, danger: true },
         ] as { icon: React.ReactNode; label: string; action: () => void; danger?: boolean }[]).map(({ icon, label, action, danger }) => (
           <button
             key={label}
             onClick={action}
             style={{
-              flex: 1, padding: "11px 4px", background: "none",
+              flex: 1, padding: "9px 2px", background: "none",
               border: "none", cursor: "pointer",
               borderRight: "1px solid rgba(194,159,96,0.1)",
-              display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
               color: danger ? "rgba(239,68,68,0.85)" : "rgba(194,159,96,0.92)",
             }}
           >
             {icon}
-            <span style={{ fontFamily: "Syne, sans-serif", fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600 }}>
+            <span style={{ fontFamily: "Syne, sans-serif", fontSize: 8, letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 600 }}>
+              {label}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* ── Secondary action bar (power features) ──────────────────────────── */}
+      <div style={{
+        display: "flex", overflowX: "auto", flexShrink: 0,
+        background: "rgba(2,5,18,0.9)",
+        borderBottom: "1px solid rgba(194,159,96,0.1)",
+      }}>
+        {/* Hidden file inputs */}
+        <input ref={musicRef} type="file" accept="audio/*" onChange={handleMusicUpload} style={{ display: "none" }} />
+
+        {([
+          { icon: <LayoutTemplate size={15} />, label: "Templates", key: "templates" as SheetMode },
+          { icon: <BookOpen size={15} />, label: "Statements", key: "statements" as SheetMode },
+          { icon: <FolderOpen size={15} />, label: "My Visions", key: "visions" as SheetMode },
+          { icon: <Music size={15} />, label: "Music", key: "music" as SheetMode },
+          { icon: <ImageIcon size={15} />, label: "Photo Lib", key: "photos" as SheetMode },
+        ] as { icon: React.ReactNode; label: string; key: SheetMode }[]).map(({ icon, label, key }) => (
+          <button
+            key={label}
+            onClick={() => setSheet(sheet === key ? null : key)}
+            style={actionTabStyle(sheet === key)}
+          >
+            {icon}
+            <span style={{ fontFamily: "Syne, sans-serif", fontSize: 8, letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 600, whiteSpace: "nowrap" }}>
               {label}
             </span>
           </button>
@@ -588,7 +854,6 @@ export default function MobileVisionEditor() {
                     }} />
                   ))}
                 </div>
-                {/* Custom color picker for background */}
                 <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(194,159,96,0.15)" }}>
                   <Pipette size={14} color="rgba(194,159,96,0.85)" />
                   <span style={{ fontFamily: "Syne, sans-serif", fontSize: 11, color: "rgba(222,211,200,0.9)", flex: 1 }}>Custom color</span>
@@ -664,7 +929,6 @@ export default function MobileVisionEditor() {
                 marginBottom: 10, padding: "12px 14px", borderRadius: 10,
                 background: "rgba(8,37,77,0.25)", border: "1px solid rgba(194,159,96,0.2)",
               }}>
-                {/* Text preview */}
                 <div style={{
                   fontFamily: el.fontFamily ?? "sans-serif",
                   fontSize: 15, color: el.color ?? "#fff",
@@ -676,7 +940,6 @@ export default function MobileVisionEditor() {
                   {el.text || <span style={{ opacity: 0.4 }}>Empty text</span>}
                 </div>
 
-                {/* Format controls row */}
                 <div style={{ display: "flex", gap: 5, marginBottom: 8, flexWrap: "wrap" }}>
                   <button onClick={() => updateEl(el.id, { fontSize: Math.max(12, (el.fontSize ?? 48) - 8) })}
                     style={{ padding: "4px 10px", borderRadius: 5, border: "1px solid rgba(194,159,96,0.3)", background: "none", color: "#DED3C8", cursor: "pointer", fontSize: 14, fontWeight: 700 }}>−</button>
@@ -695,13 +958,11 @@ export default function MobileVisionEditor() {
                     style={{ padding: "4px 8px", borderRadius: 5, border: "1px solid rgba(194,159,96,0.3)", background: el.textAlign === "right" ? "rgba(194,159,96,0.2)" : "none", color: "#DED3C8", cursor: "pointer" }}><AlignRight size={13} /></button>
                 </div>
 
-                {/* Color row with rainbow + custom picker */}
                 <div style={{ marginBottom: 10 }}>
                   <div style={{ fontFamily: "Syne, sans-serif", fontSize: 10, color: "rgba(222,211,200,0.75)", marginBottom: 6, letterSpacing: "0.1em" }}>TEXT COLOR</div>
                   <ColorRow current={el.color} onChange={(c) => updateEl(el.id, { color: c })} size={22} />
                 </div>
 
-                {/* Edit / Delete */}
                 <div style={{ display: "flex", gap: 8 }}>
                   <button onClick={() => startEditText(el)} style={{
                     flex: 1, padding: "8px 10px", borderRadius: 7,
@@ -722,6 +983,267 @@ export default function MobileVisionEditor() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* ── Templates panel ──────────────────────────────────────────────── */}
+        {sheet === "templates" && (
+          <div style={{ padding: "14px" }}>
+            <div style={{ fontFamily: "Syne, sans-serif", fontSize: 10, color: "rgba(194,159,96,0.75)", letterSpacing: "0.18em", marginBottom: 14, textTransform: "uppercase", fontWeight: 700 }}>
+              Slide Templates
+            </div>
+            <div style={{ fontFamily: "Lora, serif", fontStyle: "italic", fontSize: 12, color: "rgba(222,211,200,0.6)", marginBottom: 16, lineHeight: 1.6 }}>
+              Applying a template replaces elements on the current slide.
+            </div>
+            {([
+              { id: "single", name: "Single Affirmation", desc: "One large centered I AM statement", preview: "I AM..." },
+              { id: "title-sub", name: "Title + Affirmation", desc: "Gold title with large statement below", preview: "MY VISION / I AM..." },
+              { id: "three-lines", name: "Three Lines", desc: "Three stacked affirmations", preview: "I AM strong / I AM focused / I AM..." },
+              { id: "branded", name: "Branded", desc: "JMC header with centered statement", preview: "THE JMC™ / I AM worthy..." },
+            ] as { id: string; name: string; desc: string; preview: string }[]).map((t) => (
+              <button key={t.id} onClick={() => applyTemplate(t.id)} style={{
+                width: "100%", marginBottom: 10,
+                padding: "14px 16px", borderRadius: 10, border: "1px solid rgba(194,159,96,0.2)", cursor: "pointer",
+                background: "rgba(8,37,77,0.3)",
+                display: "flex", alignItems: "center", gap: 14, textAlign: "left",
+              } as React.CSSProperties}>
+                <div style={{
+                  width: 60, height: 34, borderRadius: 5, flexShrink: 0,
+                  background: "linear-gradient(160deg, #08254D, #040d1c)",
+                  border: "1px solid rgba(194,159,96,0.35)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontFamily: "Lora, serif", fontStyle: "italic", fontSize: 7, color: "rgba(255,255,255,0.8)",
+                  textAlign: "center", padding: "0 4px",
+                }}>
+                  {t.preview}
+                </div>
+                <div>
+                  <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 13, color: "#DED3C8", marginBottom: 3 }}>{t.name}</div>
+                  <div style={{ fontFamily: "Syne, sans-serif", fontSize: 11, color: "rgba(222,211,200,0.55)" }}>{t.desc}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* ── Statements panel ─────────────────────────────────────────────── */}
+        {sheet === "statements" && (
+          <div style={{ padding: "14px" }}>
+            <div style={{ fontFamily: "Syne, sans-serif", fontSize: 10, color: "rgba(194,159,96,0.75)", letterSpacing: "0.18em", marginBottom: 6, textTransform: "uppercase", fontWeight: 700 }}>
+              My I AM Statements
+            </div>
+            <div style={{ fontFamily: "Lora, serif", fontStyle: "italic", fontSize: 12, color: "rgba(222,211,200,0.6)", marginBottom: 16, lineHeight: 1.6 }}>
+              Tap a statement to add it as a text element on the current slide.
+            </div>
+            {STATEMENT_CATS.map((cat) => {
+              const data = statements[cat.id];
+              const hasBeing = data?.being?.trim();
+              const hasDoing = data?.doing?.trim();
+              if (!hasBeing && !hasDoing) return (
+                <div key={cat.id} style={{
+                  marginBottom: 10, padding: "12px 14px", borderRadius: 10,
+                  background: "rgba(255,255,255,0.02)", border: "1px solid rgba(194,159,96,0.1)",
+                  opacity: 0.5,
+                }}>
+                  <div style={{ fontFamily: "Syne, sans-serif", fontSize: 12, color: "rgba(222,211,200,0.5)", fontWeight: 600 }}>{cat.label}</div>
+                  <div style={{ fontFamily: "Lora, serif", fontStyle: "italic", fontSize: 11, color: "rgba(222,211,200,0.35)", marginTop: 4 }}>Not written yet — go to My Statements to add.</div>
+                </div>
+              );
+              return (
+                <div key={cat.id} style={{ marginBottom: 12 }}>
+                  <div style={{ fontFamily: "Syne, sans-serif", fontSize: 10, color: "#C29F60", letterSpacing: "0.14em", fontWeight: 700, textTransform: "uppercase", marginBottom: 6 }}>{cat.label}</div>
+                  {hasBeing && (
+                    <button onClick={() => addStatementAsText(data.being)} style={{
+                      width: "100%", marginBottom: 6, padding: "10px 12px", borderRadius: 8,
+                      background: "rgba(8,37,77,0.25)", border: "1px solid rgba(194,159,96,0.18)",
+                      cursor: "pointer", textAlign: "left",
+                    }}>
+                      <div style={{ fontFamily: "Syne, sans-serif", fontSize: 9, color: "rgba(194,159,96,0.7)", letterSpacing: "0.1em", marginBottom: 4 }}>I AM (BEING)</div>
+                      <div style={{ fontFamily: "Lora, serif", fontSize: 12, color: "#DED3C8", lineHeight: 1.5, fontStyle: "italic" }}>{data.being.slice(0, 120)}{data.being.length > 120 ? "…" : ""}</div>
+                    </button>
+                  )}
+                  {hasDoing && (
+                    <button onClick={() => addStatementAsText(data.doing)} style={{
+                      width: "100%", padding: "10px 12px", borderRadius: 8,
+                      background: "rgba(8,37,77,0.25)", border: "1px solid rgba(194,159,96,0.18)",
+                      cursor: "pointer", textAlign: "left",
+                    }}>
+                      <div style={{ fontFamily: "Syne, sans-serif", fontSize: 9, color: "rgba(194,159,96,0.7)", letterSpacing: "0.1em", marginBottom: 4 }}>I AM (DOING)</div>
+                      <div style={{ fontFamily: "Lora, serif", fontSize: 12, color: "#DED3C8", lineHeight: 1.5, fontStyle: "italic" }}>{data.doing.slice(0, 120)}{data.doing.length > 120 ? "…" : ""}</div>
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+            <button
+              onClick={() => router.push("/statements")}
+              style={{
+                width: "100%", padding: "13px", borderRadius: 10, marginTop: 8,
+                border: "1px solid rgba(194,159,96,0.3)", background: "rgba(194,159,96,0.07)",
+                cursor: "pointer", fontFamily: "Syne, sans-serif", fontSize: 11,
+                color: "rgba(194,159,96,0.9)", letterSpacing: "0.12em", fontWeight: 700,
+              }}
+            >
+              WRITE / EDIT STATEMENTS →
+            </button>
+          </div>
+        )}
+
+        {/* ── Visions panel ────────────────────────────────────────────────── */}
+        {sheet === "visions" && (
+          <div style={{ padding: "14px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <div style={{ fontFamily: "Syne, sans-serif", fontSize: 10, color: "rgba(194,159,96,0.75)", letterSpacing: "0.18em", textTransform: "uppercase", fontWeight: 700 }}>
+                My Visions
+              </div>
+              <button onClick={createNewVision} style={{
+                padding: "6px 14px", borderRadius: 20,
+                border: "1px solid rgba(194,159,96,0.4)", background: "rgba(194,159,96,0.1)",
+                cursor: "pointer", fontFamily: "Syne, sans-serif", fontSize: 10,
+                color: "#C29F60", letterSpacing: "0.1em", fontWeight: 700,
+                display: "flex", alignItems: "center", gap: 5,
+              }}>
+                <Plus size={11} /> NEW VISION
+              </button>
+            </div>
+            {allVisions.length === 0 && (
+              <div style={{ fontFamily: "Lora, serif", fontStyle: "italic", fontSize: 13, color: "rgba(222,211,200,0.5)", textAlign: "center", padding: "20px 0" }}>
+                Only one vision so far. Create more to switch between them.
+              </div>
+            )}
+            {allVisions.map((v) => (
+              <button
+                key={v.id}
+                onClick={() => switchVision(v.id)}
+                style={{
+                  width: "100%", marginBottom: 8,
+                  padding: "12px 16px", borderRadius: 10,
+                  background: v.id === visionId ? "rgba(194,159,96,0.12)" : "rgba(255,255,255,0.03)",
+                  border: `1px solid ${v.id === visionId ? "rgba(194,159,96,0.4)" : "rgba(194,159,96,0.12)"}`,
+                  cursor: v.id === visionId ? "default" : "pointer",
+                  textAlign: "left", display: "flex", alignItems: "center", gap: 10,
+                }}
+              >
+                <div style={{
+                  width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
+                  background: v.id === visionId ? "#C29F60" : "rgba(194,159,96,0.3)",
+                }} />
+                <span style={{
+                  fontFamily: "Syne, sans-serif", fontSize: 13,
+                  color: v.id === visionId ? "#C29F60" : "#DED3C8",
+                  fontWeight: v.id === visionId ? 700 : 400, flex: 1,
+                }}>
+                  {v.title}
+                </span>
+                {v.id === visionId && (
+                  <span style={{ fontFamily: "Syne, sans-serif", fontSize: 9, color: "rgba(194,159,96,0.7)", letterSpacing: "0.12em" }}>ACTIVE</span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* ── Music panel ──────────────────────────────────────────────────── */}
+        {sheet === "music" && (
+          <div style={{ padding: "14px" }}>
+            <div style={{ fontFamily: "Syne, sans-serif", fontSize: 10, color: "rgba(194,159,96,0.75)", letterSpacing: "0.18em", marginBottom: 14, textTransform: "uppercase", fontWeight: 700 }}>
+              Background Music
+            </div>
+            {vision.musicDataUrl ? (
+              <div style={{ marginBottom: 16, padding: "14px 16px", borderRadius: 10, background: "rgba(8,37,77,0.3)", border: "1px solid rgba(194,159,96,0.25)" }}>
+                <div style={{ fontFamily: "Syne, sans-serif", fontSize: 10, color: "rgba(194,159,96,0.7)", letterSpacing: "0.12em", marginBottom: 6 }}>CURRENT TRACK</div>
+                <div style={{ fontFamily: "Syne, sans-serif", fontSize: 13, color: "#DED3C8", fontWeight: 600, marginBottom: 12 }}>♪ {vision.musicName ?? "Audio Track"}</div>
+                <button
+                  onClick={() => save((v) => { const n = { ...v }; delete (n as any).musicDataUrl; delete (n as any).musicName; return n; })}
+                  style={{
+                    padding: "7px 14px", borderRadius: 7,
+                    border: "1px solid rgba(239,68,68,0.3)", background: "transparent",
+                    cursor: "pointer", fontFamily: "Syne, sans-serif", fontSize: 11,
+                    color: "rgba(239,68,68,0.8)", letterSpacing: "0.08em", fontWeight: 700,
+                  }}
+                >
+                  REMOVE TRACK
+                </button>
+              </div>
+            ) : (
+              <div style={{ fontFamily: "Lora, serif", fontStyle: "italic", fontSize: 13, color: "rgba(222,211,200,0.55)", marginBottom: 16, lineHeight: 1.6 }}>
+                No music added yet. Upload an audio file to play during your Vision Video.
+              </div>
+            )}
+            <button onClick={() => musicRef.current?.click()} style={{
+              width: "100%", padding: "16px", borderRadius: 10,
+              border: "2px dashed rgba(194,159,96,0.45)", background: "transparent",
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+              fontFamily: "Syne, sans-serif", fontSize: 12, color: "rgba(222,211,200,0.9)", letterSpacing: "0.1em", fontWeight: 600,
+            }}>
+              <Music size={16} color="#C29F60" />
+              {vision.musicDataUrl ? "REPLACE TRACK" : "UPLOAD AUDIO (MP3 / AAC / M4A)"}
+            </button>
+            <div style={{ fontFamily: "Lora, serif", fontStyle: "italic", fontSize: 11, color: "rgba(222,211,200,0.45)", marginTop: 10, textAlign: "center" }}>
+              Max 20 MB · music plays on loop during playback
+            </div>
+          </div>
+        )}
+
+        {/* ── Photo Library panel ──────────────────────────────────────────── */}
+        {sheet === "photos" && (
+          <div style={{ padding: "14px" }}>
+            <div style={{ fontFamily: "Syne, sans-serif", fontSize: 10, color: "rgba(194,159,96,0.75)", letterSpacing: "0.18em", marginBottom: 6, textTransform: "uppercase", fontWeight: 700 }}>
+              Photo Library
+            </div>
+            <div style={{ fontFamily: "Lora, serif", fontStyle: "italic", fontSize: 12, color: "rgba(222,211,200,0.6)", marginBottom: 14 }}>
+              Tap a photo to use it as the background for the current slide.
+            </div>
+            <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+              {(["jmc", "personal"] as const).map((t) => (
+                <button key={t} onClick={() => setPhotoLibTab(t)} style={{
+                  padding: "6px 16px", borderRadius: 20, border: "none", cursor: "pointer",
+                  fontFamily: "Syne, sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+                  background: photoLibTab === t ? "#C29F60" : "rgba(194,159,96,0.12)",
+                  color: photoLibTab === t ? "#08254D" : "rgba(222,211,200,0.9)",
+                }}>
+                  {t === "jmc" ? "JMC Library" : "Upload"}
+                </button>
+              ))}
+            </div>
+
+            {photoLibTab === "jmc" && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+                {JMC_PHOTOS.map((p) => (
+                  <button key={p.id} onClick={() => applyJmcPhoto(p.url)} style={{
+                    padding: 0, border: "2px solid rgba(194,159,96,0.25)", borderRadius: 8,
+                    overflow: "hidden", cursor: "pointer", background: "none", aspectRatio: "16/9",
+                    position: "relative",
+                  }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.url} alt={p.label} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    <div style={{
+                      position: "absolute", bottom: 0, left: 0, right: 0,
+                      background: "rgba(0,0,0,0.55)", padding: "3px 5px",
+                      fontFamily: "Syne, sans-serif", fontSize: 8, color: "rgba(222,211,200,0.9)",
+                      fontWeight: 600, letterSpacing: "0.08em",
+                    }}>
+                      {p.label}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {photoLibTab === "personal" && (
+              <div>
+                <input ref={photoUploadRef} type="file" accept="image/*" onChange={handleBgImage} style={{ display: "none" }} />
+                <button onClick={() => photoUploadRef.current?.click()} style={{
+                  width: "100%", padding: "16px", borderRadius: 10,
+                  border: "2px dashed rgba(194,159,96,0.45)", background: "transparent",
+                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                  fontFamily: "Syne, sans-serif", fontSize: 12, color: "rgba(222,211,200,0.9)", letterSpacing: "0.1em", fontWeight: 600,
+                }}>
+                  <ImageIcon size={16} color="#C29F60" />
+                  UPLOAD FROM DEVICE
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -752,7 +1274,6 @@ export default function MobileVisionEditor() {
                 </button>
               </div>
 
-              {/* Format bar */}
               <div style={{
                 display: "flex", gap: 6, padding: "10px 14px",
                 borderBottom: "1px solid rgba(194,159,96,0.15)",
@@ -773,12 +1294,10 @@ export default function MobileVisionEditor() {
                   style={{ padding: "7px 10px", borderRadius: 6, border: "1px solid rgba(194,159,96,0.3)", background: el.textAlign !== "left" && el.textAlign !== "right" ? "rgba(194,159,96,0.18)" : "none", color: "#DED3C8", cursor: "pointer", flexShrink: 0 }}><AlignCenter size={14} /></button>
                 <button onClick={() => updateEl(el.id, { textAlign: "right" })}
                   style={{ padding: "7px 10px", borderRadius: 6, border: "1px solid rgba(194,159,96,0.3)", background: el.textAlign === "right" ? "rgba(194,159,96,0.18)" : "none", color: "#DED3C8", cursor: "pointer", flexShrink: 0 }}><AlignRight size={14} /></button>
-                {/* Color squares inline — matches B/I/align button style */}
                 {TEXT_COLORS.map((c) => (
                   <button key={c} onClick={() => updateEl(el.id, { color: c })}
                     style={{ width: 28, height: 28, borderRadius: 5, background: c, flexShrink: 0, border: el.color === c ? "2px solid #C29F60" : c === "#ffffff" ? "1px solid rgba(255,255,255,0.35)" : "1px solid rgba(194,159,96,0.2)", cursor: "pointer", boxShadow: el.color === c ? "0 0 0 1px rgba(194,159,96,0.45)" : undefined }} />
                 ))}
-                {/* Full-spectrum picker square */}
                 <div style={{ width: 28, height: 28, borderRadius: 5, flexShrink: 0, position: "relative", overflow: "hidden", background: "conic-gradient(red, yellow, lime, cyan, blue, magenta, red)", border: "1px solid rgba(194,159,96,0.2)", cursor: "pointer" }}>
                   <input type="color" defaultValue={el.color ?? "#ffffff"} onChange={(e) => updateEl(el.id, { color: e.target.value })} style={{ position: "absolute", opacity: 0, width: "100%", height: "100%", cursor: "pointer" }} />
                 </div>
@@ -814,16 +1333,8 @@ export default function MobileVisionEditor() {
             <div style={{ fontFamily: "Lora, serif", fontStyle: "italic", fontSize: 13, color: "rgba(222,211,200,0.7)", textAlign: "center", lineHeight: 1.7 }}>
               Swipe the slide to change pages.
               <br />Tap a text element on the slide to edit it.
-              <br />Use the buttons above to change background or add text.
+              <br />Use the buttons above to edit or add content.
             </div>
-            <button onClick={dupSlide} style={{
-              padding: "9px 22px", borderRadius: 20,
-              border: "1px solid rgba(194,159,96,0.35)", background: "rgba(194,159,96,0.07)",
-              fontFamily: "Syne, sans-serif", fontSize: 11, color: "rgba(194,159,96,0.9)",
-              letterSpacing: "0.12em", cursor: "pointer", fontWeight: 700,
-            }}>
-              DUPLICATE SLIDE
-            </button>
           </div>
         )}
       </div>
