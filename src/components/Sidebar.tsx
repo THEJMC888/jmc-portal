@@ -137,7 +137,7 @@ export default function Sidebar() {
               <Link
                 href={item.comingSoon ? "#" : item.href}
                 className={clsx(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
                   item.comingSoon && "opacity-40 cursor-not-allowed"
                 )}
                 style={
@@ -147,15 +147,18 @@ export default function Sidebar() {
                         border: "1px solid rgba(0,210,255,0.32)",
                         color: "#00d8ff",
                         fontFamily: "Syne, system-ui, sans-serif",
-                        fontWeight: 600,
+                        fontWeight: 700,
+                        fontSize: "0.85rem",
                         boxShadow: "0 0 18px rgba(0,200,240,0.15), inset 0 0 14px rgba(0,140,220,0.06)",
+                        textShadow: "0 1px 8px rgba(0,0,0,0.9), 0 2px 16px rgba(0,0,0,0.7)",
                       }
                     : {
-                        color: "rgba(222,211,200,0.75)",
+                        color: "rgba(222,211,200,0.92)",
                         fontFamily: "Syne, system-ui, sans-serif",
-                        fontWeight: 400,
+                        fontWeight: 600,
+                        fontSize: "0.85rem",
                         border: "1px solid transparent",
-                        textShadow: "0 1px 3px rgba(0,0,0,0.6)",
+                        textShadow: "0 1px 6px rgba(0,0,0,0.95), 0 2px 14px rgba(0,0,0,0.85), 0 4px 20px rgba(0,0,0,0.6)",
                       }
                 }
                 onMouseEnter={(e) => {
