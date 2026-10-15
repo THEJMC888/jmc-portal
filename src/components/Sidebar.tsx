@@ -133,38 +133,61 @@ export default function Sidebar() {
                 style={
                   isGroupActive
                     ? {
-                        background: "linear-gradient(135deg, rgba(0,180,240,0.12), rgba(0,80,180,0.07))",
-                        border: "1px solid rgba(0,210,255,0.32)",
-                        color: "#00d8ff",
+                        // Active — 3D embossed glass card, gold accent, no outer glow
+                        background: "linear-gradient(175deg, rgba(255,255,255,0.14) 0%, rgba(194,159,96,0.18) 20%, rgba(120,90,20,0.28) 55%, rgba(40,25,5,0.55) 100%)",
+                        borderTop: "1.5px solid rgba(255,255,255,0.38)",
+                        borderLeft: "1px solid rgba(255,255,255,0.20)",
+                        borderRight: "1px solid rgba(0,0,0,0.30)",
+                        borderBottom: "1.5px solid rgba(80,60,20,0.60)",
+                        boxShadow: [
+                          "inset 0 2px 0 rgba(255,255,255,0.22)",
+                          "inset 0 1px 0 rgba(255,220,140,0.18)",
+                          "inset 0 -3px 8px rgba(0,0,0,0.50)",
+                          "inset -1px 0 4px rgba(0,0,0,0.20)",
+                          "0 2px 0 rgba(0,0,0,0.85)",
+                          "0 4px 0 rgba(0,0,0,0.65)",
+                          "0 6px 0 rgba(0,0,0,0.40)",
+                          "0 8px 0 rgba(0,0,0,0.22)",
+                          "0 10px 20px rgba(0,0,0,0.55)",
+                          "0 0 0 1px rgba(0,0,0,0.5)",
+                        ].join(", "),
+                        color: "#E8C97A",
                         fontFamily: "Syne, system-ui, sans-serif",
                         fontWeight: 700,
                         fontSize: "0.85rem",
-                        boxShadow: "0 0 18px rgba(0,200,240,0.15), inset 0 0 14px rgba(0,140,220,0.06)",
-                        textShadow: "0 1px 8px rgba(0,0,0,0.9), 0 2px 16px rgba(0,0,0,0.7)",
+                        textShadow: "0 1px 4px rgba(0,0,0,0.95), 0 2px 10px rgba(0,0,0,0.80)",
                       }
                     : {
+                        // Inactive — barely-there ghost box, ~95% transparent
+                        background: "rgba(255,255,255,0.04)",
+                        borderTop: "1px solid rgba(255,255,255,0.10)",
+                        borderLeft: "1px solid rgba(255,255,255,0.06)",
+                        borderRight: "1px solid rgba(0,0,0,0.12)",
+                        borderBottom: "1px solid rgba(0,0,0,0.18)",
                         color: "rgba(222,211,200,0.92)",
                         fontFamily: "Syne, system-ui, sans-serif",
                         fontWeight: 600,
                         fontSize: "0.85rem",
-                        border: "1px solid transparent",
                         textShadow: "0 1px 6px rgba(0,0,0,0.95), 0 2px 14px rgba(0,0,0,0.85), 0 4px 20px rgba(0,0,0,0.6)",
                       }
                 }
                 onMouseEnter={(e) => {
                   if (!isGroupActive && !item.comingSoon) {
-                    (e.currentTarget as HTMLElement).style.color = "#DED3C8";
-                    (e.currentTarget as HTMLElement).style.background = "rgba(194,159,96,0.05)";
+                    (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.08)";
+                    (e.currentTarget as HTMLElement).style.borderTopColor = "rgba(255,255,255,0.16)";
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isGroupActive && !item.comingSoon) {
-                    (e.currentTarget as HTMLElement).style.color = "rgba(222,211,200,0.75)";
-                    (e.currentTarget as HTMLElement).style.background = "transparent";
+                    (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)";
+                    (e.currentTarget as HTMLElement).style.borderTopColor = "rgba(255,255,255,0.10)";
                   }
                 }}
               >
-                <Icon className="w-4 h-4 flex-shrink-0" />
+                <Icon
+                  className="w-4 h-4 flex-shrink-0"
+                  style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.95)) drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }}
+                />
                 <span className="flex-1">{item.label}</span>
                 {item.comingSoon && (
                   <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", fontSize: "0.55rem", color: "rgba(194,159,96,0.4)" }}>
