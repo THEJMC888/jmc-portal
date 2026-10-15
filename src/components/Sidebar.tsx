@@ -217,32 +217,66 @@ export default function Sidebar() {
                         <Link
                           key={child.href}
                           href={child.href}
-                          style={{
-                            display: "flex", alignItems: "center", gap: 8,
-                            padding: "7px 10px", borderRadius: 6,
-                            fontFamily: "Syne, system-ui, sans-serif",
-                            fontSize: "0.72rem",
-                            fontWeight: childActive ? 600 : 400,
-                            color: childActive ? "#C29F60" : "rgba(222,211,200,0.5)",
-                            background: childActive ? "rgba(194,159,96,0.08)" : "transparent",
-                            border: `1px solid ${childActive ? "rgba(194,159,96,0.15)" : "transparent"}`,
-                            textDecoration: "none",
-                            transition: "all 0.15s",
-                          }}
+                          style={
+                            childActive
+                              ? {
+                                  display: "flex", alignItems: "center", gap: 8,
+                                  padding: "7px 10px", borderRadius: 6,
+                                  textDecoration: "none", transition: "all 0.15s",
+                                  background: "linear-gradient(175deg, rgba(255,255,255,0.12) 0%, rgba(194,159,96,0.16) 20%, rgba(120,90,20,0.24) 55%, rgba(40,25,5,0.50) 100%)",
+                                  borderTop: "1.5px solid rgba(255,255,255,0.32)",
+                                  borderLeft: "1px solid rgba(255,255,255,0.16)",
+                                  borderRight: "1px solid rgba(0,0,0,0.28)",
+                                  borderBottom: "1.5px solid rgba(80,60,20,0.55)",
+                                  boxShadow: [
+                                    "inset 0 2px 0 rgba(255,255,255,0.18)",
+                                    "inset 0 -3px 6px rgba(0,0,0,0.45)",
+                                    "0 2px 0 rgba(0,0,0,0.80)",
+                                    "0 4px 0 rgba(0,0,0,0.55)",
+                                    "0 6px 12px rgba(0,0,0,0.45)",
+                                    "0 0 0 1px rgba(0,0,0,0.45)",
+                                  ].join(", "),
+                                  color: "#E8C97A",
+                                  fontFamily: "Syne, system-ui, sans-serif",
+                                  fontWeight: 700,
+                                  fontSize: "0.75rem",
+                                  textShadow: "0 1px 4px rgba(0,0,0,0.95), 0 2px 10px rgba(0,0,0,0.80)",
+                                }
+                              : {
+                                  display: "flex", alignItems: "center", gap: 8,
+                                  padding: "7px 10px", borderRadius: 6,
+                                  textDecoration: "none", transition: "all 0.15s",
+                                  background: "rgba(255,255,255,0.04)",
+                                  borderTop: "1px solid rgba(255,255,255,0.10)",
+                                  borderLeft: "1px solid rgba(255,255,255,0.06)",
+                                  borderRight: "1px solid rgba(0,0,0,0.12)",
+                                  borderBottom: "1px solid rgba(0,0,0,0.18)",
+                                  color: "rgba(222,211,200,0.92)",
+                                  fontFamily: "Syne, system-ui, sans-serif",
+                                  fontWeight: 600,
+                                  fontSize: "0.75rem",
+                                  textShadow: "0 1px 6px rgba(0,0,0,0.95), 0 2px 14px rgba(0,0,0,0.85), 0 4px 20px rgba(0,0,0,0.6)",
+                                }
+                          }
                           onMouseEnter={(e) => {
                             if (!childActive) {
-                              (e.currentTarget as HTMLElement).style.color = "#DED3C8";
-                              (e.currentTarget as HTMLElement).style.background = "rgba(194,159,96,0.04)";
+                              (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.08)";
+                              (e.currentTarget as HTMLElement).style.borderTopColor = "rgba(255,255,255,0.16)";
                             }
                           }}
                           onMouseLeave={(e) => {
                             if (!childActive) {
-                              (e.currentTarget as HTMLElement).style.color = "rgba(222,211,200,0.5)";
-                              (e.currentTarget as HTMLElement).style.background = "transparent";
+                              (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)";
+                              (e.currentTarget as HTMLElement).style.borderTopColor = "rgba(255,255,255,0.10)";
                             }
                           }}
                         >
-                          <ChildIcon style={{ width: 12, height: 12, flexShrink: 0 }} />
+                          <ChildIcon
+                            style={{
+                              width: 12, height: 12, flexShrink: 0,
+                              filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.95)) drop-shadow(0 2px 6px rgba(0,0,0,0.8))",
+                            }}
+                          />
                           {child.label}
                         </Link>
                       );
