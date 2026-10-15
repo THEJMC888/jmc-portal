@@ -9,6 +9,7 @@ import {
   Type, Layers, Music, BookOpen, FolderOpen, LayoutTemplate, Copy,
 } from "lucide-react";
 import type { VisionVideo, VisionSlide, SlideElement, SlideBackground } from "@/types";
+import { PORTAL_PHOTO_BUCKETS, BUCKET_LABELS, type PortalPhotoBucket } from "@/lib/portalPhotos";
 
 // ── Storage keys (match desktop editor) ──────────────────────────────────────
 const VISIONS_LIST_KEY  = "jmc_visions_list";
@@ -21,21 +22,7 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 const VW = 1600;
 const VH = 900;
 
-// ── JMC Photo Library (matches desktop) ─────────────────────────────────────
-const JMC_PHOTOS = [
-  { id: "jmc1",  url: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80", label: "Summit" },
-  { id: "jmc2",  url: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80", label: "Valley" },
-  { id: "jmc3",  url: "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&q=80", label: "Starfield" },
-  { id: "jmc4",  url: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800&q=80", label: "City" },
-  { id: "jmc5",  url: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=800&q=80", label: "Ocean" },
-  { id: "jmc6",  url: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=800&q=80", label: "Forest" },
-  { id: "jmc7",  url: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80", label: "Peaks" },
-  { id: "jmc8",  url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80", label: "Towers" },
-  { id: "jmc9",  url: "https://images.unsplash.com/photo-1497436072909-60f360e1d4b1?w=800&q=80", label: "Alpine" },
-  { id: "jmc10", url: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&q=80", label: "Tropical" },
-  { id: "jmc11", url: "https://images.unsplash.com/photo-1476611338391-6f395a0ebc7b?w=800&q=80", label: "Dusk" },
-  { id: "jmc12", url: "https://images.unsplash.com/photo-1541963463532-d68292c34b19?w=800&q=80", label: "Journey" },
-];
+// JMC Photo Library — all 300 portal photos from the shared library
 
 // ── Statement categories ──────────────────────────────────────────────────────
 const STATEMENT_CATS = [
@@ -251,6 +238,7 @@ export default function MobileVisionEditor() {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
   const [photoLibTab, setPhotoLibTab] = useState<"jmc" | "personal">("jmc");
+  const [jmcBucket, setJmcBucket] = useState<PortalPhotoBucket>("morning");
 
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
@@ -1194,36 +1182,58 @@ export default function MobileVisionEditor() {
             <div style={{ fontFamily: "Lora, serif", fontStyle: "italic", fontSize: 12, color: "rgba(222,211,200,0.6)", marginBottom: 14 }}>
               Tap a photo to use it as the background for the current slide.
             </div>
-            <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+            <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
               {(["jmc", "personal"] as const).map((t) => (
                 <button key={t} onClick={() => setPhotoLibTab(t)} style={{
-                  padding: "6px 16px", borderRadius: 20, border: "none", cursor: "pointer",
+                  padding: "6px 14px", borderRadius: 20, border: "none", cursor: "pointer",
                   fontFamily: "Syne, sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
                   background: photoLibTab === t ? "#C29F60" : "rgba(194,159,96,0.12)",
                   color: photoLibTab === t ? "#08254D" : "rgba(222,211,200,0.9)",
                 }}>
-                  {t === "jmc" ? "JMC Library" : "Upload"}
+                  {t === "jmc" ? "Portal (300)" : "Upload"}
                 </button>
               ))}
             </div>
 
+            {/* Bucket tabs */}
             {photoLibTab === "jmc" && (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-                {JMC_PHOTOS.map((p) => (
-                  <button key={p.id} onClick={() => applyJmcPhoto(p.url)} style={{
+              <div style={{ display: "flex", gap: 5, marginBottom: 12, overflowX: "auto" }}>
+                {(Object.keys(PORTAL_PHOTO_BUCKETS) as PortalPhotoBucket[]).map((b) => (
+                  <button key={b} onClick={() => setJmcBucket(b)} style={{
+                    flexShrink: 0, padding: "5px 12px", borderRadius: 16, cursor: "pointer",
+                    fontFamily: "Syne, sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+                    background: jmcBucket === b ? "rgba(194,159,96,0.22)" : "rgba(255,255,255,0.04)",
+                    color: jmcBucket === b ? "#C29F60" : "rgba(222,211,200,0.6)",
+                    border: jmcBucket === b ? "1px solid rgba(194,159,96,0.4)" : "1px solid rgba(255,255,255,0.06)",
+                  } as React.CSSProperties}>
+                    {BUCKET_LABELS[b]}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {photoLibTab === "jmc" && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 7 }}>
+                {PORTAL_PHOTO_BUCKETS[jmcBucket].map((url, i) => (
+                  <button key={i} onClick={() => applyJmcPhoto(`${url}?auto=format&fit=crop&w=1920&q=80`)} style={{
                     padding: 0, border: "2px solid rgba(194,159,96,0.25)", borderRadius: 8,
                     overflow: "hidden", cursor: "pointer", background: "none", aspectRatio: "16/9",
                     position: "relative",
                   }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={p.url} alt={p.label} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    <img
+                      src={`${url}?auto=format&fit=crop&w=300&q=65`}
+                      alt=""
+                      loading="lazy"
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    />
                     <div style={{
                       position: "absolute", bottom: 0, left: 0, right: 0,
-                      background: "rgba(0,0,0,0.55)", padding: "3px 5px",
-                      fontFamily: "Syne, sans-serif", fontSize: 8, color: "rgba(222,211,200,0.9)",
-                      fontWeight: 600, letterSpacing: "0.08em",
+                      background: "rgba(0,0,0,0.5)", padding: "2px 4px",
+                      fontFamily: "Syne, sans-serif", fontSize: 7, color: "rgba(222,211,200,0.85)",
+                      fontWeight: 600, letterSpacing: "0.06em",
                     }}>
-                      {p.label}
+                      {i + 1}
                     </div>
                   </button>
                 ))}

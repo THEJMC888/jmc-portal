@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import type { VisionVideo, VisionSlide, SlideElement, SlideBackground } from "@/types";
 import MobileVisionEditor from "@/components/MobileVisionEditor";
+import { PORTAL_PHOTO_BUCKETS, BUCKET_LABELS, type PortalPhotoBucket } from "@/lib/portalPhotos";
 
 // ─── Virtual canvas ────────────────────────────────────────────────────────
 const VW = 1600;
@@ -71,20 +72,15 @@ const PHOTO_LIB_KEY = "jmc_photo_library";
 
 interface LibPhoto { id: string; dataUrl: string; name: string; addedAt: number; }
 
-const JMC_PHOTOS = [
-  { id: "jmc1", url: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4", label: "Summit" },
-  { id: "jmc2", url: "https://images.unsplash.com/photo-1469474968028-56623f02e42e", label: "Valley" },
-  { id: "jmc3", url: "https://images.unsplash.com/photo-1519681393784-d120267933ba", label: "Starfield" },
-  { id: "jmc4", url: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df", label: "City" },
-  { id: "jmc5", url: "https://images.unsplash.com/photo-1518837695005-2083093ee35b", label: "Ocean" },
-  { id: "jmc6", url: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429", label: "Forest" },
-  { id: "jmc7", url: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b", label: "Peaks" },
-  { id: "jmc8", url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab", label: "Towers" },
-  { id: "jmc9", url: "https://images.unsplash.com/photo-1497436072909-60f360e1d4b1", label: "Alpine" },
-  { id: "jmc10", url: "https://images.unsplash.com/photo-1559827260-dc66d52bef19", label: "Tropical" },
-  { id: "jmc11", url: "https://images.unsplash.com/photo-1476611338391-6f395a0ebc7b", label: "Dusk" },
-  { id: "jmc12", url: "https://images.unsplash.com/photo-1541963463532-d68292c34b19", label: "Journey" },
-];
+// Build typed photo objects from the shared portal photo library
+const JMC_PHOTOS = (Object.keys(PORTAL_PHOTO_BUCKETS) as PortalPhotoBucket[]).flatMap((bucket) =>
+  PORTAL_PHOTO_BUCKETS[bucket].map((url, i) => ({
+    id: `${bucket}_${i}`,
+    url,
+    label: `${BUCKET_LABELS[bucket]} ${i + 1}`,
+    bucket,
+  }))
+);
 
 // ─── Color presets ─────────────────────────────────────────────────────────
 const EL_COLORS = [
@@ -618,6 +614,7 @@ export default function VisionPage() {
   const [dragOverSlideId, setDragOverSlideId] = useState<string | null>(null);
   const [photoLibrary, setPhotoLibrary] = useState<LibPhoto[]>([]);
   const [photoLibTab, setPhotoLibTab] = useState<"jmc" | "personal">("jmc");
+  const [jmcBucket, setJmcBucket] = useState<PortalPhotoBucket>("morning");
   const [jmcLoadingId, setJmcLoadingId] = useState<string | null>(null);
 
   // ─── Refs ────────────────────────────────────────────────────────────────
@@ -2422,8 +2419,8 @@ export default function VisionPage() {
                 </label>
               </div>
 
-              {/* Tabs */}
-              <div style={{ display: "flex", gap: 3, marginBottom: 8 }}>
+              {/* Tabs — JMC / Personal */}
+              <div style={{ display: "flex", gap: 3, marginBottom: 6 }}>
                 {(["jmc", "personal"] as const).map((tab) => (
                   <button
                     key={tab}
@@ -2437,10 +2434,32 @@ export default function VisionPage() {
                       letterSpacing: "0.1em", textTransform: "uppercase",
                     }}
                   >
-                    {tab === "jmc" ? "JMC" : "Personal"}
+                    {tab === "jmc" ? "Portal (300)" : "Personal"}
                   </button>
                 ))}
               </div>
+
+              {/* Bucket tabs — only when JMC is active */}
+              {photoLibTab === "jmc" && (
+                <div style={{ display: "flex", gap: 2, marginBottom: 8, flexWrap: "wrap" }}>
+                  {(Object.keys(PORTAL_PHOTO_BUCKETS) as PortalPhotoBucket[]).map((b) => (
+                    <button
+                      key={b}
+                      onClick={() => setJmcBucket(b)}
+                      style={{
+                        padding: "3px 8px", borderRadius: 4, cursor: "pointer", fontSize: 8,
+                        fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700,
+                        letterSpacing: "0.08em", textTransform: "uppercase",
+                        background: jmcBucket === b ? "rgba(194,159,96,0.18)" : "transparent",
+                        border: `1px solid ${jmcBucket === b ? "rgba(194,159,96,0.35)" : "rgba(194,159,96,0.1)"}`,
+                        color: jmcBucket === b ? "#C29F60" : "rgba(222,211,200,0.35)",
+                      }}
+                    >
+                      {BUCKET_LABELS[b]} ({PORTAL_PHOTO_BUCKETS[b].length})
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {/* Personal upload hint */}
               {photoLibTab === "personal" && photoLibrary.length === 0 && (
@@ -2456,7 +2475,7 @@ export default function VisionPage() {
               {/* Photo grid */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                 {photoLibTab === "jmc"
-                  ? JMC_PHOTOS.map((p) => (
+                  ? JMC_PHOTOS.filter((p) => p.bucket === jmcBucket).map((p) => (
                     <div key={p.id} style={{ display: "flex", flexDirection: "column", gap: 2, opacity: jmcLoadingId && jmcLoadingId !== p.id ? 0.5 : 1, transition: "opacity 0.2s" }}>
                       {/* Thumbnail — click sets as bg */}
                       <button
