@@ -55,10 +55,15 @@ export default function Sidebar() {
       {/* Ethereal nature photo background */}
       <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
         <PhotoSlideshow interval={60000} transitionMs={2500} />
-        {/* Dark gradient overlay — top lighter, bottom heavier for readability */}
+        {/* Light global tint — keeps photo prominent */}
         <div style={{
           position: "absolute", inset: 0,
-          background: "linear-gradient(180deg, rgba(2,5,18,0.45) 0%, rgba(2,6,22,0.55) 40%, rgba(1,4,16,0.68) 70%, rgba(1,3,12,0.80) 100%)",
+          background: "rgba(2,6,22,0.18)",
+        }} />
+        {/* Horizontal scrim — dense behind nav text on the left, fades to clear on the right */}
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "linear-gradient(to right, rgba(2,6,22,0.72) 0%, rgba(2,6,22,0.60) 45%, rgba(2,6,22,0.20) 75%, transparent 100%)",
         }} />
       </div>
 
