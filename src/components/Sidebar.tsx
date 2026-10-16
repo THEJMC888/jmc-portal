@@ -145,27 +145,18 @@ export default function Sidebar() {
                 style={
                   isGroupActive
                     ? {
-                        // Active — full gold gradient, dark navy text (matches gold pill buttons)
-                        background: "linear-gradient(180deg, #DEC272 0%, #C8A04C 20%, #A07A28 44%, #BE9642 66%, #D4B462 86%, #E0C878 100%)",
-                        borderTop: "1.5px solid rgba(240,220,170,0.55)",
-                        borderLeft: "1px solid rgba(240,220,170,0.30)",
-                        borderRight: "1px solid rgba(20,12,0,0.35)",
-                        borderBottom: "1.5px solid rgba(20,12,0,0.65)",
-                        boxShadow: [
-                          "inset 0 1px 0 rgba(240,220,170,0.45)",
-                          "inset 0 -2px 4px rgba(0,0,0,0.22)",
-                          "0 2px 0 rgba(20,12,0,0.85)",
-                          "0 4px 0 rgba(20,12,0,0.65)",
-                          "0 6px 0 rgba(20,12,0,0.40)",
-                          "0 8px 0 rgba(20,12,0,0.20)",
-                          "0 10px 20px rgba(0,0,0,0.60)",
-                          "0 4px 30px rgba(194,159,96,0.25)",
-                        ].join(", "),
-                        color: "#08203A",
+                        // Active — 95% transparent green tint, gold text
+                        background: "rgba(29,116,88,0.07)",
+                        borderTop: "1.5px solid rgba(29,116,88,0.32)",
+                        borderLeft: "1px solid rgba(29,116,88,0.16)",
+                        borderRight: "1px solid rgba(0,0,0,0.12)",
+                        borderBottom: "1px solid rgba(0,0,0,0.20)",
+                        boxShadow: "inset 0 1px 0 rgba(29,116,88,0.14), 0 2px 8px rgba(0,0,0,0.28)",
+                        color: "#E8C97A",
                         fontFamily: "Syne, system-ui, sans-serif",
                         fontWeight: 700,
                         fontSize: "0.85rem",
-                        textShadow: "0 1px 0 rgba(255,220,140,0.25)",
+                        textShadow: "0 1px 4px rgba(0,0,0,0.95), 0 2px 10px rgba(0,0,0,0.80)",
                       }
                     : {
                         // Inactive — 5% navy tint
@@ -196,7 +187,7 @@ export default function Sidebar() {
               >
                 <Icon
                   className="w-4 h-4 flex-shrink-0"
-                  style={{ filter: isGroupActive ? "none" : "drop-shadow(0 1px 3px rgba(0,0,0,0.95)) drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }}
+                  style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.95)) drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }}
                 />
                 <span className="flex-1">{item.label}</span>
                 {item.comingSoon && (
@@ -236,24 +227,17 @@ export default function Sidebar() {
                                   display: "flex", alignItems: "center", gap: 8,
                                   padding: "9px 12px", borderRadius: 6,
                                   textDecoration: "none", transition: "all 0.15s",
-                                  background: "linear-gradient(180deg, #DEC272 0%, #C8A04C 20%, #A07A28 44%, #BE9642 66%, #D4B462 86%, #E0C878 100%)",
-                                  borderTop: "1.5px solid rgba(240,220,170,0.55)",
-                                  borderLeft: "1px solid rgba(240,220,170,0.30)",
-                                  borderRight: "1px solid rgba(20,12,0,0.35)",
-                                  borderBottom: "1.5px solid rgba(20,12,0,0.65)",
-                                  boxShadow: [
-                                    "inset 0 1px 0 rgba(240,220,170,0.45)",
-                                    "inset 0 -2px 4px rgba(0,0,0,0.22)",
-                                    "0 2px 0 rgba(20,12,0,0.85)",
-                                    "0 4px 0 rgba(20,12,0,0.65)",
-                                    "0 6px 12px rgba(0,0,0,0.45)",
-                                    "0 4px 20px rgba(194,159,96,0.2)",
-                                  ].join(", "),
-                                  color: "#08203A",
+                                  background: "rgba(29,116,88,0.07)",
+                                  borderTop: "1.5px solid rgba(29,116,88,0.28)",
+                                  borderLeft: "1px solid rgba(29,116,88,0.14)",
+                                  borderRight: "1px solid rgba(0,0,0,0.12)",
+                                  borderBottom: "1px solid rgba(0,0,0,0.18)",
+                                  boxShadow: "inset 0 1px 0 rgba(29,116,88,0.12), 0 2px 6px rgba(0,0,0,0.25)",
+                                  color: "#E8C97A",
                                   fontFamily: "Syne, system-ui, sans-serif",
                                   fontWeight: 700,
                                   fontSize: "0.82rem",
-                                  textShadow: "0 1px 0 rgba(255,220,140,0.25)",
+                                  textShadow: "0 1px 4px rgba(0,0,0,0.95), 0 2px 10px rgba(0,0,0,0.80)",
                                 }
                               : {
                                   display: "flex", alignItems: "center", gap: 8,
