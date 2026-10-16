@@ -226,36 +226,246 @@ const ghostBtn: React.CSSProperties = {
 
 // ─── Word of the Day ─────────────────────────────────────────────────────────
 const WORDS_OF_DAY = [
-  { word: "Sovereignty", definition: "Supreme authority over oneself — the recognition that you are the author of your own life.", prompt: "Where are you deferring your power to others? What would it look like to reclaim that authority today?" },
-  { word: "Presence", definition: "The quality of being fully engaged with what is happening right now, without reservation.", prompt: "What are you currently avoiding being present to? What becomes possible when you fully arrive in this moment?" },
-  { word: "Integrity", definition: "The state of being whole and undivided — aligning your words, actions, and values as one.", prompt: "Is there an area of your life where you are out of integrity? What would it take to restore it?" },
-  { word: "Abundance", definition: "A state of more than enough — a mindset that recognizes sufficiency as the foundation of generosity.", prompt: "Where do you already experience abundance that you tend to overlook? How does gratitude shift your perception?" },
-  { word: "Courage", definition: "The willingness to act in the presence of fear — not the absence of it, but movement through it.", prompt: "What courageous step have you been postponing? What is the cost of continuing to wait?" },
-  { word: "Discernment", definition: "The ability to judge and perceive clearly — choosing what is true and worthy from what merely appears so.", prompt: "Where in your life do you need greater discernment right now? What has clouded your judgment?" },
-  { word: "Resilience", definition: "The capacity to recover and adapt in the face of adversity, uncertainty, or significant challenge.", prompt: "Reflect on a time you recovered from something difficult. What did that reveal about who you are?" },
-  { word: "Intention", definition: "A clear aim or purpose that precedes and shapes every action and decision you take.", prompt: "What is the deepest intention behind what you are building right now? Does your daily behavior reflect it?" },
-  { word: "Gratitude", definition: "The recognition and appreciation of what is good — a practice that reshapes how reality presents itself.", prompt: "List five things that are easy to overlook that you are genuinely grateful for. Sit with each one." },
-  { word: "Vulnerability", definition: "The willingness to be seen — to open yourself to uncertainty and emotional risk in service of connection.", prompt: "Where have you been hiding or performing? What would you say if you allowed yourself to be fully seen?" },
-  { word: "Legacy", definition: "The lasting impression you leave on people, places, and systems long after your direct involvement ends.", prompt: "If someone described your legacy today, what would they say? Is that the legacy you intend to leave?" },
-  { word: "Discipline", definition: "The consistent practice of doing what is required, even when motivation has departed.", prompt: "Where does your discipline serve you most? Where has its absence cost you? What needs restructuring?" },
-  { word: "Clarity", definition: "A state of precise understanding — knowing exactly what you want, why you want it, and what it will require.", prompt: "In which area of your life do you currently lack clarity? What would become possible if you found it?" },
-  { word: "Trust", definition: "A confident reliance on the character, ability, or truth of someone or something — including yourself.", prompt: "Do you trust yourself? Where has that trust been broken, and what would it take to rebuild it?" },
-  { word: "Accountability", definition: "Taking full ownership of your choices and their consequences — without blame, excuse, or deflection.", prompt: "Where have you been avoiding accountability? What happens when you own it completely?" },
-  { word: "Empathy", definition: "The capacity to understand and share the experience of another — the foundation of genuine connection.", prompt: "Who in your life needs to feel understood right now? What would it mean to truly listen?" },
-  { word: "Vision", definition: "A vivid mental image of a desired future — the north star that gives direction and meaning to daily effort.", prompt: "How alive is your vision right now? What would reconnecting to it fully change about how you are showing up?" },
-  { word: "Stillness", definition: "The practice of internal quietude — creating space within the noise to hear what is most essential.", prompt: "When did you last sit in true stillness? What arises when you stop moving long enough to hear yourself?" },
-  { word: "Authenticity", definition: "The quality of being genuinely and fully yourself — unmasked by performance, approval, or expectation.", prompt: "Where are you performing a version of yourself rather than inhabiting it? What would full authenticity cost — and offer?" },
-  { word: "Purpose", definition: "The animating reason beneath your existence — the deeper 'why' that makes suffering meaningful and effort sustainable.", prompt: "If you had one year left, what would you devote it to? What does that reveal about your true purpose?" },
-  { word: "Devotion", definition: "A sustained commitment to something larger than immediate comfort — the practice of consistent love in action.", prompt: "What are you devoted to in this season of your life? Is your devotion showing up in how you spend your time?" },
-  { word: "Mastery", definition: "The result of sustained, deliberate practice — the transformation of effort into effortless excellence over time.", prompt: "What craft or skill calls for deeper mastery from you? What would it look like to commit to it fully?" },
-  { word: "Surrender", definition: "The conscious release of what you cannot control — not weakness, but wisdom in the face of what is.", prompt: "What are you holding on to that is not yours to carry? What becomes available when you release it?" },
-  { word: "Wisdom", definition: "The synthesis of experience, reflection, and truth — knowing not only what to do but when and why.", prompt: "What is the wisest piece of counsel you carry right now? Are you applying it to your own life?" },
-  { word: "Humility", definition: "An accurate assessment of your own strengths and limitations — the foundation of continued growth.", prompt: "Where has pride or ego recently blocked your learning? What would humility open up right now?" },
-  { word: "Creation", definition: "The act of bringing something new into existence — the fundamental expression of human will and imagination.", prompt: "What are you currently in the process of creating? What is trying to be born through you right now?" },
-  { word: "Boundaries", definition: "Clearly communicated limits that honor your values, energy, and sense of self — acts of self-respect.", prompt: "Where do you need to establish or reinforce a boundary? What has it cost you not to?" },
-  { word: "Momentum", definition: "The forward energy created by consistent aligned action — the compound interest of showing up.", prompt: "Where does positive momentum exist in your life right now? How can you feed it rather than interrupt it?" },
-  { word: "Commitment", definition: "A binding resolution to a course of action — the decision made once so it doesn't have to be made again.", prompt: "What are you only half-committed to? What would full commitment look like — and what does it require?" },
-  { word: "Reverence", definition: "A deep respect and sense of wonder for what is sacred — the quality that transforms ordinary moments into meaningful ones.", prompt: "What in your life deserves more reverence than you are currently giving it? How might that shift how you inhabit it?" },
+  {
+    word: "Sovereignty",
+    definition: "Supreme authority over oneself — the recognition that you are the author of your own life.",
+    etymology: "From Latin superanus (above all) via Old French souverain. The root supra — 'over, above' — points not to dominion over others but to standing above reactive patterns, inherited conditioning, and unconscious programming.",
+    quantum: "Quantum systems remain in superposition — all possibilities at once — until an observer collapses the wave function into a single reality. Sovereignty is the act of becoming that observer: the one whose conscious attention determines which version of reality crystallises.",
+    metaphysical: "In esoteric tradition, sovereignty is the seat of the Higher Self — the I AM Presence that exists prior to all story, role, or circumstance. To claim sovereignty is to recognise that the soul is not subject to external creation; it is itself the creative intelligence choosing its experience.",
+    prompt: "Where are you deferring your power to others? What would it look like to reclaim that authority today?",
+  },
+  {
+    word: "Presence",
+    definition: "The quality of being fully engaged with what is happening right now, without reservation.",
+    etymology: "From Latin praesentia — prae (before) + esse (to be). To be present is literally to exist fully in the act of being. The word carries the sense of being 'before' what arises — prior to reaction, prior to story.",
+    quantum: "The quantum Zeno effect demonstrates that consistent observation stabilises a quantum system, preventing it from shifting states. Your conscious presence holds your reality in focus — attention is not passive; it is the force that shapes what persists.",
+    metaphysical: "The perennial tradition teaches that the Now is the only point of power — the singular location where creation actually occurs. Past and future are constructs of mind; all transformation, all healing, all true encounter happen only in the living present.",
+    prompt: "What are you currently avoiding being present to? What becomes possible when you fully arrive in this moment?",
+  },
+  {
+    word: "Integrity",
+    definition: "The state of being whole and undivided — aligning your words, actions, and values as one.",
+    etymology: "From Latin integritas — integer (untouched, whole). The same root gives us 'integrate' and 'integer.' Integrity literally means nothing has been removed, corrupted, or fragmented. You are the same person in every room.",
+    quantum: "Quantum coherence is the state in which a system's components vibrate in perfect phase alignment, producing amplified, measurable effects. A person in integrity operates coherently — their energy is not scattered across competing stories but unified and potent.",
+    metaphysical: "Ancient traditions describe the fragmented self as the source of all suffering. Integrity is the restoration of the inner temple — when thought, word, and deed are one, the soul becomes a clear channel through which higher intelligence can act in the world.",
+    prompt: "Is there an area of your life where you are out of integrity? What would it take to restore it?",
+  },
+  {
+    word: "Abundance",
+    definition: "A state of more than enough — a mindset that recognises sufficiency as the foundation of generosity.",
+    etymology: "From Latin abundantia — ab (from) + unda (wave). Abundance is the state of overflowing like a wave. The root image is water running over — not accumulated, but perpetually in motion and in excess.",
+    quantum: "The quantum field is not empty space — it is a sea of infinite potential energy, what physicists call the zero-point field. Abundance is the natural ground state of reality; scarcity is a contracted perception that filters out what was always available.",
+    metaphysical: "Universal law teaches that the universe operates from infinite supply — limitation exists only in consciousness. As above, so below: the inner experience of sufficiency opens the channels through which outer provision flows. Gratitude is the frequency of abundance.",
+    prompt: "Where do you already experience abundance that you tend to overlook? How does gratitude shift your perception?",
+  },
+  {
+    word: "Courage",
+    definition: "The willingness to act in the presence of fear — not its absence, but movement through it.",
+    etymology: "From Old French corage — coeur (heart). Courage is literally a heart-act, not a head-act. Medieval usage meant to speak what was in one's heart, even when dangerous. Bravery is physical; courage is moral — it is the heart's refusal to be silent.",
+    quantum: "In quantum tunnelling, particles pass through barriers that classical physics says are impassable — not around them, but through them. Courage is the human equivalent: the willingness to move directly through the wall of fear rather than waiting for it to disappear.",
+    metaphysical: "Spiritual traditions universally describe the heroic journey as a descent into what we fear most. Carl Jung called this the encounter with the shadow. Courage is the willingness to face what the ego would rather not see — and in facing it, to reclaim the energy trapped inside it.",
+    prompt: "What courageous step have you been postponing? What is the cost of continuing to wait?",
+  },
+  {
+    word: "Discernment",
+    definition: "The ability to judge and perceive clearly — choosing what is true and worthy from what merely appears so.",
+    etymology: "From Latin discernere — dis (apart) + cernere (to sift, separate). Discernment is the act of sifting apart what is genuine from what is counterfeit. The root cernere also gives us 'concern' and 'certain' — all words about the act of distinguishing.",
+    quantum: "Quantum measurement involves distinguishing between states — the act of observation itself defines which reality becomes actual. Discernment is the conscious version of this: your attention is a measuring instrument, and what you focus on, you amplify into reality.",
+    metaphysical: "In the Vedic tradition, viveka — discriminating wisdom — is considered the highest spiritual faculty. It is the capacity to distinguish the real from the unreal, the eternal from the transient. Without discernment, even spiritual experiences can become subtle traps.",
+    prompt: "Where in your life do you need greater discernment right now? What has clouded your judgment?",
+  },
+  {
+    word: "Resilience",
+    definition: "The capacity to recover and adapt in the face of adversity, uncertainty, or significant challenge.",
+    etymology: "From Latin resilire — re (back) + salire (to leap, jump). Resilience is the spring in a material that causes it to leap back to its original form after compression. The root image is not endurance but elasticity — returning, not merely withstanding.",
+    quantum: "Quantum systems naturally return to their ground state — their lowest-energy, most stable configuration — after being disturbed. Resilience in humans mirrors this: after disruption, the system seeks coherence. The ground state of human consciousness is peace.",
+    metaphysical: "The Tao Te Ching teaches that water, the softest substance, overcomes rock, the hardest — not by force but by persistence and adaptability. Resilience in the metaphysical sense is not about rigidity but about rootedness in something that cannot be disturbed: presence itself.",
+    prompt: "Reflect on a time you recovered from something difficult. What did that reveal about who you are?",
+  },
+  {
+    word: "Intention",
+    definition: "A clear aim or purpose that precedes and shapes every action and decision you take.",
+    etymology: "From Latin intentio — intendere (to stretch toward). Intention is a stretching of will toward a desired end. The same root gives us 'tense' and 'tension' — an intention is a state of directed inner tension that pulls future into the present.",
+    quantum: "Research in quantum biology and consciousness studies suggests that directed intention influences measurable physical systems — from random number generators to plant growth. Dr. Emoto's water crystal research and Radin's mind-matter studies point to intention as a physically real force.",
+    metaphysical: "Intention is the first act of creation in every mystical tradition. In the beginning was the Word — but before the Word came the will. Intention sets the vibrational signature of what follows; every structure in your life is the materialisation of a previous intention, whether conscious or not.",
+    prompt: "What is the deepest intention behind what you are building right now? Does your daily behaviour reflect it?",
+  },
+  {
+    word: "Gratitude",
+    definition: "The recognition and appreciation of what is good — a practice that reshapes how reality presents itself.",
+    etymology: "From Latin gratitudo — gratus (pleasing, thankful). The root gratus also gives us 'grace' and 'gratis.' Gratitude and grace share a common origin: both describe the experience of receiving something as gift rather than transaction.",
+    quantum: "HeartMath Institute research demonstrates that gratitude shifts heart rate variability into coherent patterns — measurable states of physiological order that enhance cognitive performance and immune function. Gratitude is not merely emotional; it is a biological and energetic state.",
+    metaphysical: "Mystics across traditions teach that gratitude is not a response to good fortune — it is the cause of it. When the soul genuinely appreciates what exists, it aligns with the creative force that produced it, and draws more of that force into expression. Gratitude is the posture of the open hand.",
+    prompt: "List five things that are easy to overlook that you are genuinely grateful for. Sit with each one.",
+  },
+  {
+    word: "Vulnerability",
+    definition: "The willingness to be seen — to open yourself to uncertainty and emotional risk in service of connection.",
+    etymology: "From Latin vulnerabilis — vulnus (wound). To be vulnerable is literally to be woundable — to have removed the armour that protects against hurt. The word does not imply weakness; it implies the courage to be open enough to be affected by life.",
+    quantum: "In quantum field theory, particles are not solid objects but open systems in constant exchange with their environment. True connection requires permeability — the willingness to be in genuine exchange rather than defended transaction. Isolation is energetically costly; openness is the natural state of energy.",
+    metaphysical: "Brené Brown's research aligns with ancient wisdom: vulnerability is not the opposite of strength but its birthplace. The wound (vulnus) is the very place where light enters. In Sufi poetry, the broken-open heart is described as the vessel most fit to receive divine love.",
+    prompt: "Where have you been hiding or performing? What would you say if you allowed yourself to be fully seen?",
+  },
+  {
+    word: "Legacy",
+    definition: "The lasting impression you leave on people, places, and systems long after your direct involvement ends.",
+    etymology: "From Latin legatum — legare (to send as ambassador, to bequeath). A legacy is what an ambassador leaves behind — not just property but a mission, a representation, a transmission of something entrusted to you that you now pass forward.",
+    quantum: "Quantum entanglement demonstrates that particles, once connected, remain correlated across any distance and time. A life lived with purpose creates entanglements — bonds of influence that persist beyond physical presence. You are already entangled with everyone you have genuinely touched.",
+    metaphysical: "Indigenous traditions speak of living for seven generations — considering how your choices ripple through those who have not yet arrived. Legacy in the metaphysical sense is not reputation but resonance: the quality of frequency you leave embedded in the people and places you moved through.",
+    prompt: "If someone described your legacy today, what would they say? Is that the legacy you intend to leave?",
+  },
+  {
+    word: "Discipline",
+    definition: "The consistent practice of doing what is required, even when motivation has departed.",
+    etymology: "From Latin disciplina — discere (to learn). The root of discipline is learning, not punishment. A disciple is one who submits to instruction — not because they are forced, but because they recognise the teacher's wisdom exceeds their own comfort.",
+    quantum: "Neuroplasticity research shows that repeated neural activation strengthens synaptic connections through long-term potentiation — the brain literally rewires toward what is consistently practised. Discipline at the quantum level is the process of collapsing probability into habit.",
+    metaphysical: "Every spiritual tradition offers a practice: a discipline that, followed faithfully, opens what casual effort cannot reach. The word 'ascesis' in Greek means training — the same word athletes used. Discipline is the agreement to submit to a process whose fruits you cannot yet taste, trusting the tradition that mapped the path.",
+    prompt: "Where does your discipline serve you most? Where has its absence cost you? What needs restructuring?",
+  },
+  {
+    word: "Clarity",
+    definition: "A state of precise understanding — knowing exactly what you want, why you want it, and what it will require.",
+    etymology: "From Latin claritas — clarus (clear, bright, renowned). Clarity is not merely the absence of fog but the presence of light. The root also gives us 'declare' — clarity compels articulation; when you truly see, you cannot remain silent about what you see.",
+    quantum: "Laser light differs from ordinary light in one way: it is coherent — all photons in phase, moving in the same direction. An ordinary bulb scatters; a laser cuts through steel. Clarity is the coherent state of intention — when scattered thoughts align into a single directed beam.",
+    metaphysical: "The mystic's path often begins not with answers but with the burning away of false certainties. Clarity in the deep sense is not knowing more — it is seeing through the constructs that obscure what was always present. It is the moment the lens is cleaned and the view sharpens to what is actually here.",
+    prompt: "In which area of your life do you currently lack clarity? What would become possible if you found it?",
+  },
+  {
+    word: "Trust",
+    definition: "A confident reliance on the character, ability, or truth of someone or something — including yourself.",
+    etymology: "From Old Norse traust — strength, confidence. Related to 'true' and 'tree' — both words rooted in the idea of something solid, upright, and enduring. Trust is an act of resting your weight on something believed to be structurally sound.",
+    quantum: "The quantum measurement problem reveals that a system without an observer remains in superposition — all states equally possible. Trust is the willingness to step into that uncertainty without needing to collapse every variable first. It is the act of participating in reality before the outcome is guaranteed.",
+    metaphysical: "Faith in all traditions is not belief in the absence of evidence — it is active trust in the intelligence behind the pattern. The mystic's 'dark night of the soul' is precisely the testing of trust when no outer evidence remains. Those who emerge describe trust not as a posture they maintained, but as the ground that held them.",
+    prompt: "Do you trust yourself? Where has that trust been broken, and what would it take to rebuild it?",
+  },
+  {
+    word: "Accountability",
+    definition: "Taking full ownership of your choices and their consequences — without blame, excuse, or deflection.",
+    etymology: "From Old French aconter — a (to) + conter (to count, recount). To be accountable is literally to give an account — to stand before an honest reckoning of what has occurred and own one's part in it. It is the willingness to be counted.",
+    quantum: "In quantum mechanics, there is no observer-independent reality — the observer is always implicated in the result. Accountability mirrors this: there is no outcome in your life in which you played no part. To recognise this is not guilt but power — what you co-created, you can co-recreate.",
+    metaphysical: "Karma is not punishment but the law of complete accounting — every cause produces its effect, and every effect can be traced to its cause. Accountability in the spiritual sense is not about self-judgment but about recognising your creative role in your experience, and exercising that role with greater wisdom.",
+    prompt: "Where have you been avoiding accountability? What happens when you own it completely?",
+  },
+  {
+    word: "Empathy",
+    definition: "The capacity to understand and share the experience of another — the foundation of genuine connection.",
+    etymology: "From Greek empatheia — en (in) + pathos (feeling, suffering). Empathy is literally being 'in the feeling' of another. The term was adopted in 1858 by German aestheticians — einfühlung, 'feeling-into' — to describe the experience of projecting oneself into a work of art.",
+    quantum: "Mirror neurons, discovered in the 1990s, fire both when an action is performed and when it is observed — the brain rehearses the experience of another as if it were its own. At a quantum level, entangled systems share state; empathy may be the biological expression of the deeper interconnection quantum physics describes.",
+    metaphysical: "The Vedantic concept of 'Tat Tvam Asi' — Thou Art That — holds that the perceived separation between self and other is the fundamental illusion. Empathy is a momentary dissolution of that illusion — a glimpse of the underlying unity in which another's joy and pain are recognised as not entirely other than your own.",
+    prompt: "Who in your life needs to feel understood right now? What would it mean to truly listen?",
+  },
+  {
+    word: "Vision",
+    definition: "A vivid mental image of a desired future — the north star that gives direction and meaning to daily effort.",
+    etymology: "From Latin visio — videre (to see). Vision shares its root with 'evident,' 'provide,' and 'prudent' — all words about seeing ahead or seeing clearly. A vision is not a wish but a seeing: the faculty of perceiving what has not yet materialised as though it already has.",
+    quantum: "Quantum mechanics demonstrates that the future is not fixed — it exists as a probability distribution that collapses toward particular outcomes based on present conditions. Vision is the act of intentionally conditioning the present — loading the probability field — toward a preferred future.",
+    metaphysical: "Prophets and visionaries in every tradition did not predict the future — they perceived it. In the Hermetic view, time is not linear but holographic; all moments exist simultaneously, and the gifted seer learns to access what is already complete at a higher octave of reality. Your vision is a memory of where you are going.",
+    prompt: "How alive is your vision right now? What would reconnecting to it fully change about how you are showing up?",
+  },
+  {
+    word: "Stillness",
+    definition: "The practice of internal quietude — creating space within the noise to hear what is most essential.",
+    etymology: "From Old English stille — fixed, motionless, calm. Related to the German Stille and the concept of being 'stilled' — not dead but arrested, like a body of water that has ceased its turbulence and become reflective. Stillness is motion's perfect completion.",
+    quantum: "Quantum systems at their ground state — their minimum energy — exhibit zero-point fluctuations: subtle, irreducible motion that underlies all apparent stillness. True stillness is not the absence of activity but attunement to the subtlest level of movement — the hum beneath the noise.",
+    metaphysical: "The Psalms say 'Be still and know that I AM God.' Stillness in the mystical sense is not the cessation of thought but the dropping beneath it — into the awareness that precedes thinking. In that pre-conceptual space, the practitioner encounters what cannot be reached by effort: the ground of being itself.",
+    prompt: "When did you last sit in true stillness? What arises when you stop moving long enough to hear yourself?",
+  },
+  {
+    word: "Authenticity",
+    definition: "The quality of being genuinely and fully yourself — unmasked by performance, approval, or expectation.",
+    etymology: "From Greek authentikos — authentes (one who acts on their own authority). The root autos means 'self' — authenticity is self-authored action, as opposed to action driven by the scripts of others. The authentic person is the original, not the copy.",
+    quantum: "In quantum information theory, no unknown quantum state can be perfectly copied — the 'no-cloning theorem.' You cannot be authentically replicated. Each consciousness is a unique configuration of the quantum field; authenticity is the act of expressing that unrepeatable signature rather than mimicking an existing one.",
+    metaphysical: "The Sufi concept of the 'nafs al-safiyya' — the purified soul — describes authenticity as what remains when the accumulated layers of conditioning, fear, and persona are dissolved. Beneath performance is a self that needs no approval because it knows its own origin. Authenticity is proximity to that inner ground.",
+    prompt: "Where are you performing a version of yourself rather than inhabiting it? What would full authenticity cost — and offer?",
+  },
+  {
+    word: "Purpose",
+    definition: "The animating reason beneath your existence — the deeper 'why' that makes suffering meaningful and effort sustainable.",
+    etymology: "From Old French porpos — por (forth) + poser (to place). Purpose is that which is placed-forth — the aim set before you. The word shares its root with 'propose' and 'depose': to purpose something is to set it before you as that toward which all other movement is organised.",
+    quantum: "Purpose functions like a strange attractor in chaos theory — a pattern that organises seemingly random events into a coherent trajectory. A life lived on purpose does not eliminate uncertainty; it gives every event, including difficulty, a context in which it becomes information rather than noise.",
+    metaphysical: "Viktor Frankl, writing from Auschwitz, observed that those who survived possessed a sense of meaning — a why that bore almost any how. In the Vedic tradition, dharma — one's sacred duty and soul-path — is not chosen but discovered: it is the specific shape of your soul's assignment in this incarnation.",
+    prompt: "If you had one year left, what would you devote it to? What does that reveal about your true purpose?",
+  },
+  {
+    word: "Devotion",
+    definition: "A sustained commitment to something larger than immediate comfort — the practice of consistent love in action.",
+    etymology: "From Latin devotio — devovere (to vow, consecrate). To be devoted is to have made a vow — to have set apart a portion of your life as sacred to something beyond the self. Roman soldiers devoted their lives to the emperor; mystics devoted them to the divine.",
+    quantum: "Sustained attention — a form of devotion — changes brain structure through neuroplasticity. What you consistently attend to expands; what you neglect contracts. Devotion is the sustained application of consciousness that literally reshapes the neural architecture through which you perceive and respond to reality.",
+    metaphysical: "Bhakti — the yoga of devotion — is considered by many Hindu teachers the most direct path to the divine. The devoted heart bypasses the intellectual obstacles that block the mind. Devotion is not sentiment but orientation: the entire instrument of the self pointed consistently toward what it loves most.",
+    prompt: "What are you devoted to in this season of your life? Is your devotion showing up in how you spend your time?",
+  },
+  {
+    word: "Mastery",
+    definition: "The result of sustained, deliberate practice — the transformation of effort into effortless excellence over time.",
+    etymology: "From Old French maistre — Latin magister (master, chief, teacher). Mastery is not possession of a skill but the condition of being its teacher — having so thoroughly absorbed something that you can transmit it. The master has made the external internal.",
+    quantum: "In quantum mechanics, a well-defined energy state is said to be an eigenstate — the most stable, self-consistent configuration a system can occupy. Mastery is the human eigenstate: the point at which skill and self are indistinguishable, and performance flows from identity rather than effort.",
+    metaphysical: "The Zen tradition speaks of beginner's mind — the paradox that the greatest masters are those who have returned to openness. Mastery does not close the door on mystery; it opens it. The master has not accumulated techniques but shed the resistance that prevented the skill from moving freely through them.",
+    prompt: "What craft or skill calls for deeper mastery from you? What would it look like to commit to it fully?",
+  },
+  {
+    word: "Surrender",
+    definition: "The conscious release of what you cannot control — not weakness, but wisdom in the face of what is.",
+    etymology: "From Old French surrendre — sur (over) + rendre (to give back, render). To surrender is to give back what was never truly yours to keep. The word implies not defeat but the recognition of a higher claim — returning what was held in trust.",
+    quantum: "The quantum concept of decoherence describes how systems entangled with their environment lose their isolated identity and become part of a larger whole. Surrender is the human experience of this: the release of the insistence on a separate, controlled self, and the discovery of what is possible in that expanded state.",
+    metaphysical: "Every mystical tradition identifies the ego's need for control as the primary obstacle to grace. The Sufi concept of fana — annihilation of the self — and the Christian 'thy will be done' both describe the same movement: the conscious release of the personal will into a larger intelligence. What is surrendered does not disappear — it is transfigured.",
+    prompt: "What are you holding on to that is not yours to carry? What becomes available when you release it?",
+  },
+  {
+    word: "Wisdom",
+    definition: "The synthesis of experience, reflection, and truth — knowing not only what to do but when and why.",
+    etymology: "From Old English wīsdōm — wīs (wise) + dōm (judgment, condition). Wisdom is not merely knowledge but the condition of being wise — a state of being, not just a possession. The root wīs connects to 'see' — wisdom is, at its core, the capacity to see clearly.",
+    quantum: "Classical information is data; quantum information includes the context and the observer. Wisdom is the quantum version of intelligence — it does not just process information but holds the relationship between the information, the context, and the consciousness receiving it. Wisdom is information in its full entangled state.",
+    metaphysical: "Sophia — divine wisdom — appears across Greek, Gnostic, Kabbalistic, and Christian mystical traditions as a feminine principle of the divine intelligence that underlies creation. Wisdom in the metaphysical sense is not acquired from outside but uncovered from within — it is the soul's original nature, recovered through experience.",
+    prompt: "What is the wisest piece of counsel you carry right now? Are you applying it to your own life?",
+  },
+  {
+    word: "Humility",
+    definition: "An accurate assessment of your own strengths and limitations — the foundation of continued growth.",
+    etymology: "From Latin humilitas — humus (earth, ground). Humility is groundedness — being of the earth, close to what is real and foundational. The root image is not self-deprecation but soil: the humble person is grounded, fertile, receptive. Things grow in humble soil.",
+    quantum: "The uncertainty principle teaches that the more precisely you know one property of a particle, the less you can know another. Knowledge always comes at the cost of certainty elsewhere. Humility is the experiential understanding of this: the more you genuinely know, the more you understand how much remains unknown.",
+    metaphysical: "Every spiritual tradition guards its deepest teaching behind humility — not as a gatekeeping device, but because the inflated ego cannot receive what is too subtle to be grasped. The Sufi teacher Rumi described the self as a flute only capable of music when it has been emptied. Humility is the emptying.",
+    prompt: "Where has pride or ego recently blocked your learning? What would humility open up right now?",
+  },
+  {
+    word: "Creation",
+    definition: "The act of bringing something new into existence — the fundamental expression of human will and imagination.",
+    etymology: "From Latin creatio — creare (to make, produce). The root connects to 'crescere' (to grow) — creation is not manufacture from nothing but the cultivation of what is latent into what is actual. The creator is the one who causes potential to grow into form.",
+    quantum: "Quantum field theory describes a vacuum that is not empty but seething with virtual particles — all possible forms in constant potential. Creation, in the quantum sense, is the collapse of possibility into actuality. Every creative act is a localised version of the same process by which the universe perpetually brings itself into being.",
+    metaphysical: "In nearly every creation cosmology, the world emerges from a divine creative act — the Word, the sound, the light. Humans, made in that image, carry the same creative capacity at a smaller scale. The Hermetic axiom 'as above, so below' applies most powerfully here: you are a universe creating itself from the inside out.",
+    prompt: "What are you currently in the process of creating? What is trying to be born through you right now?",
+  },
+  {
+    word: "Boundaries",
+    definition: "Clearly communicated limits that honour your values, energy, and sense of self — acts of self-respect.",
+    etymology: "From Old French bounde — Medieval Latin bodina (landmark, boundary marker). A boundary is literally a marker — a stone placed in the earth to indicate where one domain ends and another begins. It is not a wall but a declaration: this is mine; this is yours.",
+    quantum: "Phase boundaries in physics are the zones where one state of matter transitions to another — where liquid becomes gas, or solid becomes liquid. These boundaries are not walls but zones of transformation. Human boundaries similarly define not merely limits but the conditions under which transformation is possible.",
+    metaphysical: "The sacred in many traditions is always bounded — a sanctuary has walls, a ritual has a circle, a temple has a threshold. Boundaries create the container within which something precious can be held and developed. Without a container, energy dissipates. A life without boundaries is like a river without banks — not freer, but formless.",
+    prompt: "Where do you need to establish or reinforce a boundary? What has it cost you not to?",
+  },
+  {
+    word: "Momentum",
+    definition: "The forward energy created by consistent aligned action — the compound interest of showing up.",
+    etymology: "From Latin momentum — movere (to move). Momentum is the measure of motion — specifically, the quality of motion that resists being stopped. The same root gives us 'moment' — the smallest unit of time that still contains movement.",
+    quantum: "In quantum mechanics, the momentum of a particle is related to its wave's frequency — higher momentum means shorter wavelength and more precise location. Momentum in a human life produces clarity: the more consistently you move in a direction, the more precisely your location in that field becomes defined.",
+    metaphysical: "Newton's first law — an object in motion tends to remain in motion — applies as much to consciousness as to physics. Every spiritual tradition recognises the importance of maintaining the current of practice, devotion, or effort. The hardest moment is the first; once momentum is established, the path carries you forward as much as you carry it.",
+    prompt: "Where does positive momentum exist in your life right now? How can you feed it rather than interrupt it?",
+  },
+  {
+    word: "Commitment",
+    definition: "A binding resolution to a course of action — the decision made once so it doesn't have to be made again.",
+    etymology: "From Latin committere — com (together) + mittere (to send). Commitment is sending yourself forward together with something — a pledge, a person, a direction. To commit is to put yourself in motion toward something and bind the journey.",
+    quantum: "In quantum mechanics, measurement collapses the probability wave into a single actuality — the infinite becomes particular. Commitment is the human act of conscious collapse: choosing one path from among all possible paths, and concentrating all available energy there. Indecision is perpetual superposition; commitment is the act of becoming real.",
+    metaphysical: "The universe is said to conspire on behalf of commitment — Goethe wrote that the moment one definitely commits, providence moves too. This is not superstition but the recognition that full commitment restructures attention, energy, and relational field in ways that produce radically different conditions than half-measures ever could.",
+    prompt: "What are you only half-committed to? What would full commitment look like — and what does it require?",
+  },
+  {
+    word: "Reverence",
+    definition: "A deep respect and sense of wonder for what is sacred — the quality that transforms ordinary moments into meaningful ones.",
+    etymology: "From Latin revereri — re (intensifier) + vereri (to feel awe, to respect). Reverence is intensified awe — the experience of being in the presence of something whose value exceeds your capacity to fully comprehend it. The root connects to 'aware' and 'wary': reverence is a form of heightened, careful attention.",
+    quantum: "The wave function in quantum mechanics contains all possibilities simultaneously — a magnitude of potential that cannot be directly observed without being changed by observation. Reverence is the posture of approaching such magnitude: standing before what is larger than your frameworks, willing to be changed by the encounter.",
+    metaphysical: "Rudolf Steiner described reverence as the first step of esoteric training: before any knowledge can be received, the soul must cultivate the capacity to be in the presence of the sacred without grasping or reducing it. Reverence is not passive awe but active receptivity — the open hand extended toward what cannot be demanded, only received.",
+    prompt: "What in your life deserves more reverence than you are currently giving it? How might that shift how you inhabit it?",
+  },
 ];
 
 function getWordOfDay() {
@@ -264,79 +474,133 @@ function getWordOfDay() {
   return WORDS_OF_DAY[seed % WORDS_OF_DAY.length];
 }
 
-function WordOfDayCard({ compact = false }: { compact?: boolean }) {
-  const word = getWordOfDay();
+const PERSPECTIVE_LABELS = [
+  { key: "etymology" as const, label: "Etymology", color: "rgba(194,159,96,0.7)" },
+  { key: "quantum" as const, label: "Quantum", color: "rgba(0,200,240,0.7)" },
+  { key: "metaphysical" as const, label: "Metaphysical", color: "rgba(180,140,255,0.7)" },
+];
 
-  if (compact) {
-    return (
-      <div
-        style={{
-          width: "100%", textAlign: "left", cursor: "pointer",
-          marginBottom: 4, padding: "10px 12px", borderRadius: 8,
-          background: "linear-gradient(135deg, rgba(0,200,240,0.07), rgba(0,100,180,0.05))",
-          borderTop: "1px solid rgba(0,200,240,0.2)",
-          borderLeft: "1px solid rgba(0,200,240,0.1)",
-          borderRight: "1px solid rgba(0,0,0,0.12)",
-          borderBottom: "1px solid rgba(0,0,0,0.25)",
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 2px 6px rgba(0,0,0,0.25)",
-        }}
-      >
-        <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(0,200,240,0.7)", marginBottom: 3 }}>
-          Word of the Day
-        </div>
-        <div style={{ fontFamily: "Lora, Georgia, serif", fontWeight: 600, fontSize: 14, color: "#DED3C8" }}>
-          {word.word}
-        </div>
-      </div>
-    );
-  }
+function WordOfDayCard({ sidebarMode = false }: { sidebarMode?: boolean }) {
+  const word = getWordOfDay();
+  const [open, setOpen] = useState(!sidebarMode);
+
+  const cardStyle: React.CSSProperties = sidebarMode
+    ? {
+        background: "linear-gradient(160deg, rgba(0,200,240,0.06) 0%, rgba(4,12,40,0.5) 100%)",
+        borderTop: "1px solid rgba(0,200,240,0.2)",
+        borderLeft: "1px solid rgba(0,200,240,0.1)",
+        borderRight: "1px solid rgba(0,0,0,0.15)",
+        borderBottom: "1px solid rgba(0,0,0,0.3)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 3px 10px rgba(0,0,0,0.35)",
+        borderRadius: 8,
+        marginBottom: 8,
+        overflow: "hidden",
+      }
+    : {
+        background: "linear-gradient(160deg, rgba(0,200,240,0.08) 0%, rgba(4,15,50,0.45) 50%, rgba(2,8,28,0.6) 100%)",
+        backdropFilter: "blur(24px) saturate(180%)",
+        WebkitBackdropFilter: "blur(24px) saturate(180%)",
+        borderTop: "1.5px solid rgba(0,200,240,0.3)",
+        borderLeft: "1px solid rgba(0,200,240,0.15)",
+        borderRight: "1px solid rgba(0,0,0,0.2)",
+        borderBottom: "1.5px solid rgba(0,0,0,0.45)",
+        boxShadow: [
+          "inset 0 2px 0 rgba(255,255,255,0.12)",
+          "inset 0 1px 0 rgba(0,200,240,0.15)",
+          "inset 0 -3px 10px rgba(0,0,0,0.4)",
+          "0 4px 0 rgba(0,0,0,0.7)", "0 8px 0 rgba(0,0,0,0.45)",
+          "0 12px 0 rgba(0,0,0,0.22)", "0 16px 0 rgba(0,0,0,0.1)",
+          "0 20px 32px rgba(0,0,0,0.6)",
+        ].join(", "),
+        borderRadius: 14,
+        marginBottom: 32,
+        overflow: "hidden",
+        position: "relative" as const,
+      };
 
   return (
-    <div style={{
-      background: "linear-gradient(160deg, rgba(0,200,240,0.08) 0%, rgba(4,15,50,0.45) 50%, rgba(2,8,28,0.6) 100%)",
-      backdropFilter: "blur(24px) saturate(180%)",
-      WebkitBackdropFilter: "blur(24px) saturate(180%)",
-      borderTop: "1.5px solid rgba(0,200,240,0.3)",
-      borderLeft: "1px solid rgba(0,200,240,0.15)",
-      borderRight: "1px solid rgba(0,0,0,0.2)",
-      borderBottom: "1.5px solid rgba(0,0,0,0.45)",
-      boxShadow: [
-        "inset 0 2px 0 rgba(255,255,255,0.12)",
-        "inset 0 1px 0 rgba(0,200,240,0.15)",
-        "inset 0 -3px 10px rgba(0,0,0,0.4)",
-        "0 4px 0 rgba(0,0,0,0.7)", "0 8px 0 rgba(0,0,0,0.45)",
-        "0 12px 0 rgba(0,0,0,0.22)", "0 16px 0 rgba(0,0,0,0.1)",
-        "0 20px 32px rgba(0,0,0,0.6)",
-      ].join(", "),
-      borderRadius: 14,
-      padding: "24px 28px",
-      marginBottom: 32,
-      position: "relative",
-      overflow: "hidden",
-    }}>
-      <div style={{ position: "absolute", top: 0, left: "10%", right: "10%", height: 1, background: "linear-gradient(to right, transparent, rgba(0,200,240,0.5), transparent)" }} />
-      <div style={{ position: "absolute", top: -50, right: -50, width: 140, height: 140, borderRadius: "50%", background: "radial-gradient(circle, rgba(0,200,240,0.06) 0%, transparent 70%)", pointerEvents: "none" }} />
+    <div style={cardStyle}>
+      {!sidebarMode && (
+        <div style={{ position: "absolute", top: 0, left: "10%", right: "10%", height: 1, background: "linear-gradient(to right, transparent, rgba(0,200,240,0.5), transparent)" }} />
+      )}
 
-      <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", color: "rgba(0,200,240,0.75)", marginBottom: 10 }}>
-        Word of the Day · {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric" })}
-      </div>
-
-      <div style={{ fontFamily: "Lora, Georgia, serif", fontWeight: 600, fontSize: 30, color: "#DED3C8", marginBottom: 10, lineHeight: 1.1, textShadow: "0 2px 16px rgba(0,0,0,0.5)" }}>
-        {word.word}
-      </div>
-
-      <p style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 13, color: "rgba(222,211,200,0.65)", lineHeight: 1.7, marginBottom: 16, paddingLeft: 12, borderLeft: "2px solid rgba(0,200,240,0.25)" }}>
-        {word.definition}
-      </p>
-
-      <div style={{ background: "rgba(0,0,0,0.25)", borderRadius: 8, padding: "14px 16px", borderTop: "1px solid rgba(0,200,240,0.12)", borderLeft: "1px solid rgba(0,200,240,0.08)", boxShadow: "inset 0 2px 8px rgba(0,0,0,0.35)" }}>
-        <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(0,200,240,0.55)", marginBottom: 6 }}>
-          Contemplation Prompt
+      {/* Always-visible header — word + toggle */}
+      <button
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          width: "100%", textAlign: "left", cursor: "pointer",
+          background: "none", border: "none",
+          padding: sidebarMode ? "10px 12px" : "24px 28px 16px",
+          display: "flex", alignItems: sidebarMode ? "center" : "flex-start",
+          justifyContent: "space-between", gap: 10,
+        }}
+      >
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(0,200,240,0.72)", marginBottom: sidebarMode ? 3 : 8 }}>
+            Word of the Day {!sidebarMode && `· ${new Date().toLocaleDateString("en-US", { month: "long", day: "numeric" })}`}
+          </div>
+          <div style={{ fontFamily: "Lora, Georgia, serif", fontWeight: 600, fontSize: sidebarMode ? 15 : 30, color: "#DED3C8", lineHeight: 1.1, textShadow: sidebarMode ? "none" : "0 2px 16px rgba(0,0,0,0.5)" }}>
+            {word.word}
+          </div>
         </div>
-        <p style={{ fontFamily: "Lora, Georgia, serif", fontSize: 13, color: "rgba(222,211,200,0.82)", lineHeight: 1.7, margin: 0 }}>
-          {word.prompt}
-        </p>
-      </div>
+        <div style={{
+          fontFamily: "Syne, system-ui, sans-serif", fontSize: 9, fontWeight: 700,
+          color: "rgba(0,200,240,0.5)", letterSpacing: "0.12em", flexShrink: 0,
+          marginTop: sidebarMode ? 0 : 8,
+        }}>
+          {open ? "▲ Hide" : "▼ Explore"}
+        </div>
+      </button>
+
+      {/* Collapsible body */}
+      {open && (
+        <div style={{ padding: sidebarMode ? "0 12px 12px" : "0 28px 24px" }}>
+          {/* Definition */}
+          <p style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: sidebarMode ? 11 : 13, color: "rgba(222,211,200,0.62)", lineHeight: 1.7, marginBottom: 16, paddingLeft: 10, borderLeft: "2px solid rgba(0,200,240,0.25)" }}>
+            {word.definition}
+          </p>
+
+          {/* Three perspectives */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+            {PERSPECTIVE_LABELS.map(({ key, label, color }) => (
+              <div key={key} style={{
+                background: "rgba(0,0,0,0.22)",
+                borderRadius: 8,
+                padding: sidebarMode ? "10px 12px" : "14px 16px",
+                borderTop: `1px solid ${color.replace("0.7", "0.15")}`,
+                borderLeft: `2px solid ${color.replace("0.7", "0.35")}`,
+                borderRight: "1px solid rgba(0,0,0,0.12)",
+                borderBottom: "1px solid rgba(0,0,0,0.28)",
+                boxShadow: "inset 0 2px 6px rgba(0,0,0,0.3)",
+              }}>
+                <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 7.5, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color, marginBottom: 5 }}>
+                  {label}
+                </div>
+                <p style={{ fontFamily: "Lora, Georgia, serif", fontSize: sidebarMode ? 11 : 12.5, color: "rgba(222,211,200,0.78)", lineHeight: 1.75, margin: 0 }}>
+                  {word[key]}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Contemplation prompt */}
+          <div style={{
+            background: "rgba(0,200,240,0.05)",
+            borderRadius: 7,
+            padding: sidebarMode ? "10px 12px" : "13px 15px",
+            borderTop: "1px solid rgba(0,200,240,0.12)",
+            borderLeft: "1px solid rgba(0,200,240,0.08)",
+            boxShadow: "inset 0 2px 6px rgba(0,0,0,0.25)",
+          }}>
+            <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 7.5, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(0,200,240,0.5)", marginBottom: 5 }}>
+              Contemplation Prompt
+            </div>
+            <p style={{ fontFamily: "Lora, Georgia, serif", fontSize: sidebarMode ? 11 : 13, color: "rgba(222,211,200,0.82)", lineHeight: 1.7, margin: 0 }}>
+              {word.prompt}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -890,7 +1154,7 @@ export default function JournalPage() {
           }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: "linear-gradient(to right, rgba(0,200,240,0.2), rgba(255,255,255,0.06), transparent)" }} />
 
-            <WordOfDayCard compact />
+            <WordOfDayCard sidebarMode />
 
             {list.length === 0 ? (
               <div style={{ padding: "32px 12px", textAlign: "center" }}>
