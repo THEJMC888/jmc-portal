@@ -480,9 +480,9 @@ const PERSPECTIVE_LABELS = [
   { key: "metaphysical" as const, label: "Metaphysical", color: "rgba(180,140,255,0.7)" },
 ];
 
-function WordOfDayCard({ sidebarMode = false }: { sidebarMode?: boolean }) {
+function WordOfDayCard({ sidebarMode = false, initialOpen }: { sidebarMode?: boolean; initialOpen?: boolean }) {
   const word = getWordOfDay();
-  const [open, setOpen] = useState(!sidebarMode);
+  const [open, setOpen] = useState(initialOpen ?? !sidebarMode);
 
   const cardStyle: React.CSSProperties = sidebarMode
     ? {
@@ -1221,6 +1221,9 @@ export default function JournalPage() {
         {/* Editor */}
         {(!isMobile || !showList) && (
           <main style={{ flex: 1, overflowY: "auto", padding: isMobile ? "20px 16px" : "36px 44px", maxWidth: isMobile ? "100%" : 860 }}>
+
+            {/* Word of the Day — collapsible, starts closed */}
+            <WordOfDayCard initialOpen={false} />
 
             {!entry ? (
               /* Empty state */

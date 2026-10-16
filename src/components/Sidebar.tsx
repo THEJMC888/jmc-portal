@@ -65,8 +65,8 @@ export default function Sidebar() {
         boxShadow: "inset -1px 0 0 rgba(255,255,255,0.06), 4px 0 40px rgba(0,0,0,0.6), 12px 0 80px rgba(0,0,0,0.4)",
       }}
     >
-      {/* Subtle nature photo texture over brand navy base */}
-      <div style={{ position: "absolute", inset: 0, zIndex: 0, opacity: 0.18 }}>
+      {/* Nature photo background — full opacity */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
         <PhotoSlideshow interval={60000} transitionMs={2500} />
       </div>
 
@@ -153,7 +153,7 @@ export default function Sidebar() {
                         borderRight: "1px solid rgba(0,0,0,0.25)",
                         borderBottom: "1px solid rgba(0,0,0,0.30)",
                         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 2px 8px rgba(0,0,0,0.35)",
-                        color: "#E8C97A",
+                        color: "#C29F60",
                         fontFamily: "Syne, system-ui, sans-serif",
                         fontWeight: 700,
                         fontSize: "0.85rem",
@@ -234,7 +234,7 @@ export default function Sidebar() {
                                   borderRight: "1px solid rgba(0,0,0,0.25)",
                                   borderBottom: "1px solid rgba(0,0,0,0.30)",
                                   boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 2px 8px rgba(0,0,0,0.35)",
-                                  color: "#E8C97A",
+                                  color: "#C29F60",
                                   fontFamily: "Syne, system-ui, sans-serif",
                                   fontWeight: 700,
                                   fontSize: "0.82rem",
