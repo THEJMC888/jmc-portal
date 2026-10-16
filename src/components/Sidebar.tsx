@@ -112,8 +112,8 @@ export default function Sidebar() {
               textTransform: "uppercase",
               letterSpacing: "0.18em",
               fontSize: "0.6rem",
-              color: "rgba(194,159,96,0.65)",
-              textShadow: "0 1px 3px rgba(0,0,0,0.6)",
+              color: "rgba(194,159,96,0.9)",
+              textShadow: "none",
             }}
           >
             Portal
