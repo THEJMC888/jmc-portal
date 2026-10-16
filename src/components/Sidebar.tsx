@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { LayoutDashboard, PlaySquare, Users, Sparkles, BookOpen, LogOut, ChevronRight, NotebookPen, Wind, Lock, Route } from "lucide-react";
+import { LayoutDashboard, PlaySquare, Users, Sparkles, BookOpen, LogOut, ChevronRight, NotebookPen, Wind, Lock, Route, Fingerprint } from "lucide-react";
 import { clsx } from "clsx";
 import BrandLogo from "./BrandLogo";
 import { supabase } from "@/lib/supabase";
@@ -30,6 +30,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   { label: "Journal", href: "/journal", icon: NotebookPen },
   { label: "My Journey", href: "/journey", icon: Route },
+  { label: "My Blueprint", href: "/blueprint", icon: Fingerprint },
   { label: "Meditations", href: "/meditations", icon: Wind },
   { label: "Community", href: "/community", icon: Users, comingSoon: true },
 ];
