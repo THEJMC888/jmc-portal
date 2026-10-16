@@ -975,31 +975,41 @@ export default function StatementsPage() {
           />
 
           {/* ── Skip / Unskip ── */}
-          <div style={{ marginTop: 24, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 14 }}>
+          <div style={{ marginTop: 28, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12 }}>
             {activeStatement.skipped ? (
               <>
                 <span style={{
                   fontFamily: "Syne, system-ui, sans-serif", fontSize: 9, fontWeight: 700,
                   letterSpacing: "0.18em", textTransform: "uppercase",
-                  color: "rgba(194,159,96,0.45)",
-                  padding: "3px 10px",
-                  borderRadius: 3,
-                  background: "rgba(194,159,96,0.06)",
-                  border: "1px solid rgba(194,159,96,0.15)",
+                  color: "rgba(194,159,96,0.5)",
+                  padding: "5px 12px", borderRadius: 5,
+                  background: "linear-gradient(180deg, rgba(194,159,96,0.1) 0%, rgba(194,159,96,0.04) 100%)",
+                  borderTop: "1px solid rgba(194,159,96,0.28)",
+                  borderLeft: "1px solid rgba(194,159,96,0.14)",
+                  borderRight: "1px solid rgba(0,0,0,0.12)",
+                  borderBottom: "1px solid rgba(0,0,0,0.22)",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 2px 6px rgba(0,0,0,0.2)",
                 }}>
                   Section Skipped
                 </span>
                 <button
                   onClick={handleUnskip}
                   style={{
-                    background: "none", border: "none", cursor: "pointer",
-                    fontFamily: "Syne, system-ui, sans-serif", fontSize: 10,
-                    color: "rgba(194,159,96,0.65)", letterSpacing: "0.07em",
-                    textDecoration: "underline", padding: 0,
-                    transition: "color 0.15s",
+                    display: "inline-flex", alignItems: "center",
+                    padding: "5px 14px", borderRadius: 5, cursor: "pointer",
+                    fontFamily: "Syne, system-ui, sans-serif", fontSize: 9, fontWeight: 700,
+                    letterSpacing: "0.14em", textTransform: "uppercase",
+                    color: "rgba(222,211,200,0.72)",
+                    background: "linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.02) 100%)",
+                    borderTop: "1px solid rgba(255,255,255,0.15)",
+                    borderLeft: "1px solid rgba(255,255,255,0.08)",
+                    borderRight: "1px solid rgba(0,0,0,0.14)",
+                    borderBottom: "1px solid rgba(0,0,0,0.28)",
+                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.3)",
+                    transition: "transform 0.12s, box-shadow 0.12s",
                   }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#C29F60"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(194,159,96,0.65)"; }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
                 >
                   Undo skip
                 </button>
@@ -1008,13 +1018,27 @@ export default function StatementsPage() {
               <button
                 onClick={handleSkip}
                 style={{
-                  background: "none", border: "none", cursor: "pointer",
-                  fontFamily: "Syne, system-ui, sans-serif", fontSize: 10,
-                  color: "rgba(222,211,200,0.28)", letterSpacing: "0.07em", padding: 0,
-                  transition: "color 0.15s",
+                  display: "inline-flex", alignItems: "center",
+                  padding: "5px 16px", borderRadius: 5, cursor: "pointer",
+                  fontFamily: "Syne, system-ui, sans-serif", fontSize: 9, fontWeight: 700,
+                  letterSpacing: "0.16em", textTransform: "uppercase",
+                  color: "rgba(222,211,200,0.55)",
+                  background: "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.015) 100%)",
+                  borderTop: "1px solid rgba(255,255,255,0.12)",
+                  borderLeft: "1px solid rgba(255,255,255,0.07)",
+                  borderRight: "1px solid rgba(0,0,0,0.14)",
+                  borderBottom: "1px solid rgba(0,0,0,0.28)",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.07), inset 0 -1px 0 rgba(0,0,0,0.1), 0 2px 0 rgba(0,0,0,0.5), 0 4px 8px rgba(0,0,0,0.25)",
+                  transition: "transform 0.12s, color 0.12s",
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(222,211,200,0.55)"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(222,211,200,0.28)"; }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
+                  (e.currentTarget as HTMLElement).style.color = "rgba(222,211,200,0.82)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
+                  (e.currentTarget as HTMLElement).style.color = "rgba(222,211,200,0.55)";
+                }}
               >
                 Skip this section →
               </button>
