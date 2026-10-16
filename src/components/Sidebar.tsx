@@ -170,12 +170,12 @@ export default function Sidebar() {
                         textShadow: "0 1px 4px rgba(0,0,0,0.95), 0 2px 10px rgba(0,0,0,0.80)",
                       }
                     : {
-                        // Inactive — barely-there ghost box, ~95% transparent
-                        background: "rgba(255,255,255,0.04)",
-                        borderTop: "1px solid rgba(255,255,255,0.10)",
-                        borderLeft: "1px solid rgba(255,255,255,0.06)",
-                        borderRight: "1px solid rgba(0,0,0,0.12)",
-                        borderBottom: "1px solid rgba(0,0,0,0.18)",
+                        // Inactive — 5% navy tint
+                        background: "rgba(2,12,30,0.05)",
+                        borderTop: "1px solid rgba(255,255,255,0.08)",
+                        borderLeft: "1px solid rgba(255,255,255,0.05)",
+                        borderRight: "1px solid rgba(0,0,0,0.10)",
+                        borderBottom: "1px solid rgba(0,0,0,0.15)",
                         color: "rgba(222,211,200,0.92)",
                         fontFamily: "Syne, system-ui, sans-serif",
                         fontWeight: 600,
@@ -185,14 +185,14 @@ export default function Sidebar() {
                 }
                 onMouseEnter={(e) => {
                   if (!isGroupActive && !item.comingSoon) {
-                    (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.08)";
-                    (e.currentTarget as HTMLElement).style.borderTopColor = "rgba(255,255,255,0.16)";
+                    (e.currentTarget as HTMLElement).style.background = "rgba(2,12,30,0.12)";
+                    (e.currentTarget as HTMLElement).style.borderTopColor = "rgba(255,255,255,0.12)";
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isGroupActive && !item.comingSoon) {
-                    (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)";
-                    (e.currentTarget as HTMLElement).style.borderTopColor = "rgba(255,255,255,0.10)";
+                    (e.currentTarget as HTMLElement).style.background = "rgba(2,12,30,0.05)";
+                    (e.currentTarget as HTMLElement).style.borderTopColor = "rgba(255,255,255,0.08)";
                   }
                 }}
               >
