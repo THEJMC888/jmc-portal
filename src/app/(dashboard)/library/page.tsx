@@ -40,13 +40,17 @@ const pillBase = {
 
 const pillInactive = {
   ...pillBase,
-  background: "linear-gradient(175deg, rgba(255,255,255,0.09) 0%, rgba(20,55,130,0.28) 20%, rgba(6,18,55,0.48) 50%, rgba(3,8,26,0.68) 100%)",
-  borderTop: "2px solid rgba(255,255,255,0.35)",
-  borderLeft: "1px solid rgba(255,255,255,0.18)",
-  borderRight: "1.5px solid rgba(194,159,96,0.15)",
-  borderBottom: "1.5px solid rgba(140,145,155,0.5)",
-  boxShadow: CARD_SHADOW,
-  color: "rgba(222,211,200,0.75)",
+  background: "linear-gradient(180deg, rgba(255,255,255,0.055) 0%, rgba(8,20,52,0.55) 60%, rgba(2,8,28,0.72) 100%)",
+  border: "1px solid rgba(255,255,255,0.09)",
+  borderBottom: "1px solid rgba(0,0,0,0.45)",
+  boxShadow: [
+    "inset 0 1px 0 rgba(255,255,255,0.07)",
+    "inset 0 -1px 0 rgba(0,0,0,0.2)",
+    "0 2px 4px rgba(0,0,0,0.45)",
+    "0 4px 10px rgba(0,0,0,0.25)",
+    "0 0 0 1px rgba(0,0,0,0.3)",
+  ].join(", "),
+  color: "rgba(222,211,200,0.72)",
 } as React.CSSProperties;
 
 const pillActive = {
