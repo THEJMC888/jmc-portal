@@ -145,13 +145,13 @@ export default function Sidebar() {
                 style={
                   isGroupActive
                     ? {
-                        // Active — 60% transparent green tint, gold text
-                        background: "rgba(29,116,88,0.40)",
-                        borderTop: "1.5px solid rgba(29,116,88,0.55)",
-                        borderLeft: "1px solid rgba(29,116,88,0.35)",
+                        // Active — frosted white glass lift, gold text
+                        background: "rgba(255,255,255,0.13)",
+                        borderTop: "1px solid rgba(255,255,255,0.22)",
+                        borderLeft: "1px solid rgba(255,255,255,0.14)",
                         borderRight: "1px solid rgba(0,0,0,0.18)",
-                        borderBottom: "1px solid rgba(0,0,0,0.28)",
-                        boxShadow: "inset 0 1px 0 rgba(29,116,88,0.30), 0 2px 10px rgba(0,0,0,0.35)",
+                        borderBottom: "1px solid rgba(0,0,0,0.22)",
+                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.18), 0 2px 8px rgba(0,0,0,0.28)",
                         color: "#E8C97A",
                         fontFamily: "Syne, system-ui, sans-serif",
                         fontWeight: 700,
@@ -227,12 +227,12 @@ export default function Sidebar() {
                                   display: "flex", alignItems: "center", gap: 8,
                                   padding: "9px 12px", borderRadius: 6,
                                   textDecoration: "none", transition: "all 0.15s",
-                                  background: "rgba(29,116,88,0.40)",
-                                  borderTop: "1.5px solid rgba(29,116,88,0.55)",
-                                  borderLeft: "1px solid rgba(29,116,88,0.35)",
+                                  background: "rgba(255,255,255,0.13)",
+                                  borderTop: "1px solid rgba(255,255,255,0.22)",
+                                  borderLeft: "1px solid rgba(255,255,255,0.14)",
                                   borderRight: "1px solid rgba(0,0,0,0.18)",
-                                  borderBottom: "1px solid rgba(0,0,0,0.28)",
-                                  boxShadow: "inset 0 1px 0 rgba(29,116,88,0.28), 0 2px 8px rgba(0,0,0,0.30)",
+                                  borderBottom: "1px solid rgba(0,0,0,0.22)",
+                                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.18), 0 2px 8px rgba(0,0,0,0.28)",
                                   color: "#E8C97A",
                                   fontFamily: "Syne, system-ui, sans-serif",
                                   fontWeight: 700,
