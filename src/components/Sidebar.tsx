@@ -57,15 +57,14 @@ export default function Sidebar() {
     <aside
       className="fixed top-0 left-0 h-full w-64 hidden md:flex flex-col z-40 overflow-hidden"
       style={{
-        backdropFilter: "blur(32px) saturate(200%)",
-        WebkitBackdropFilter: "blur(32px) saturate(200%)",
+        background: "#0d1f3c",
         borderTop: "none",
         borderRight: "1px solid rgba(255,255,255,0.1)",
         boxShadow: "inset -1px 0 0 rgba(255,255,255,0.06), 4px 0 40px rgba(0,0,0,0.6), 12px 0 80px rgba(0,0,0,0.4)",
       }}
     >
-      {/* Ethereal nature photo background */}
-      <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
+      {/* Subtle nature photo texture over brand navy base */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 0, opacity: 0.18 }}>
         <PhotoSlideshow interval={60000} transitionMs={2500} />
       </div>
 
