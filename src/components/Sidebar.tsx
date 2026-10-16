@@ -216,7 +216,7 @@ export default function Sidebar() {
 
               {/* Sub-items — shown when parent group is active */}
               {item.children && isGroupActive && (
-                <div style={{ marginTop: 2, marginBottom: 4, paddingLeft: 16 }}>
+                <div style={{ marginTop: 14, marginBottom: 6, paddingLeft: 16 }}>
                   <div style={{
                     borderLeft: "1px solid rgba(194,159,96,0.18)",
                     paddingLeft: 12,
