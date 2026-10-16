@@ -145,29 +145,27 @@ export default function Sidebar() {
                 style={
                   isGroupActive
                     ? {
-                        // Active — 3D embossed glass card, gold accent, no outer glow
-                        background: "linear-gradient(175deg, rgba(255,255,255,0.14) 0%, rgba(194,159,96,0.18) 20%, rgba(120,90,20,0.28) 55%, rgba(40,25,5,0.55) 100%)",
-                        borderTop: "1.5px solid rgba(255,255,255,0.38)",
-                        borderLeft: "1px solid rgba(255,255,255,0.20)",
-                        borderRight: "1px solid rgba(0,0,0,0.30)",
-                        borderBottom: "1.5px solid rgba(80,60,20,0.60)",
+                        // Active — full gold gradient, dark navy text (matches gold pill buttons)
+                        background: "linear-gradient(180deg, #DEC272 0%, #C8A04C 20%, #A07A28 44%, #BE9642 66%, #D4B462 86%, #E0C878 100%)",
+                        borderTop: "1.5px solid rgba(240,220,170,0.55)",
+                        borderLeft: "1px solid rgba(240,220,170,0.30)",
+                        borderRight: "1px solid rgba(20,12,0,0.35)",
+                        borderBottom: "1.5px solid rgba(20,12,0,0.65)",
                         boxShadow: [
-                          "inset 0 2px 0 rgba(255,255,255,0.22)",
-                          "inset 0 1px 0 rgba(255,220,140,0.18)",
-                          "inset 0 -3px 8px rgba(0,0,0,0.50)",
-                          "inset -1px 0 4px rgba(0,0,0,0.20)",
-                          "0 2px 0 rgba(0,0,0,0.85)",
-                          "0 4px 0 rgba(0,0,0,0.65)",
-                          "0 6px 0 rgba(0,0,0,0.40)",
-                          "0 8px 0 rgba(0,0,0,0.22)",
-                          "0 10px 20px rgba(0,0,0,0.55)",
-                          "0 0 0 1px rgba(0,0,0,0.5)",
+                          "inset 0 1px 0 rgba(240,220,170,0.45)",
+                          "inset 0 -2px 4px rgba(0,0,0,0.22)",
+                          "0 2px 0 rgba(20,12,0,0.85)",
+                          "0 4px 0 rgba(20,12,0,0.65)",
+                          "0 6px 0 rgba(20,12,0,0.40)",
+                          "0 8px 0 rgba(20,12,0,0.20)",
+                          "0 10px 20px rgba(0,0,0,0.60)",
+                          "0 4px 30px rgba(194,159,96,0.25)",
                         ].join(", "),
-                        color: "#E8C97A",
+                        color: "#08203A",
                         fontFamily: "Syne, system-ui, sans-serif",
                         fontWeight: 700,
                         fontSize: "0.85rem",
-                        textShadow: "0 1px 4px rgba(0,0,0,0.95), 0 2px 10px rgba(0,0,0,0.80)",
+                        textShadow: "0 1px 0 rgba(255,220,140,0.25)",
                       }
                     : {
                         // Inactive — 5% navy tint
@@ -198,7 +196,7 @@ export default function Sidebar() {
               >
                 <Icon
                   className="w-4 h-4 flex-shrink-0"
-                  style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.95)) drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }}
+                  style={{ filter: isGroupActive ? "none" : "drop-shadow(0 1px 3px rgba(0,0,0,0.95)) drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }}
                 />
                 <span className="flex-1">{item.label}</span>
                 {item.comingSoon && (
@@ -238,24 +236,24 @@ export default function Sidebar() {
                                   display: "flex", alignItems: "center", gap: 8,
                                   padding: "9px 12px", borderRadius: 6,
                                   textDecoration: "none", transition: "all 0.15s",
-                                  background: "linear-gradient(175deg, rgba(255,255,255,0.12) 0%, rgba(194,159,96,0.16) 20%, rgba(120,90,20,0.24) 55%, rgba(40,25,5,0.50) 100%)",
-                                  borderTop: "1.5px solid rgba(255,255,255,0.32)",
-                                  borderLeft: "1px solid rgba(255,255,255,0.16)",
-                                  borderRight: "1px solid rgba(0,0,0,0.28)",
-                                  borderBottom: "1.5px solid rgba(80,60,20,0.55)",
+                                  background: "linear-gradient(180deg, #DEC272 0%, #C8A04C 20%, #A07A28 44%, #BE9642 66%, #D4B462 86%, #E0C878 100%)",
+                                  borderTop: "1.5px solid rgba(240,220,170,0.55)",
+                                  borderLeft: "1px solid rgba(240,220,170,0.30)",
+                                  borderRight: "1px solid rgba(20,12,0,0.35)",
+                                  borderBottom: "1.5px solid rgba(20,12,0,0.65)",
                                   boxShadow: [
-                                    "inset 0 2px 0 rgba(255,255,255,0.18)",
-                                    "inset 0 -3px 6px rgba(0,0,0,0.45)",
-                                    "0 2px 0 rgba(0,0,0,0.80)",
-                                    "0 4px 0 rgba(0,0,0,0.55)",
+                                    "inset 0 1px 0 rgba(240,220,170,0.45)",
+                                    "inset 0 -2px 4px rgba(0,0,0,0.22)",
+                                    "0 2px 0 rgba(20,12,0,0.85)",
+                                    "0 4px 0 rgba(20,12,0,0.65)",
                                     "0 6px 12px rgba(0,0,0,0.45)",
-                                    "0 0 0 1px rgba(0,0,0,0.45)",
+                                    "0 4px 20px rgba(194,159,96,0.2)",
                                   ].join(", "),
-                                  color: "#E8C97A",
+                                  color: "#08203A",
                                   fontFamily: "Syne, system-ui, sans-serif",
                                   fontWeight: 700,
                                   fontSize: "0.82rem",
-                                  textShadow: "0 1px 4px rgba(0,0,0,0.95), 0 2px 10px rgba(0,0,0,0.80)",
+                                  textShadow: "0 1px 0 rgba(255,220,140,0.25)",
                                 }
                               : {
                                   display: "flex", alignItems: "center", gap: 8,
