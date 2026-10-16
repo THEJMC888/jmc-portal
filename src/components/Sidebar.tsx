@@ -39,6 +39,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [statementsReady, setStatementsReady] = useState(false);
+  const [showEditorPrompt, setShowEditorPrompt] = useState(false);
 
   useEffect(() => {
     try {
@@ -216,70 +217,93 @@ export default function Sidebar() {
                       const childActive = pathname === child.href || (child.href !== item.href && pathname.startsWith(child.href + "/"));
                       const isEditorLink = child.href === "/vision";
                       const locked = isEditorLink && !statementsReady;
-                      return (
-                        <Link
-                          key={child.href}
-                          href={locked ? "/statements" : child.href}
-                          title={locked ? "Complete My Statements first to unlock the Editor" : undefined}
-                          style={
-                            childActive
-                              ? {
-                                  display: "flex", alignItems: "center", gap: 8,
-                                  padding: "9px 12px", borderRadius: 6,
-                                  textDecoration: "none", transition: "all 0.15s",
-                                  background: "rgba(2,12,30,0.45)",
-                                  borderTop: "1px solid rgba(255,255,255,0.18)",
-                                  borderLeft: "1px solid rgba(255,255,255,0.10)",
-                                  borderRight: "1px solid rgba(0,0,0,0.25)",
-                                  borderBottom: "1px solid rgba(0,0,0,0.30)",
-                                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 2px 8px rgba(0,0,0,0.35)",
-                                  color: "#C29F60",
-                                  fontFamily: "Syne, system-ui, sans-serif",
-                                  fontWeight: 700,
-                                  fontSize: "0.82rem",
-                                  textShadow: "0 1px 4px rgba(0,0,0,0.95), 0 2px 10px rgba(0,0,0,0.80)",
-                                }
-                              : {
-                                  display: "flex", alignItems: "center", gap: 8,
-                                  padding: "9px 12px", borderRadius: 6,
-                                  textDecoration: "none", transition: "all 0.15s",
-                                  background: "rgba(2,12,30,0.05)",
-                                  borderTop: "1px solid rgba(255,255,255,0.07)",
-                                  borderLeft: "1px solid rgba(255,255,255,0.04)",
-                                  borderRight: "1px solid rgba(0,0,0,0.10)",
-                                  borderBottom: "1px solid rgba(0,0,0,0.14)",
-                                  color: locked ? "rgba(222,211,200,0.38)" : "rgba(222,211,200,0.88)",
-                                  fontFamily: "Syne, system-ui, sans-serif",
-                                  fontWeight: 600,
-                                  fontSize: "0.82rem",
-                                  textShadow: "0 1px 6px rgba(0,0,0,0.95), 0 2px 14px rgba(0,0,0,0.85), 0 4px 20px rgba(0,0,0,0.6)",
-                                }
-                          }
-                          onMouseEnter={(e) => {
-                            if (!childActive) {
+                      return locked ? (
+                          <button
+                            key={child.href}
+                            onClick={() => setShowEditorPrompt(true)}
+                            style={{
+                              width: "100%", textAlign: "left", cursor: "pointer",
+                              display: "flex", alignItems: "center", gap: 8,
+                              padding: "9px 12px", borderRadius: 6,
+                              transition: "all 0.15s",
+                              background: "rgba(2,12,30,0.05)",
+                              borderTop: "1px solid rgba(255,255,255,0.07)",
+                              borderLeft: "1px solid rgba(255,255,255,0.04)",
+                              borderRight: "1px solid rgba(0,0,0,0.10)",
+                              borderBottom: "1px solid rgba(0,0,0,0.14)",
+                              color: "rgba(222,211,200,0.38)",
+                              fontFamily: "Syne, system-ui, sans-serif",
+                              fontWeight: 600,
+                              fontSize: "0.82rem",
+                              textShadow: "0 1px 6px rgba(0,0,0,0.95), 0 2px 14px rgba(0,0,0,0.85), 0 4px 20px rgba(0,0,0,0.6)",
+                            }}
+                            onMouseEnter={(e) => {
                               (e.currentTarget as HTMLElement).style.background = "rgba(2,12,30,0.12)";
                               (e.currentTarget as HTMLElement).style.borderTopColor = "rgba(255,255,255,0.12)";
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!childActive) {
+                            }}
+                            onMouseLeave={(e) => {
                               (e.currentTarget as HTMLElement).style.background = "rgba(2,12,30,0.05)";
                               (e.currentTarget as HTMLElement).style.borderTopColor = "rgba(255,255,255,0.07)";
+                            }}
+                          >
+                            <Lock style={{ width: 12, height: 12, flexShrink: 0, filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.95))" }} />
+                            <span style={{ flex: 1 }}>{child.label}</span>
+                          </button>
+                        ) : (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            style={
+                              childActive
+                                ? {
+                                    display: "flex", alignItems: "center", gap: 8,
+                                    padding: "9px 12px", borderRadius: 6,
+                                    textDecoration: "none", transition: "all 0.15s",
+                                    background: "rgba(2,12,30,0.45)",
+                                    borderTop: "1px solid rgba(255,255,255,0.18)",
+                                    borderLeft: "1px solid rgba(255,255,255,0.10)",
+                                    borderRight: "1px solid rgba(0,0,0,0.25)",
+                                    borderBottom: "1px solid rgba(0,0,0,0.30)",
+                                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 2px 8px rgba(0,0,0,0.35)",
+                                    color: "#C29F60",
+                                    fontFamily: "Syne, system-ui, sans-serif",
+                                    fontWeight: 700,
+                                    fontSize: "0.82rem",
+                                    textShadow: "0 1px 4px rgba(0,0,0,0.95), 0 2px 10px rgba(0,0,0,0.80)",
+                                  }
+                                : {
+                                    display: "flex", alignItems: "center", gap: 8,
+                                    padding: "9px 12px", borderRadius: 6,
+                                    textDecoration: "none", transition: "all 0.15s",
+                                    background: "rgba(2,12,30,0.05)",
+                                    borderTop: "1px solid rgba(255,255,255,0.07)",
+                                    borderLeft: "1px solid rgba(255,255,255,0.04)",
+                                    borderRight: "1px solid rgba(0,0,0,0.10)",
+                                    borderBottom: "1px solid rgba(0,0,0,0.14)",
+                                    color: "rgba(222,211,200,0.88)",
+                                    fontFamily: "Syne, system-ui, sans-serif",
+                                    fontWeight: 600,
+                                    fontSize: "0.82rem",
+                                    textShadow: "0 1px 6px rgba(0,0,0,0.95), 0 2px 14px rgba(0,0,0,0.85), 0 4px 20px rgba(0,0,0,0.6)",
+                                  }
                             }
-                          }}
-                        >
-                          {locked
-                            ? <Lock style={{ width: 12, height: 12, flexShrink: 0, filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.95))" }} />
-                            : <ChildIcon style={{ width: 13, height: 13, flexShrink: 0, filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.95)) drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }} />
-                          }
-                          <span style={{ flex: 1 }}>{child.label}</span>
-                          {locked && (
-                            <span style={{ fontSize: "0.5rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(194,159,96,0.4)" }}>
-                              Start here →
-                            </span>
-                          )}
-                        </Link>
-                      );
+                            onMouseEnter={(e) => {
+                              if (!childActive) {
+                                (e.currentTarget as HTMLElement).style.background = "rgba(2,12,30,0.12)";
+                                (e.currentTarget as HTMLElement).style.borderTopColor = "rgba(255,255,255,0.12)";
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!childActive) {
+                                (e.currentTarget as HTMLElement).style.background = "rgba(2,12,30,0.05)";
+                                (e.currentTarget as HTMLElement).style.borderTopColor = "rgba(255,255,255,0.07)";
+                              }
+                            }}
+                          >
+                            <ChildIcon style={{ width: 13, height: 13, flexShrink: 0, filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.95)) drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }} />
+                            <span style={{ flex: 1 }}>{child.label}</span>
+                          </Link>
+                        );
                     })}
                   </div>
                 </div>
@@ -361,6 +385,97 @@ export default function Sidebar() {
       </div>
 
       </div>{/* end nav content wrapper */}
+
+      {/* Editor locked — prompt modal */}
+      {showEditorPrompt && (
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 200,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: "rgba(2,8,28,0.75)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+          }}
+          onClick={() => setShowEditorPrompt(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "linear-gradient(160deg, rgba(13,31,60,0.97) 0%, rgba(2,8,28,0.99) 100%)",
+              borderTop: "1.5px solid rgba(194,159,96,0.45)",
+              borderLeft: "1px solid rgba(194,159,96,0.2)",
+              borderRight: "1px solid rgba(0,0,0,0.4)",
+              borderBottom: "1.5px solid rgba(0,0,0,0.6)",
+              boxShadow: "0 8px 0 rgba(0,0,0,0.6), 0 16px 0 rgba(0,0,0,0.35), 0 32px 60px rgba(0,0,0,0.7)",
+              borderRadius: 18,
+              padding: "40px 44px",
+              maxWidth: 420,
+              width: "90%",
+              textAlign: "center",
+              position: "relative",
+            }}
+          >
+            {/* Close */}
+            <button
+              onClick={() => setShowEditorPrompt(false)}
+              style={{
+                position: "absolute", top: 16, right: 16,
+                background: "none", border: "none", cursor: "pointer",
+                color: "rgba(222,211,200,0.4)", fontSize: 18, lineHeight: 1,
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#DED3C8"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(222,211,200,0.4)"; }}
+            >
+              ✕
+            </button>
+
+            {/* Lock icon */}
+            <div style={{ marginBottom: 20 }}>
+              <Lock style={{ width: 32, height: 32, color: "rgba(194,159,96,0.6)" }} />
+            </div>
+
+            <h2 style={{
+              fontFamily: "Lora, Georgia, serif",
+              fontWeight: 600, fontSize: 22, color: "#DED3C8",
+              lineHeight: 1.2, marginBottom: 14,
+            }}>
+              Complete My Statements First
+            </h2>
+            <p style={{
+              fontFamily: "Lora, Georgia, serif",
+              fontStyle: "italic", fontSize: 13,
+              color: "rgba(222,211,200,0.65)", lineHeight: 1.75, marginBottom: 30,
+            }}>
+              The Vision Video Editor is built on the foundation of your personal statements — who you are being and what you are doing in each area of your life. Complete My Statements to unlock the editor.
+            </p>
+            <button
+              onClick={() => { setShowEditorPrompt(false); router.push("/statements"); }}
+              style={{
+                background: "linear-gradient(180deg, #DEC272 0%, #C8A04C 20%, #A07A28 44%, #BE9642 66%, #D4B462 86%, #E0C878 100%)",
+                border: "none",
+                color: "#08203A",
+                boxShadow: [
+                  "inset 0 1px 0 rgba(240,220,170,0.4)",
+                  "inset 0 -2px 4px rgba(0,0,0,0.25)",
+                  "0 2px 0 rgba(20,12,0,0.85)", "0 4px 0 rgba(20,12,0,0.5)",
+                  "0 6px 0 rgba(20,12,0,0.25)", "0 8px 16px rgba(0,0,0,0.5)",
+                ].join(", "),
+                cursor: "pointer",
+                borderRadius: 8,
+                padding: "11px 28px",
+                fontFamily: "Syne, system-ui, sans-serif",
+                fontWeight: 700, fontSize: 12,
+                letterSpacing: "0.1em", textTransform: "uppercase",
+                transition: "transform 0.1s ease",
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
+            >
+              Begin My Statements →
+            </button>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }
