@@ -90,13 +90,12 @@ export default function Sidebar() {
         </Link>
       </div>
 
-      {/* Branded glass panel — 5% dark scrim behind nav text only */}
+      {/* Nav panel — no background overlay, photo shows through fully */}
       <div style={{
         flex: 1,
         display: "flex",
         flexDirection: "column",
         minHeight: 0,
-        background: "rgba(2,6,22,0.05)",
       }}>
 
       {/* Portal label */}
