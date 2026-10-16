@@ -1179,11 +1179,19 @@ interface StatementFieldProps {
   accentColor: string;
 }
 
+const NEGATION_RE = /\b(not|no(?=\s|$)|never|nor(?=\s|$)|don'?t|won'?t|can'?t|isn'?t|aren'?t|wasn'?t|weren'?t|wouldn'?t|couldn'?t|shouldn'?t|haven'?t|hasn'?t|doesn'?t|didn'?t|without)\b/i;
+
+function detectNegation(text: string): string | null {
+  const m = text.match(NEGATION_RE);
+  return m ? m[0] : null;
+}
+
 function StatementField({ badge, badgeStyle, prompt, example, value, onChange, placeholder, accentColor }: StatementFieldProps) {
   const [showExample, setShowExample] = useState(false);
   const [focused, setFocused] = useState(false);
 
   const isBeing = badge === "Being";
+  const negationWord = detectNegation(value);
 
   return (
     <div>
@@ -1252,6 +1260,33 @@ function StatementField({ badge, badgeStyle, prompt, example, value, onChange, p
           transition: "box-shadow 0.25s, border-color 0.25s, background 0.25s",
         }}
       />
+
+      {/* Negation hint */}
+      {negationWord && (
+        <div style={{
+          marginTop: 10,
+          display: "flex", alignItems: "flex-start", gap: 10,
+          padding: "12px 16px",
+          borderRadius: 8,
+          background: "linear-gradient(160deg, rgba(245,158,11,0.08) 0%, rgba(245,158,11,0.03) 100%)",
+          borderTop: "1px solid rgba(245,158,11,0.35)",
+          borderLeft: "2px solid rgba(245,158,11,0.5)",
+          borderRight: "1px solid rgba(0,0,0,0.12)",
+          borderBottom: "1px solid rgba(0,0,0,0.2)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 0 16px rgba(245,158,11,0.06)",
+        }}>
+          <AlertTriangle size={13} color="rgba(245,158,11,0.8)" style={{ flexShrink: 0, marginTop: 1 }} />
+          <p style={{
+            fontFamily: "Lora, Georgia, serif", fontStyle: "italic",
+            fontSize: 12.5, color: "rgba(222,211,200,0.82)", lineHeight: 1.7, margin: 0,
+          }}>
+            <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontStyle: "normal", fontWeight: 700, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(245,158,11,0.85)", display: "block", marginBottom: 4 }}>
+              Affirmation Tip
+            </span>
+            I AM statements are most powerful in the positive. Rather than <em style={{ color: "rgba(245,158,11,0.9)" }}>&ldquo;{negationWord}&rdquo;</em>, try declaring what IS true — what you are, what you have, how you show up. Your subconscious moves toward what you affirm, not away from what you deny.
+          </p>
+        </div>
+      )}
 
       {/* See an example */}
       <button
