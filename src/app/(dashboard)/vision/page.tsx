@@ -614,7 +614,7 @@ export default function VisionPage() {
   const [dragOverSlideId, setDragOverSlideId] = useState<string | null>(null);
   const [photoLibrary, setPhotoLibrary] = useState<LibPhoto[]>([]);
   const [photoLibTab, setPhotoLibTab] = useState<"jmc" | "personal">("jmc");
-  const [jmcBucket, setJmcBucket] = useState<PortalPhotoBucket>("morning");
+  const [jmcBucket, setJmcBucket] = useState<PortalPhotoBucket | "all">("all");
   const [jmcLoadingId, setJmcLoadingId] = useState<string | null>(null);
   const [controlTab, setControlTab] = useState<"bg" | "style" | "music" | "photos">("bg");
 
@@ -1633,7 +1633,7 @@ export default function VisionPage() {
 
       {bgTab === "gradient" && (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
             {BG_GRADIENTS.map((g) => (
               <button
                 key={g.label}
@@ -2414,9 +2414,13 @@ export default function VisionPage() {
           {/* ── Control panel content (desktop only) ── */}
           {!isMobile && (
             <div style={{ flex: 1, overflowY: "auto", padding: "14px 18px 18px" }}>
-              {controlTab === "bg" && renderBgProps()}
+              {controlTab === "bg" && (
+                <div style={{ maxWidth: 520 }}>
+                  {renderBgProps()}
+                </div>
+              )}
               {controlTab === "style" && (
-                selEl ? renderElProps(selEl) : (
+                selEl ? <div style={{ maxWidth: 520 }}>{renderElProps(selEl)}</div> : (
                   <div style={{ textAlign: "center", padding: "40px 0", color: "rgba(222,211,200,0.25)", fontSize: 11, fontFamily: "Syne,system-ui,sans-serif", letterSpacing: "0.06em" }}>
                     Select an element on the canvas to edit its style
                   </div>
@@ -2459,17 +2463,24 @@ export default function VisionPage() {
                 {/* Bucket sub-tabs (JMC only) */}
                 {photoLibTab === "jmc" && (
                   <div style={{ display: "flex", gap: 2, marginBottom: 10 }}>
-                    {(Object.keys(PORTAL_PHOTO_BUCKETS) as PortalPhotoBucket[]).map((b) => (
-                      <button key={b} onClick={() => setJmcBucket(b)} style={{
+                    {([
+                      { id: "all" as const, label: "All", count: JMC_PHOTOS.length },
+                      ...(Object.keys(PORTAL_PHOTO_BUCKETS) as PortalPhotoBucket[]).map((b) => ({
+                        id: b as PortalPhotoBucket | "all",
+                        label: BUCKET_LABELS[b],
+                        count: PORTAL_PHOTO_BUCKETS[b].length,
+                      })),
+                    ]).map(({ id, label, count }) => (
+                      <button key={id} onClick={() => setJmcBucket(id)} style={{
                         padding: "3px 12px 4px", borderRadius: 0, cursor: "pointer", fontSize: 8,
                         fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700,
                         letterSpacing: "0.1em", textTransform: "uppercase",
                         background: "transparent", border: "none",
-                        borderBottom: jmcBucket === b ? "1px solid rgba(194,159,96,0.55)" : "1px solid transparent",
-                        color: jmcBucket === b ? "rgba(194,159,96,0.9)" : "rgba(222,211,200,0.28)",
+                        borderBottom: jmcBucket === id ? "1px solid rgba(194,159,96,0.55)" : "1px solid transparent",
+                        color: jmcBucket === id ? "rgba(194,159,96,0.9)" : "rgba(222,211,200,0.28)",
                         transition: "color 0.15s, border-bottom-color 0.15s",
                       }}>
-                        {BUCKET_LABELS[b]} ({PORTAL_PHOTO_BUCKETS[b].length})
+                        {label} ({count})
                       </button>
                     ))}
                   </div>
@@ -2485,7 +2496,7 @@ export default function VisionPage() {
                 {/* Photo grid — wider auto-fill columns now that we have full width */}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 8 }}>
                   {photoLibTab === "jmc"
-                    ? JMC_PHOTOS.filter((p) => p.bucket === jmcBucket).map((p) => (
+                    ? (jmcBucket === "all" ? JMC_PHOTOS : JMC_PHOTOS.filter((p) => p.bucket === jmcBucket)).map((p) => (
                       <div key={p.id} style={{ display: "flex", flexDirection: "column", gap: 3, opacity: jmcLoadingId && jmcLoadingId !== p.id ? 0.45 : 1, transition: "opacity 0.2s" }}>
                         <button
                           onClick={() => applyJmcPhoto(p.id, p.url)}

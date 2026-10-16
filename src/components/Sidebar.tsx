@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, PlaySquare, Users, Sparkles, BookOpen, LogOut, ChevronRight, NotebookPen, Wind } from "lucide-react";
+import { useState, useEffect } from "react";
+import { LayoutDashboard, PlaySquare, Users, Sparkles, BookOpen, LogOut, ChevronRight, NotebookPen, Wind, Lock } from "lucide-react";
 import { clsx } from "clsx";
 import BrandLogo from "./BrandLogo";
 import { supabase } from "@/lib/supabase";
@@ -35,6 +36,17 @@ const NAV_ITEMS: NavItem[] = [
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const [statementsReady, setStatementsReady] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("jmc_statements_v1");
+      if (raw) {
+        const data = JSON.parse(raw) as Record<string, { being: string; doing: string; skipped?: boolean }>;
+        setStatementsReady(Object.values(data).some((c) => c.being?.trim() || c.doing?.trim() || c.skipped));
+      }
+    } catch { /* ignore */ }
+  }, [pathname]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -213,15 +225,18 @@ export default function Sidebar() {
                     {item.children.map((child) => {
                       const ChildIcon = child.icon;
                       const childActive = pathname === child.href || (child.href !== item.href && pathname.startsWith(child.href + "/"));
+                      const isEditorLink = child.href === "/vision";
+                      const locked = isEditorLink && !statementsReady;
                       return (
                         <Link
                           key={child.href}
-                          href={child.href}
+                          href={locked ? "/statements" : child.href}
+                          title={locked ? "Complete My Statements first to unlock the Editor" : undefined}
                           style={
                             childActive
                               ? {
                                   display: "flex", alignItems: "center", gap: 8,
-                                  padding: "7px 10px", borderRadius: 6,
+                                  padding: "9px 12px", borderRadius: 6,
                                   textDecoration: "none", transition: "all 0.15s",
                                   background: "linear-gradient(175deg, rgba(255,255,255,0.12) 0%, rgba(194,159,96,0.16) 20%, rgba(120,90,20,0.24) 55%, rgba(40,25,5,0.50) 100%)",
                                   borderTop: "1.5px solid rgba(255,255,255,0.32)",
@@ -239,45 +254,48 @@ export default function Sidebar() {
                                   color: "#E8C97A",
                                   fontFamily: "Syne, system-ui, sans-serif",
                                   fontWeight: 700,
-                                  fontSize: "0.75rem",
+                                  fontSize: "0.82rem",
                                   textShadow: "0 1px 4px rgba(0,0,0,0.95), 0 2px 10px rgba(0,0,0,0.80)",
                                 }
                               : {
                                   display: "flex", alignItems: "center", gap: 8,
-                                  padding: "7px 10px", borderRadius: 6,
+                                  padding: "9px 12px", borderRadius: 6,
                                   textDecoration: "none", transition: "all 0.15s",
-                                  background: "rgba(255,255,255,0.04)",
-                                  borderTop: "1px solid rgba(255,255,255,0.10)",
-                                  borderLeft: "1px solid rgba(255,255,255,0.06)",
-                                  borderRight: "1px solid rgba(0,0,0,0.12)",
-                                  borderBottom: "1px solid rgba(0,0,0,0.18)",
-                                  color: "rgba(222,211,200,0.92)",
+                                  background: "rgba(2,12,30,0.05)",
+                                  borderTop: "1px solid rgba(255,255,255,0.07)",
+                                  borderLeft: "1px solid rgba(255,255,255,0.04)",
+                                  borderRight: "1px solid rgba(0,0,0,0.10)",
+                                  borderBottom: "1px solid rgba(0,0,0,0.14)",
+                                  color: locked ? "rgba(222,211,200,0.38)" : "rgba(222,211,200,0.88)",
                                   fontFamily: "Syne, system-ui, sans-serif",
                                   fontWeight: 600,
-                                  fontSize: "0.75rem",
+                                  fontSize: "0.82rem",
                                   textShadow: "0 1px 6px rgba(0,0,0,0.95), 0 2px 14px rgba(0,0,0,0.85), 0 4px 20px rgba(0,0,0,0.6)",
                                 }
                           }
                           onMouseEnter={(e) => {
                             if (!childActive) {
-                              (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.08)";
-                              (e.currentTarget as HTMLElement).style.borderTopColor = "rgba(255,255,255,0.16)";
+                              (e.currentTarget as HTMLElement).style.background = "rgba(2,12,30,0.12)";
+                              (e.currentTarget as HTMLElement).style.borderTopColor = "rgba(255,255,255,0.12)";
                             }
                           }}
                           onMouseLeave={(e) => {
                             if (!childActive) {
-                              (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)";
-                              (e.currentTarget as HTMLElement).style.borderTopColor = "rgba(255,255,255,0.10)";
+                              (e.currentTarget as HTMLElement).style.background = "rgba(2,12,30,0.05)";
+                              (e.currentTarget as HTMLElement).style.borderTopColor = "rgba(255,255,255,0.07)";
                             }
                           }}
                         >
-                          <ChildIcon
-                            style={{
-                              width: 12, height: 12, flexShrink: 0,
-                              filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.95)) drop-shadow(0 2px 6px rgba(0,0,0,0.8))",
-                            }}
-                          />
-                          {child.label}
+                          {locked
+                            ? <Lock style={{ width: 12, height: 12, flexShrink: 0, filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.95))" }} />
+                            : <ChildIcon style={{ width: 13, height: 13, flexShrink: 0, filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.95)) drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }} />
+                          }
+                          <span style={{ flex: 1 }}>{child.label}</span>
+                          {locked && (
+                            <span style={{ fontSize: "0.5rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(194,159,96,0.4)" }}>
+                              Start here →
+                            </span>
+                          )}
                         </Link>
                       );
                     })}

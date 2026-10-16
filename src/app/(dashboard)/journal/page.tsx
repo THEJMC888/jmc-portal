@@ -224,6 +224,123 @@ const ghostBtn: React.CSSProperties = {
   transition: "transform 0.1s ease, box-shadow 0.1s ease",
 };
 
+// ─── Word of the Day ─────────────────────────────────────────────────────────
+const WORDS_OF_DAY = [
+  { word: "Sovereignty", definition: "Supreme authority over oneself — the recognition that you are the author of your own life.", prompt: "Where are you deferring your power to others? What would it look like to reclaim that authority today?" },
+  { word: "Presence", definition: "The quality of being fully engaged with what is happening right now, without reservation.", prompt: "What are you currently avoiding being present to? What becomes possible when you fully arrive in this moment?" },
+  { word: "Integrity", definition: "The state of being whole and undivided — aligning your words, actions, and values as one.", prompt: "Is there an area of your life where you are out of integrity? What would it take to restore it?" },
+  { word: "Abundance", definition: "A state of more than enough — a mindset that recognizes sufficiency as the foundation of generosity.", prompt: "Where do you already experience abundance that you tend to overlook? How does gratitude shift your perception?" },
+  { word: "Courage", definition: "The willingness to act in the presence of fear — not the absence of it, but movement through it.", prompt: "What courageous step have you been postponing? What is the cost of continuing to wait?" },
+  { word: "Discernment", definition: "The ability to judge and perceive clearly — choosing what is true and worthy from what merely appears so.", prompt: "Where in your life do you need greater discernment right now? What has clouded your judgment?" },
+  { word: "Resilience", definition: "The capacity to recover and adapt in the face of adversity, uncertainty, or significant challenge.", prompt: "Reflect on a time you recovered from something difficult. What did that reveal about who you are?" },
+  { word: "Intention", definition: "A clear aim or purpose that precedes and shapes every action and decision you take.", prompt: "What is the deepest intention behind what you are building right now? Does your daily behavior reflect it?" },
+  { word: "Gratitude", definition: "The recognition and appreciation of what is good — a practice that reshapes how reality presents itself.", prompt: "List five things that are easy to overlook that you are genuinely grateful for. Sit with each one." },
+  { word: "Vulnerability", definition: "The willingness to be seen — to open yourself to uncertainty and emotional risk in service of connection.", prompt: "Where have you been hiding or performing? What would you say if you allowed yourself to be fully seen?" },
+  { word: "Legacy", definition: "The lasting impression you leave on people, places, and systems long after your direct involvement ends.", prompt: "If someone described your legacy today, what would they say? Is that the legacy you intend to leave?" },
+  { word: "Discipline", definition: "The consistent practice of doing what is required, even when motivation has departed.", prompt: "Where does your discipline serve you most? Where has its absence cost you? What needs restructuring?" },
+  { word: "Clarity", definition: "A state of precise understanding — knowing exactly what you want, why you want it, and what it will require.", prompt: "In which area of your life do you currently lack clarity? What would become possible if you found it?" },
+  { word: "Trust", definition: "A confident reliance on the character, ability, or truth of someone or something — including yourself.", prompt: "Do you trust yourself? Where has that trust been broken, and what would it take to rebuild it?" },
+  { word: "Accountability", definition: "Taking full ownership of your choices and their consequences — without blame, excuse, or deflection.", prompt: "Where have you been avoiding accountability? What happens when you own it completely?" },
+  { word: "Empathy", definition: "The capacity to understand and share the experience of another — the foundation of genuine connection.", prompt: "Who in your life needs to feel understood right now? What would it mean to truly listen?" },
+  { word: "Vision", definition: "A vivid mental image of a desired future — the north star that gives direction and meaning to daily effort.", prompt: "How alive is your vision right now? What would reconnecting to it fully change about how you are showing up?" },
+  { word: "Stillness", definition: "The practice of internal quietude — creating space within the noise to hear what is most essential.", prompt: "When did you last sit in true stillness? What arises when you stop moving long enough to hear yourself?" },
+  { word: "Authenticity", definition: "The quality of being genuinely and fully yourself — unmasked by performance, approval, or expectation.", prompt: "Where are you performing a version of yourself rather than inhabiting it? What would full authenticity cost — and offer?" },
+  { word: "Purpose", definition: "The animating reason beneath your existence — the deeper 'why' that makes suffering meaningful and effort sustainable.", prompt: "If you had one year left, what would you devote it to? What does that reveal about your true purpose?" },
+  { word: "Devotion", definition: "A sustained commitment to something larger than immediate comfort — the practice of consistent love in action.", prompt: "What are you devoted to in this season of your life? Is your devotion showing up in how you spend your time?" },
+  { word: "Mastery", definition: "The result of sustained, deliberate practice — the transformation of effort into effortless excellence over time.", prompt: "What craft or skill calls for deeper mastery from you? What would it look like to commit to it fully?" },
+  { word: "Surrender", definition: "The conscious release of what you cannot control — not weakness, but wisdom in the face of what is.", prompt: "What are you holding on to that is not yours to carry? What becomes available when you release it?" },
+  { word: "Wisdom", definition: "The synthesis of experience, reflection, and truth — knowing not only what to do but when and why.", prompt: "What is the wisest piece of counsel you carry right now? Are you applying it to your own life?" },
+  { word: "Humility", definition: "An accurate assessment of your own strengths and limitations — the foundation of continued growth.", prompt: "Where has pride or ego recently blocked your learning? What would humility open up right now?" },
+  { word: "Creation", definition: "The act of bringing something new into existence — the fundamental expression of human will and imagination.", prompt: "What are you currently in the process of creating? What is trying to be born through you right now?" },
+  { word: "Boundaries", definition: "Clearly communicated limits that honor your values, energy, and sense of self — acts of self-respect.", prompt: "Where do you need to establish or reinforce a boundary? What has it cost you not to?" },
+  { word: "Momentum", definition: "The forward energy created by consistent aligned action — the compound interest of showing up.", prompt: "Where does positive momentum exist in your life right now? How can you feed it rather than interrupt it?" },
+  { word: "Commitment", definition: "A binding resolution to a course of action — the decision made once so it doesn't have to be made again.", prompt: "What are you only half-committed to? What would full commitment look like — and what does it require?" },
+  { word: "Reverence", definition: "A deep respect and sense of wonder for what is sacred — the quality that transforms ordinary moments into meaningful ones.", prompt: "What in your life deserves more reverence than you are currently giving it? How might that shift how you inhabit it?" },
+];
+
+function getWordOfDay() {
+  const d = new Date();
+  const seed = d.getFullYear() * 1000 + Math.floor((d.getTime() - new Date(d.getFullYear(), 0, 0).getTime()) / 86400000);
+  return WORDS_OF_DAY[seed % WORDS_OF_DAY.length];
+}
+
+function WordOfDayCard({ compact = false }: { compact?: boolean }) {
+  const word = getWordOfDay();
+
+  if (compact) {
+    return (
+      <div
+        style={{
+          width: "100%", textAlign: "left", cursor: "pointer",
+          marginBottom: 4, padding: "10px 12px", borderRadius: 8,
+          background: "linear-gradient(135deg, rgba(0,200,240,0.07), rgba(0,100,180,0.05))",
+          borderTop: "1px solid rgba(0,200,240,0.2)",
+          borderLeft: "1px solid rgba(0,200,240,0.1)",
+          borderRight: "1px solid rgba(0,0,0,0.12)",
+          borderBottom: "1px solid rgba(0,0,0,0.25)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 2px 6px rgba(0,0,0,0.25)",
+        }}
+      >
+        <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(0,200,240,0.7)", marginBottom: 3 }}>
+          Word of the Day
+        </div>
+        <div style={{ fontFamily: "Lora, Georgia, serif", fontWeight: 600, fontSize: 14, color: "#DED3C8" }}>
+          {word.word}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      background: "linear-gradient(160deg, rgba(0,200,240,0.08) 0%, rgba(4,15,50,0.45) 50%, rgba(2,8,28,0.6) 100%)",
+      backdropFilter: "blur(24px) saturate(180%)",
+      WebkitBackdropFilter: "blur(24px) saturate(180%)",
+      borderTop: "1.5px solid rgba(0,200,240,0.3)",
+      borderLeft: "1px solid rgba(0,200,240,0.15)",
+      borderRight: "1px solid rgba(0,0,0,0.2)",
+      borderBottom: "1.5px solid rgba(0,0,0,0.45)",
+      boxShadow: [
+        "inset 0 2px 0 rgba(255,255,255,0.12)",
+        "inset 0 1px 0 rgba(0,200,240,0.15)",
+        "inset 0 -3px 10px rgba(0,0,0,0.4)",
+        "0 4px 0 rgba(0,0,0,0.7)", "0 8px 0 rgba(0,0,0,0.45)",
+        "0 12px 0 rgba(0,0,0,0.22)", "0 16px 0 rgba(0,0,0,0.1)",
+        "0 20px 32px rgba(0,0,0,0.6)",
+      ].join(", "),
+      borderRadius: 14,
+      padding: "24px 28px",
+      marginBottom: 32,
+      position: "relative",
+      overflow: "hidden",
+    }}>
+      <div style={{ position: "absolute", top: 0, left: "10%", right: "10%", height: 1, background: "linear-gradient(to right, transparent, rgba(0,200,240,0.5), transparent)" }} />
+      <div style={{ position: "absolute", top: -50, right: -50, width: 140, height: 140, borderRadius: "50%", background: "radial-gradient(circle, rgba(0,200,240,0.06) 0%, transparent 70%)", pointerEvents: "none" }} />
+
+      <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", color: "rgba(0,200,240,0.75)", marginBottom: 10 }}>
+        Word of the Day · {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric" })}
+      </div>
+
+      <div style={{ fontFamily: "Lora, Georgia, serif", fontWeight: 600, fontSize: 30, color: "#DED3C8", marginBottom: 10, lineHeight: 1.1, textShadow: "0 2px 16px rgba(0,0,0,0.5)" }}>
+        {word.word}
+      </div>
+
+      <p style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 13, color: "rgba(222,211,200,0.65)", lineHeight: 1.7, marginBottom: 16, paddingLeft: 12, borderLeft: "2px solid rgba(0,200,240,0.25)" }}>
+        {word.definition}
+      </p>
+
+      <div style={{ background: "rgba(0,0,0,0.25)", borderRadius: 8, padding: "14px 16px", borderTop: "1px solid rgba(0,200,240,0.12)", borderLeft: "1px solid rgba(0,200,240,0.08)", boxShadow: "inset 0 2px 8px rgba(0,0,0,0.35)" }}>
+        <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(0,200,240,0.55)", marginBottom: 6 }}>
+          Contemplation Prompt
+        </div>
+        <p style={{ fontFamily: "Lora, Georgia, serif", fontSize: 13, color: "rgba(222,211,200,0.82)", lineHeight: 1.7, margin: 0 }}>
+          {word.prompt}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ─── MediaRecorder hook ───────────────────────────────────────────────────────
 function useRecorder(type: "audio" | "video") {
   const [state, setState] = useState<"idle" | "recording" | "done">("idle");
@@ -696,6 +813,7 @@ export default function JournalPage() {
       {/* ── Feed view ── */}
       {viewMode === "feed" && (
         <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "20px 16px" : "36px 44px", maxWidth: 860, margin: "0 auto", width: "100%" }}>
+          <WordOfDayCard />
           {list.length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px 20px" }}>
               <NotebookPen size={32} color="rgba(0,200,240,0.2)" style={{ marginBottom: 12 }} />
@@ -771,6 +889,8 @@ export default function JournalPage() {
             position: "relative",
           }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: "linear-gradient(to right, rgba(0,200,240,0.2), rgba(255,255,255,0.06), transparent)" }} />
+
+            <WordOfDayCard compact />
 
             {list.length === 0 ? (
               <div style={{ padding: "32px 12px", textAlign: "center" }}>

@@ -14,6 +14,7 @@ const uid = () => Math.random().toString(36).slice(2, 11);
 interface CategoryStatement {
   being: string;
   doing: string;
+  skipped?: boolean;
 }
 
 type StatementsData = Record<string, CategoryStatement>;
@@ -353,7 +354,7 @@ export default function StatementsPage() {
     setStatements((prev) => {
       const next = {
         ...prev,
-        [activeId]: { ...(prev[activeId] ?? { being: "", doing: "" }), [field]: value },
+        [activeId]: { ...(prev[activeId] ?? { being: "", doing: "" }), [field]: value, skipped: false },
       };
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => {
@@ -361,6 +362,24 @@ export default function StatementsPage() {
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
       }, 400);
+      return next;
+    });
+  }, [activeId]);
+
+  const handleSkip = useCallback(() => {
+    setStatements((prev) => {
+      const next = { ...prev, [activeId]: { being: "", doing: "", skipped: true } };
+      persistStatements(next);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1800);
+      return next;
+    });
+  }, [activeId]);
+
+  const handleUnskip = useCallback(() => {
+    setStatements((prev) => {
+      const next = { ...prev, [activeId]: { ...(prev[activeId] ?? { being: "", doing: "" }), skipped: false } };
+      persistStatements(next);
       return next;
     });
   }, [activeId]);
@@ -451,7 +470,7 @@ export default function StatementsPage() {
 
   if (!mounted) return null;
 
-  const filled = CATEGORIES.filter((c) => statements[c.id]?.being || statements[c.id]?.doing).length;
+  const filled = CATEGORIES.filter((c) => statements[c.id]?.being || statements[c.id]?.doing || statements[c.id]?.skipped).length;
   const anySlideExists = Object.values(visionStatus).some((s) => s !== "none");
   const activeStatus = visionStatus[activeId] ?? "none";
 
@@ -788,6 +807,7 @@ export default function StatementsPage() {
             {CATEGORIES.map((cat) => {
               const isActive = cat.id === activeId;
               const hasCont = !!(statements[cat.id]?.being || statements[cat.id]?.doing);
+              const isSkipped = !!statements[cat.id]?.skipped;
               const status = visionStatus[cat.id] ?? "none";
               return (
                 <button
@@ -832,6 +852,14 @@ export default function StatementsPage() {
                     }
                   }}
                 >
+                  {isSkipped ? (
+                    <div style={{
+                      width: 14, height: 2, borderRadius: 1, flexShrink: 0,
+                      background: "rgba(194,159,96,0.35)",
+                      boxShadow: "0 0 4px rgba(194,159,96,0.2)",
+                      transition: "all 0.2s",
+                    }} />
+                  ) : (
                   <div style={{
                     width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
                     background: hasCont ? "#C29F60" : "transparent",
@@ -839,6 +867,7 @@ export default function StatementsPage() {
                     boxShadow: hasCont ? "0 0 8px rgba(194,159,96,0.5), 0 0 16px rgba(194,159,96,0.2)" : "none",
                     transition: "all 0.2s",
                   }} />
+                  )}
                   <div style={{ flex: 1 }}>
                     <div style={{
                       fontFamily: "Syne, system-ui, sans-serif", fontSize: 12,
@@ -944,6 +973,53 @@ export default function StatementsPage() {
             placeholder="I am..."
             accentColor="rgba(194,159,96,0.7)"
           />
+
+          {/* ── Skip / Unskip ── */}
+          <div style={{ marginTop: 24, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 14 }}>
+            {activeStatement.skipped ? (
+              <>
+                <span style={{
+                  fontFamily: "Syne, system-ui, sans-serif", fontSize: 9, fontWeight: 700,
+                  letterSpacing: "0.18em", textTransform: "uppercase",
+                  color: "rgba(194,159,96,0.45)",
+                  padding: "3px 10px",
+                  borderRadius: 3,
+                  background: "rgba(194,159,96,0.06)",
+                  border: "1px solid rgba(194,159,96,0.15)",
+                }}>
+                  Section Skipped
+                </span>
+                <button
+                  onClick={handleUnskip}
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    fontFamily: "Syne, system-ui, sans-serif", fontSize: 10,
+                    color: "rgba(194,159,96,0.65)", letterSpacing: "0.07em",
+                    textDecoration: "underline", padding: 0,
+                    transition: "color 0.15s",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#C29F60"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(194,159,96,0.65)"; }}
+                >
+                  Undo skip
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={handleSkip}
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  fontFamily: "Syne, system-ui, sans-serif", fontSize: 10,
+                  color: "rgba(222,211,200,0.28)", letterSpacing: "0.07em", padding: 0,
+                  transition: "color 0.15s",
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(222,211,200,0.55)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(222,211,200,0.28)"; }}
+              >
+                Skip this section →
+              </button>
+            )}
+          </div>
 
           {/* ── Slide sync status ── */}
           {activeStatus !== "none" && (

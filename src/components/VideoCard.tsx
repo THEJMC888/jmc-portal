@@ -95,10 +95,12 @@ export default function VideoCard({ video, showCategory = true }: VideoCardProps
           ].join(", ");
         }}
       >
-        {/* Thumbnail */}
+        {/* Thumbnail — fixed height ensures all cards are uniform */}
         <div
-          className="relative aspect-video"
+          className="relative"
           style={{
+            height: 200,
+            flexShrink: 0,
             background: "linear-gradient(135deg, #08254D, #053372, #0B4B32)",
           }}
         >
@@ -157,7 +159,7 @@ export default function VideoCard({ video, showCategory = true }: VideoCardProps
         </div>
 
         {/* Info — fixed height keeps all cards uniform */}
-        <div className="p-4 flex flex-col flex-1" style={{ minHeight: 118 }}>
+        <div className="p-4 flex flex-col" style={{ height: 170, flexShrink: 0 }}>
           {showCategory && video.categoryName && (
             <p
               className="mb-1"
