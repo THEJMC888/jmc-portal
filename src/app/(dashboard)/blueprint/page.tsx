@@ -1,9 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Fingerprint, Save, ChevronDown, ChevronUp, Edit2 } from "lucide-react";
+import { Fingerprint, Save, ChevronDown, ChevronUp, Edit2, ExternalLink, Calendar, Clock, MapPin } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+interface BirthData {
+  date: string;   // YYYY-MM-DD
+  time: string;   // HH:MM
+  city: string;   // "Los Angeles, CA, USA"
+}
+
 interface GeneKeysProfile {
   lifeWork: string;       // Activation Sequence — 1st key
   evolution: string;      // Activation Sequence — 2nd key
@@ -44,6 +50,7 @@ interface AstrologyProfile {
 }
 
 interface Blueprint {
+  birthData: BirthData;
   geneKeys: GeneKeysProfile;
   humanDesign: HumanDesignProfile;
   astrology: AstrologyProfile;
@@ -52,6 +59,7 @@ interface Blueprint {
 const STORAGE_KEY = "jmc_blueprint_v1";
 
 const EMPTY_BLUEPRINT: Blueprint = {
+  birthData: { date: "", time: "", city: "" },
   geneKeys: { lifeWork: "", evolution: "", radiance: "", purpose: "", attraction: "", iq: "", eq: "", sq: "", vocation: "", culture: "", brand: "", notes: "" },
   humanDesign: { type: "", authority: "", profile: "", strategy: "", definedCenters: "", channels: "", gates: "", notes: "" },
   astrology: { sun: "", moon: "", rising: "", mercury: "", venus: "", mars: "", jupiter: "", saturn: "", northNode: "", notes: "" },
@@ -115,6 +123,264 @@ const GK_POSITIONS = {
   culture: { label: "Culture", sequence: "Pearl Sequence", description: "The environment and collective you are here to influence — the culture you naturally create around you." },
   brand: { label: "Brand", sequence: "Pearl Sequence", description: "The unique frequency of your brand and how your gifts are recognized in the marketplace — your signature energy." },
 };
+
+// ─── Calculator guide data ────────────────────────────────────────────────────
+const CALC_GUIDES = {
+  genekeys: {
+    title: "Find Your Gene Keys Profile",
+    url: "https://genekeys.com/profile-finder/",
+    urlLabel: "genekeys.com/profile-finder",
+    note: "A free account is required. Your profile is generated from your birth date (and optionally birth time).",
+    steps: [
+      "Create a free account at genekeys.com",
+      "Go to My Profile and enter your birth date",
+      "Open your Hologenetic Profile page",
+      "Copy the gate number shown for each position into the fields below",
+    ],
+    fieldMap: [
+      { field: "Life's Work (Activation)", from: "Activation Sequence — 1st key (Conscious Sun)" },
+      { field: "Evolution (Activation)", from: "Activation Sequence — 2nd key (Conscious Earth)" },
+      { field: "Radiance (Activation)", from: "Activation Sequence — 3rd key" },
+      { field: "Purpose (Activation)", from: "Activation Sequence — 4th key (Unconscious Sun)" },
+      { field: "Attraction, IQ, EQ, SQ (Venus)", from: "Venus Sequence — 4 keys shown in order" },
+      { field: "Vocation, Culture, Brand (Pearl)", from: "Pearl Sequence — 3 keys shown in order" },
+    ],
+  },
+  humandesign: {
+    title: "Get Your Human Design Chart",
+    url: "https://www.mybodygraph.com/",
+    urlLabel: "mybodygraph.com",
+    note: "Free — no account needed. Requires your exact birth time and city for an accurate chart.",
+    steps: [
+      "Go to mybodygraph.com",
+      "Enter your birth date, time (to the minute), and city",
+      "Your BodyGraph generates instantly",
+      "Copy your results into the fields below",
+    ],
+    fieldMap: [
+      { field: "Type", from: "Shown at the top — e.g. Generator, Projector, Manifestor" },
+      { field: "Profile", from: "Next to your Type — e.g. 3/5, 1/3, 6/2" },
+      { field: "Authority", from: "Listed in chart summary — e.g. Sacral, Emotional, Splenic" },
+      { field: "Strategy", from: "Listed with your Type — or auto-filled when you pick a Type above" },
+      { field: "Defined Centers", from: "The colored (non-white) shapes in your BodyGraph" },
+      { field: "Channels & Gates", from: "Lines connecting centers (channels) and their gate numbers" },
+    ],
+  },
+  astrology: {
+    title: "Get Your Birth Chart",
+    url: "https://www.astro.com/cgi/chart.cgi",
+    urlLabel: "astro.com free chart",
+    note: "The most trusted free natal chart online. Exact birth time and city are needed for your Rising sign.",
+    steps: [
+      "Go to astro.com and choose Free Horoscopes → Extended Chart Selection",
+      "Enter your birth date, exact time, and city",
+      "Your natal chart and planet table generate",
+      "Copy each planet's sign (and house) into the fields below",
+    ],
+    fieldMap: [
+      { field: "Sun", from: "Listed first — your zodiac sign is your Sun sign" },
+      { field: "Moon", from: "Requires birth time for accuracy" },
+      { field: "Rising / Ascendant", from: "Requires exact time and city — shown in the Ascendant row" },
+      { field: "Mercury, Venus, Mars…", from: "Planet table below the chart — sign + house for each" },
+      { field: "North Node", from: "Listed as 'Node' or 'True Node' in the planet table" },
+    ],
+  },
+} as const;
+
+type CalcKey = keyof typeof CALC_GUIDES;
+
+function CalculatorGuide({ system, hasData }: { system: CalcKey; hasData: boolean }) {
+  const [open, setOpen] = useState(!hasData);
+  const g = CALC_GUIDES[system];
+  const accentColor = system === "genekeys" ? "rgba(194,159,96,0.7)" : system === "humandesign" ? "rgba(0,200,240,0.7)" : "rgba(180,140,255,0.7)";
+  const accentBg = system === "genekeys" ? "rgba(194,159,96,0.06)" : system === "humandesign" ? "rgba(0,200,240,0.06)" : "rgba(180,140,255,0.06)";
+
+  return (
+    <div style={{
+      marginBottom: 22,
+      borderRadius: 10,
+      background: accentBg,
+      borderTop: `1px solid ${accentColor.replace("0.7", "0.25")}`,
+      borderLeft: `2px solid ${accentColor.replace("0.7", "0.4")}`,
+      borderRight: "1px solid rgba(0,0,0,0.12)",
+      borderBottom: "1px solid rgba(0,0,0,0.2)",
+      overflow: "hidden",
+    }}>
+      {/* Header toggle */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "12px 16px", background: "none", border: "none", cursor: "pointer",
+          gap: 10,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <ExternalLink size={12} color={accentColor.replace("0.7", "0.9")} />
+          <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: accentColor.replace("0.7", "0.9") }}>
+            {g.title}
+          </span>
+        </div>
+        {open ? <ChevronUp size={13} color={accentColor.replace("0.7","0.5")} /> : <ChevronDown size={13} color={accentColor.replace("0.7","0.5")} />}
+      </button>
+
+      {open && (
+        <div style={{ padding: "0 16px 16px" }}>
+          {/* Link */}
+          <a
+            href={g.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              padding: "7px 14px", borderRadius: 6, marginBottom: 14,
+              background: accentColor.replace("0.7", "0.12"),
+              border: `1px solid ${accentColor.replace("0.7", "0.3")}`,
+              textDecoration: "none",
+              fontFamily: "Syne, system-ui, sans-serif", fontSize: 10, fontWeight: 700,
+              color: accentColor.replace("0.7", "0.95"),
+              letterSpacing: "0.06em",
+            }}
+          >
+            <ExternalLink size={10} /> {g.urlLabel}
+          </a>
+
+          <p style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 11.5, color: "rgba(222,211,200,0.65)", lineHeight: 1.65, margin: "0 0 12px" }}>
+            {g.note}
+          </p>
+
+          {/* Steps */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 14 }}>
+            {g.steps.map((step, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, color: accentColor.replace("0.7", "0.6"), flexShrink: 0, marginTop: 2 }}>{i + 1}.</span>
+                <span style={{ fontFamily: "Lora, Georgia, serif", fontSize: 11.5, color: "rgba(222,211,200,0.7)", lineHeight: 1.55 }}>{step}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Field map */}
+          <div style={{ borderTop: `1px solid ${accentColor.replace("0.7", "0.12")}`, paddingTop: 12 }}>
+            <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 7.5, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: accentColor.replace("0.7", "0.5"), marginBottom: 8 }}>
+              Where to find each field
+            </div>
+            {g.fieldMap.map((row, i) => (
+              <div key={i} style={{ display: "flex", gap: 8, marginBottom: 5, alignItems: "flex-start" }}>
+                <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 9.5, fontWeight: 700, color: "rgba(222,211,200,0.75)", flexShrink: 0, minWidth: 140 }}>{row.field}</span>
+                <span style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 10.5, color: "rgba(222,211,200,0.45)", lineHeight: 1.5 }}>{row.from}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Birth Data Panel ─────────────────────────────────────────────────────────
+function BirthDataPanel({ data, editing, onChange }: { data: BirthData; editing: boolean; onChange: (d: BirthData) => void }) {
+  const set = (key: keyof BirthData) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    onChange({ ...data, [key]: e.target.value });
+
+  const hasBirthData = data.date || data.time || data.city;
+
+  const panelBase: React.CSSProperties = {
+    borderRadius: 10,
+    padding: "16px 20px",
+    marginBottom: 28,
+    background: "linear-gradient(160deg, rgba(194,159,96,0.07) 0%, rgba(2,12,30,0.45) 100%)",
+    borderTop: "1px solid rgba(194,159,96,0.25)",
+    borderLeft: "2px solid rgba(194,159,96,0.35)",
+    borderRight: "1px solid rgba(0,0,0,0.15)",
+    borderBottom: "1px solid rgba(0,0,0,0.25)",
+    boxShadow: "inset 0 2px 8px rgba(0,0,0,0.2)",
+  };
+
+  if (!editing) {
+    return (
+      <div style={panelBase}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: hasBirthData ? 12 : 4 }}>
+          <Calendar size={10} color="rgba(194,159,96,0.7)" />
+          <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 7.5, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(194,159,96,0.65)" }}>
+            Birth Data
+          </span>
+        </div>
+        {hasBirthData ? (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
+            {data.date && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <Calendar size={11} color="rgba(194,159,96,0.45)" />
+                <span style={{ fontFamily: "Lora, Georgia, serif", fontSize: 13, color: "rgba(222,211,200,0.82)" }}>
+                  {new Date(data.date + "T12:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                </span>
+              </div>
+            )}
+            {data.time && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <Clock size={11} color="rgba(194,159,96,0.45)" />
+                <span style={{ fontFamily: "Lora, Georgia, serif", fontSize: 13, color: "rgba(222,211,200,0.82)" }}>{data.time}</span>
+              </div>
+            )}
+            {data.city && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <MapPin size={11} color="rgba(194,159,96,0.45)" />
+                <span style={{ fontFamily: "Lora, Georgia, serif", fontSize: 13, color: "rgba(222,211,200,0.82)" }}>{data.city}</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 12, color: "rgba(222,211,200,0.35)", margin: 0 }}>
+            Add your birth date, time, and city — you&rsquo;ll need these for all three calculators.
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div style={panelBase}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}>
+        <Calendar size={10} color="rgba(194,159,96,0.7)" />
+        <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 7.5, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(194,159,96,0.65)" }}>
+          Birth Data
+        </span>
+        <span style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 10.5, color: "rgba(222,211,200,0.35)", marginLeft: 4 }}>
+          used by all three calculators below
+        </span>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: 10 }}>
+        <div>
+          <FieldLabel>Date of Birth</FieldLabel>
+          <input
+            type="date"
+            value={data.date}
+            onChange={set("date")}
+            style={{ ...inputStyle, colorScheme: "dark" }}
+          />
+        </div>
+        <div>
+          <FieldLabel hint="as accurate as possible">Birth Time</FieldLabel>
+          <input
+            type="time"
+            value={data.time}
+            onChange={set("time")}
+            style={{ ...inputStyle, colorScheme: "dark" }}
+          />
+        </div>
+        <div>
+          <FieldLabel hint="city, state/country">Birth City</FieldLabel>
+          <input
+            type="text"
+            value={data.city}
+            onChange={set("city")}
+            placeholder="e.g. Los Angeles, CA, USA"
+            style={inputStyle}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ─── Styling helpers ──────────────────────────────────────────────────────────
 const TABS = [
@@ -200,6 +466,7 @@ function GeneKeysTab({ data, editing, onChange }: { data: GeneKeysProfile; editi
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <CalculatorGuide system="genekeys" hasData={Object.values(data).some(v => v.trim())} />
       <SectionHeader label="Activation Sequence — Self & Purpose" color="rgba(194,159,96,0.7)" />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
         {(["lifeWork", "evolution", "radiance", "purpose"] as const).map(key => (
@@ -305,6 +572,7 @@ function HumanDesignTab({ data, editing, onChange }: { data: HumanDesignProfile;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <CalculatorGuide system="humandesign" hasData={Object.values(data).some(v => v.trim())} />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <div>
           <FieldLabel>Type</FieldLabel>
@@ -404,6 +672,7 @@ function AstrologyTab({ data, editing, onChange }: { data: AstrologyProfile; edi
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <CalculatorGuide system="astrology" hasData={PLANETS.some(p => data[p.key].trim())} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
         {PLANETS.map(p => (
           <div key={p.key}>
@@ -484,6 +753,13 @@ export default function BlueprintPage() {
           Your energetic architecture — Gene Keys, Human Design, and Astrology — mapped as one living document.
         </p>
       </div>
+
+      {/* Birth Data Panel */}
+      <BirthDataPanel
+        data={editing ? draft.birthData : blueprint.birthData}
+        editing={editing}
+        onChange={d => setDraft(prev => ({ ...prev, birthData: d }))}
+      />
 
       {/* Tab bar */}
       <div style={{ display: "flex", gap: 4, marginBottom: 28, borderBottom: "1px solid rgba(255,255,255,0.07)", paddingBottom: 0 }}>
