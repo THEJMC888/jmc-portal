@@ -1,7 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Route, Plus, Check, Users, User, ChevronDown, ChevronUp, FileText, X } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Route, Plus, Check, Users, User, ChevronDown, ChevronUp, FileText, X, Loader2 } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
+
+const ADMIN_EMAIL = "rng@thejourneymencollective.com";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ActionItem {
@@ -12,6 +16,7 @@ interface ActionItem {
 
 interface CoachingSession {
   id: string;
+  memberEmail?: string;
   title: string;
   date: string;
   sessionType: "solo" | "group";
@@ -22,104 +27,70 @@ interface CoachingSession {
   transcript?: string;
 }
 
-// ─── Sample seed data ─────────────────────────────────────────────────────────
-const SEED_SESSIONS: CoachingSession[] = [
-  {
-    id: "session-1",
-    title: "Clarity & Direction",
-    date: "2026-10-10",
-    sessionType: "solo",
-    summary: "This session centered on cutting through the noise to identify your core direction. We explored the gap between where your energy is going and where your deepest values point. A significant breakthrough emerged around the conflation of productivity and purpose — you are doing a great deal, but not always in alignment with what matters most.",
-    takeaways: [
-      "Your current pace is driven by urgency, not priority — the two have become indistinguishable.",
-      "The vision you articulated for The Journeymen Collective is clear; the bottleneck is execution structure.",
-      "You carry a pattern of deferring rest as a reward rather than a requirement — this is costing you creative capacity.",
-      "The next chapter requires you to lead from vision rather than from the tasks in front of you.",
-    ],
-    actionItems: [
-      { id: "ai-1-1", text: "Complete a full weekly review and identify the top 3 highest-leverage activities", completed: false },
-      { id: "ai-1-2", text: "Block 90 minutes daily for deep creative work — non-negotiable", completed: false },
-      { id: "ai-1-3", text: "Write one page answering: what does the business look like in 12 months if everything goes right?", completed: false },
-    ],
-    coachNotes: "Robert arrived to this session already in motion — he is highly capable and self-aware. The key intervention is slowing down long enough to choose direction deliberately rather than responding to what's in front of him. Watch for the pattern of over-commitment as a form of avoidance. The real work is in the decisions he isn't making yet.",
-    transcript: "Coach: Let's start with a check-in. How are you arriving to this session?\n\nRobert: Honestly, busy. A lot of moving parts. I feel like I'm in execution mode and not sure if I'm executing on the right things.\n\nCoach: That distinction — execution versus right execution — is interesting. What does 'right' feel like for you?\n\nRobert: When things feel aligned. When I'm working and it doesn't feel like work. That's rare lately.\n\nCoach: When did you last feel that?\n...",
-  },
-  {
-    id: "session-2",
-    title: "Group Alignment — Q4 Momentum",
-    date: "2026-10-03",
-    sessionType: "group",
-    summary: "This group session brought together three members at similar stages of their entrepreneurial journey. The theme that emerged organically was accountability — not to external standards, but to the commitments each person had made to themselves and then quietly let slide. Each participant identified a specific area where they had been performing alignment rather than living it.",
-    takeaways: [
-      "Accountability without self-compassion becomes self-punishment — the group named this pattern collectively.",
-      "The shared theme: each person has clarity on what to do and is finding sophisticated reasons not to do it.",
-      "Group energy is a resource — using it deliberately multiplies individual momentum.",
-      "Q4 is a natural reset point; the question is what you are choosing to reset toward.",
-    ],
-    actionItems: [
-      { id: "ai-2-1", text: "Identify one commitment from the last 90 days that you abandoned — and recommit or consciously release it", completed: true },
-      { id: "ai-2-2", text: "Share a weekly update in the group channel every Friday by noon", completed: false },
-      { id: "ai-2-3", text: "Schedule your Q4 planning session before end of this week", completed: false },
-    ],
-    coachNotes: "The group dynamic in this session was unusually open — participants moved past performance quickly. The collective naming of avoidance behavior was a turning point. For Robert specifically: he was the first to name his own pattern, which opened the room. This is his natural role — he would benefit from owning it more explicitly in group settings rather than minimizing it.",
-    transcript: "Coach: I want to start differently today. Rather than check-ins, I'd like each of you to complete this sentence: 'The one thing I said I would do and haven't is…'\n\n[Participant 1]: Building my morning practice. I said I would and I haven't started.\n\n[Participant 2]: Having a hard conversation with my business partner. It's been weeks.\n\nRobert: Finishing the membership framework. It's 80% done and I keep not touching it.\n\nCoach: Three very different things, but notice what they have in common...",
-  },
-  {
-    id: "session-3",
-    title: "Breaking Through Resistance",
-    date: "2026-09-22",
-    sessionType: "solo",
-    summary: "We spent this session going underneath the surface-level blocks to find the deeper structure of resistance. What emerged was a pattern common to high-performers: resistance is not laziness or lack of motivation — it is protection. The unconscious is delaying the very things that matter most because failure there would be most costly. The things you avoid most are the things you care about most.",
-    takeaways: [
-      "Resistance is proportional to meaning — the bigger the project, the more sophisticated the avoidance.",
-      "You have conflated starting with succeeding — this makes starting feel like it carries all the weight of the outcome.",
-      "The antidote is not more motivation; it is lowering the stakes of the first step until action becomes trivially easy.",
-      "Your identity as someone who 'does things right' is both a strength and the primary source of your procrastination.",
-    ],
-    actionItems: [
-      { id: "ai-3-1", text: "For your most-avoided project: do 5 minutes only, then stop. Do this for 7 days straight.", completed: true },
-      { id: "ai-3-2", text: "Write down what you are afraid will happen if this project succeeds", completed: true },
-      { id: "ai-3-3", text: "Identify one project where 80% done is genuinely enough — and declare it complete", completed: false },
-    ],
-    coachNotes: "This was one of the most honest sessions we have had. Robert allowed himself to be seen in the resistance rather than performing breakthrough. The work on identity — specifically the 'does things right' self-concept — is the thread to pull going forward. This pattern will reappear every time a high-stakes project emerges. Name it early next session.",
-  },
-];
-
-const STORAGE_KEY = "jmc_journey_v1";
+// ─── DB mapping ───────────────────────────────────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function dbToSession(row: any): CoachingSession {
+  return {
+    id: row.id,
+    memberEmail: row.member_email ?? undefined,
+    title: row.title,
+    date: row.date,
+    sessionType: row.session_type,
+    summary: row.summary ?? "",
+    takeaways: row.takeaways ?? [],
+    actionItems: row.action_items ?? [],
+    coachNotes: row.coach_notes ?? "",
+    transcript: row.transcript || undefined,
+  };
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  return new Date(iso + "T12:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 function formatDateShort(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  return new Date(iso + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 // ─── Add Session Modal ────────────────────────────────────────────────────────
-function AddSessionModal({ onClose, onSave }: { onClose: () => void; onSave: (s: CoachingSession) => void }) {
+function AddSessionModal({
+  isAdmin,
+  onClose,
+  onSave,
+}: {
+  isAdmin: boolean;
+  onClose: () => void;
+  onSave: (s: Omit<CoachingSession, "id">) => Promise<void>;
+}) {
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [type, setType] = useState<"solo" | "group">("solo");
+  const [memberEmail, setMemberEmail] = useState("");
   const [summary, setSummary] = useState("");
   const [takeaways, setTakeaways] = useState("");
   const [actions, setActions] = useState("");
   const [coachNotes, setCoachNotes] = useState("");
   const [transcript, setTranscript] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  const handle = () => {
+  const handle = async () => {
     if (!title.trim() || !summary.trim()) return;
-    const session: CoachingSession = {
-      id: `session-${Date.now()}`,
+    setSaving(true);
+    await onSave({
+      memberEmail: memberEmail.trim() || undefined,
       title: title.trim(),
       date,
       sessionType: type,
       summary: summary.trim(),
       takeaways: takeaways.split("\n").map(t => t.trim()).filter(Boolean),
-      actionItems: actions.split("\n").map((t, i) => ({ id: `ai-new-${i}`, text: t.trim(), completed: false })).filter(a => a.text),
+      actionItems: actions
+        .split("\n")
+        .map((t, i) => ({ id: `ai-${Date.now()}-${i}`, text: t.trim(), completed: false }))
+        .filter(a => a.text),
       coachNotes: coachNotes.trim(),
       transcript: transcript.trim() || undefined,
-    };
-    onSave(session);
+    });
+    setSaving(false);
     onClose();
   };
 
@@ -198,6 +169,20 @@ function AddSessionModal({ onClose, onSave }: { onClose: () => void; onSave: (s:
             </div>
           </div>
 
+          {/* Admin-only: assign session to a member by email */}
+          {isAdmin && (
+            <div>
+              <label style={labelStyle}>Member Email (assign to client)</label>
+              <input
+                style={inputStyle}
+                type="email"
+                value={memberEmail}
+                onChange={e => setMemberEmail(e.target.value)}
+                placeholder="client@example.com — leave blank for unassigned"
+              />
+            </div>
+          )}
+
           <div>
             <label style={labelStyle}>Session Summary</label>
             <textarea style={{ ...inputStyle, minHeight: 90, resize: "vertical" }} value={summary} onChange={e => setSummary(e.target.value)} placeholder="What was the core theme and breakthrough of this session?" />
@@ -213,26 +198,31 @@ function AddSessionModal({ onClose, onSave }: { onClose: () => void; onSave: (s:
             <textarea style={{ ...inputStyle, minHeight: 70, resize: "vertical" }} value={actions} onChange={e => setActions(e.target.value)} placeholder="Each action item on its own line..." />
           </div>
 
-          <div>
-            <label style={labelStyle}>Coach&apos;s Notes</label>
-            <textarea style={{ ...inputStyle, minHeight: 70, resize: "vertical" }} value={coachNotes} onChange={e => setCoachNotes(e.target.value)} placeholder="Private observations and patterns to track..." />
-          </div>
+          {isAdmin && (
+            <div>
+              <label style={labelStyle}>Coach&apos;s Notes</label>
+              <textarea style={{ ...inputStyle, minHeight: 70, resize: "vertical" }} value={coachNotes} onChange={e => setCoachNotes(e.target.value)} placeholder="Private observations and patterns to track..." />
+            </div>
+          )}
 
           <div>
             <label style={labelStyle}>Transcript (optional — paste full text)</label>
             <textarea style={{ ...inputStyle, minHeight: 80, resize: "vertical", fontFamily: "monospace", fontSize: 11 }} value={transcript} onChange={e => setTranscript(e.target.value)} placeholder="Paste the Fireflies transcript here..." />
           </div>
 
-          <button onClick={handle} style={{
-            marginTop: 4, padding: "13px 0", borderRadius: 8, cursor: "pointer",
+          <button onClick={handle} disabled={saving} style={{
+            marginTop: 4, padding: "13px 0", borderRadius: 8, cursor: saving ? "not-allowed" : "pointer",
             fontFamily: "Syne, system-ui, sans-serif", fontSize: 11, fontWeight: 700,
             letterSpacing: "0.16em", textTransform: "uppercase",
             background: "linear-gradient(180deg, #DEC272 0%, #C8A04C 20%, #A07A28 50%, #D4B462 82%, #E0C878 100%)",
             color: "#08203A",
             border: "1.5px solid rgba(240,220,170,0.45)",
             boxShadow: "0 2px 0 rgba(20,12,0,0.85), 0 4px 0 rgba(20,12,0,0.55), 0 8px 20px rgba(0,0,0,0.5)",
+            opacity: saving ? 0.7 : 1,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
           }}>
-            Save Session
+            {saving && <Loader2 style={{ width: 14, height: 14, animation: "spin 1s linear infinite" }} />}
+            {saving ? "Saving..." : "Save Session"}
           </button>
         </div>
       </div>
@@ -241,7 +231,15 @@ function AddSessionModal({ onClose, onSave }: { onClose: () => void; onSave: (s:
 }
 
 // ─── Session Detail ───────────────────────────────────────────────────────────
-function SessionDetail({ session, onToggleAction }: { session: CoachingSession; onToggleAction: (sessionId: string, actionId: string) => void }) {
+function SessionDetail({
+  session,
+  isAdmin,
+  onToggleAction,
+}: {
+  session: CoachingSession;
+  isAdmin: boolean;
+  onToggleAction: (sessionId: string, actionId: string) => void;
+}) {
   const [transcriptOpen, setTranscriptOpen] = useState(false);
 
   return (
@@ -260,6 +258,17 @@ function SessionDetail({ session, onToggleAction }: { session: CoachingSession; 
           {session.sessionType === "group" ? <Users style={{ width: 9, height: 9 }} /> : <User style={{ width: 9, height: 9 }} />}
           {session.sessionType === "group" ? "Group Session" : "Solo Session"}
         </span>
+        {isAdmin && session.memberEmail && (
+          <span style={{
+            padding: "3px 10px", borderRadius: 12,
+            background: "rgba(130,80,200,0.08)",
+            border: "1px solid rgba(180,140,255,0.18)",
+            color: "rgba(180,140,255,0.7)",
+            fontSize: 8, letterSpacing: "0.1em",
+          }}>
+            {session.memberEmail}
+          </span>
+        )}
       </div>
 
       {/* Title */}
@@ -350,8 +359,8 @@ function SessionDetail({ session, onToggleAction }: { session: CoachingSession; 
         </div>
       )}
 
-      {/* Coach's Notes */}
-      {session.coachNotes && (
+      {/* Coach's Notes — admin only */}
+      {isAdmin && session.coachNotes && (
         <div style={{
           background: "rgba(130,80,200,0.07)", borderRadius: 10,
           borderTop: "1px solid rgba(180,140,255,0.18)", borderLeft: "2px solid rgba(180,140,255,0.3)",
@@ -404,59 +413,102 @@ function SessionDetail({ session, onToggleAction }: { session: CoachingSession; 
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function MyJourneyPage() {
+  const { user, session, loading: authLoading } = useAuth();
+  const isAdmin = user?.email === ADMIN_EMAIL;
+
   const [sessions, setSessions] = useState<CoachingSession[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        setSessions(JSON.parse(raw));
-      } else {
-        setSessions(SEED_SESSIONS);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_SESSIONS));
+  const loadSessions = useCallback(async () => {
+    if (!session) return;
+    setLoading(true);
+    setError(null);
+    const { data, error: dbError } = await supabase
+      .from("coaching_sessions")
+      .select("*")
+      .order("date", { ascending: false });
+
+    if (dbError) {
+      setError(dbError.message);
+    } else if (data) {
+      const mapped = data.map(dbToSession);
+      setSessions(mapped);
+      if (mapped.length > 0 && !selectedId) {
+        setSelectedId(mapped[0].id);
       }
-    } catch {
-      setSessions(SEED_SESSIONS);
     }
-  }, []);
+    setLoading(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
 
   useEffect(() => {
-    if (sessions.length > 0 && !selectedId) {
-      setSelectedId(sessions[0].id);
+    if (!authLoading && session) {
+      loadSessions();
+    } else if (!authLoading && !session) {
+      setLoading(false);
     }
-  }, [sessions, selectedId]);
+  }, [authLoading, session, loadSessions]);
 
-  const save = (updated: CoachingSession[]) => {
-    setSessions(updated);
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
+  const addSession = async (s: Omit<CoachingSession, "id">) => {
+    if (!session) return;
+    const { data, error: dbError } = await supabase
+      .from("coaching_sessions")
+      .insert({
+        member_email: s.memberEmail ?? null,
+        title: s.title,
+        date: s.date,
+        session_type: s.sessionType,
+        summary: s.summary,
+        takeaways: s.takeaways,
+        action_items: s.actionItems,
+        coach_notes: s.coachNotes,
+        transcript: s.transcript ?? null,
+      })
+      .select()
+      .single();
+
+    if (!dbError && data) {
+      const newSession = dbToSession(data);
+      setSessions(prev => [newSession, ...prev]);
+      setSelectedId(newSession.id);
+    }
   };
 
-  const addSession = (s: CoachingSession) => {
-    const updated = [s, ...sessions];
-    save(updated);
-    setSelectedId(s.id);
-  };
+  const toggleAction = async (sessionId: string, actionId: string) => {
+    const target = sessions.find(s => s.id === sessionId);
+    if (!target) return;
 
-  const toggleAction = (sessionId: string, actionId: string) => {
-    const updated = sessions.map(s => {
-      if (s.id !== sessionId) return s;
-      return {
-        ...s,
-        actionItems: s.actionItems.map(a =>
-          a.id === actionId ? { ...a, completed: !a.completed } : a
-        ),
-      };
-    });
-    save(updated);
+    const updatedItems = target.actionItems.map(a =>
+      a.id === actionId ? { ...a, completed: !a.completed } : a
+    );
+
+    // Optimistic update
+    setSessions(prev =>
+      prev.map(s => s.id === sessionId ? { ...s, actionItems: updatedItems } : s)
+    );
+
+    await supabase
+      .from("coaching_sessions")
+      .update({ action_items: updatedItems })
+      .eq("id", sessionId);
   };
 
   const selected = sessions.find(s => s.id === selectedId) ?? null;
 
+  const isReady = !authLoading && !loading;
+
   return (
     <div style={{ display: "flex", height: "calc(100vh - 64px)", overflow: "hidden", gap: 0, margin: "-32px" }}>
-      {showAdd && <AddSessionModal onClose={() => setShowAdd(false)} onSave={addSession} />}
+      {showAdd && isAdmin && (
+        <AddSessionModal
+          isAdmin={isAdmin}
+          onClose={() => setShowAdd(false)}
+          onSave={addSession}
+        />
+      )}
 
       {/* Left sidebar list */}
       <div style={{
@@ -470,88 +522,116 @@ export default function MyJourneyPage() {
             <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8.5, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(194,159,96,0.65)" }}>
               My Journey
             </div>
-            <button onClick={() => setShowAdd(true)} style={{
-              display: "flex", alignItems: "center", gap: 4,
-              padding: "5px 10px", borderRadius: 6, cursor: "pointer",
-              fontFamily: "Syne, system-ui, sans-serif", fontSize: 8.5, fontWeight: 700,
-              letterSpacing: "0.1em", textTransform: "uppercase",
-              background: "linear-gradient(180deg, #DEC272 0%, #A07A28 50%, #D4B462 100%)",
-              color: "#08203A", border: "1px solid rgba(240,220,170,0.4)",
-              boxShadow: "0 2px 0 rgba(20,12,0,0.7), 0 4px 8px rgba(0,0,0,0.4)",
-            }}>
-              <Plus style={{ width: 10, height: 10 }} />
-              Add
-            </button>
+            {isAdmin && (
+              <button onClick={() => setShowAdd(true)} style={{
+                display: "flex", alignItems: "center", gap: 4,
+                padding: "5px 10px", borderRadius: 6, cursor: "pointer",
+                fontFamily: "Syne, system-ui, sans-serif", fontSize: 8.5, fontWeight: 700,
+                letterSpacing: "0.1em", textTransform: "uppercase",
+                background: "linear-gradient(180deg, #DEC272 0%, #A07A28 50%, #D4B462 100%)",
+                color: "#08203A", border: "1px solid rgba(240,220,170,0.4)",
+                boxShadow: "0 2px 0 rgba(20,12,0,0.7), 0 4px 8px rgba(0,0,0,0.4)",
+              }}>
+                <Plus style={{ width: 10, height: 10 }} />
+                Add
+              </button>
+            )}
           </div>
           <p style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 11, color: "rgba(222,211,200,0.45)", margin: 0 }}>
-            {sessions.length} coaching {sessions.length === 1 ? "session" : "sessions"}
+            {isReady
+              ? `${sessions.length} coaching ${sessions.length === 1 ? "session" : "sessions"}`
+              : "Loading…"
+            }
           </p>
         </div>
 
         {/* Session list */}
         <div style={{ flex: 1, overflowY: "auto", padding: "8px 10px" }}>
-          {sessions.map(s => {
-            const isActive = s.id === selectedId;
-            const completedCount = s.actionItems.filter(a => a.completed).length;
-            return (
-              <button key={s.id} onClick={() => setSelectedId(s.id)} style={{
-                width: "100%", textAlign: "left", padding: "12px 12px",
-                borderRadius: 8, marginBottom: 3, cursor: "pointer",
-                background: isActive ? "rgba(2,12,30,0.55)" : "transparent",
-                border: isActive ? "1px solid rgba(255,255,255,0.1)" : "1px solid transparent",
-                borderTop: isActive ? "1px solid rgba(255,255,255,0.14)" : "1px solid transparent",
-                boxShadow: isActive ? "inset 0 1px 0 rgba(255,255,255,0.07), 0 2px 8px rgba(0,0,0,0.3)" : "none",
-                transition: "all 0.15s",
-              }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-                  <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8.5, color: "rgba(194,159,96,0.55)", fontWeight: 700, letterSpacing: "0.12em" }}>
-                    {formatDateShort(s.date)}
-                  </span>
-                  <span style={{
-                    display: "inline-flex", alignItems: "center", gap: 3,
-                    padding: "2px 7px", borderRadius: 10,
-                    background: s.sessionType === "group" ? "rgba(0,180,200,0.1)" : "rgba(194,159,96,0.07)",
-                    border: `1px solid ${s.sessionType === "group" ? "rgba(0,200,220,0.18)" : "rgba(194,159,96,0.15)"}`,
-                    fontSize: 7.5, fontFamily: "Syne, system-ui, sans-serif", fontWeight: 700,
-                    letterSpacing: "0.1em", textTransform: "uppercase",
-                    color: s.sessionType === "group" ? "rgba(0,200,220,0.7)" : "rgba(194,159,96,0.65)",
-                  }}>
-                    {s.sessionType === "group" ? <Users style={{ width: 8, height: 8 }} /> : <User style={{ width: 8, height: 8 }} />}
-                    {s.sessionType}
-                  </span>
-                </div>
-                <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 13, fontWeight: isActive ? 700 : 600, color: isActive ? "#DED3C8" : "rgba(222,211,200,0.75)", marginBottom: 5, lineHeight: 1.3 }}>
-                  {s.title}
-                </div>
-                {s.actionItems.length > 0 && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                    <div style={{
-                      height: 3, flex: 1, borderRadius: 2,
-                      background: "rgba(255,255,255,0.07)",
-                      overflow: "hidden",
+          {!isReady ? (
+            <div style={{ display: "flex", justifyContent: "center", paddingTop: 32 }}>
+              <Loader2 style={{ width: 20, height: 20, color: "rgba(194,159,96,0.4)", animation: "spin 1s linear infinite" }} />
+            </div>
+          ) : error ? (
+            <div style={{ padding: "16px 12px", fontFamily: "Syne, system-ui, sans-serif", fontSize: 11, color: "rgba(255,100,100,0.7)" }}>
+              {error}
+            </div>
+          ) : sessions.length === 0 ? (
+            <div style={{ padding: "24px 12px", textAlign: "center", fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 12, color: "rgba(222,211,200,0.35)" }}>
+              No sessions yet
+            </div>
+          ) : (
+            sessions.map(s => {
+              const isActive = s.id === selectedId;
+              const completedCount = s.actionItems.filter(a => a.completed).length;
+              return (
+                <button key={s.id} onClick={() => setSelectedId(s.id)} style={{
+                  width: "100%", textAlign: "left", padding: "12px 12px",
+                  borderRadius: 8, marginBottom: 3, cursor: "pointer",
+                  background: isActive ? "rgba(2,12,30,0.55)" : "transparent",
+                  border: isActive ? "1px solid rgba(255,255,255,0.1)" : "1px solid transparent",
+                  borderTop: isActive ? "1px solid rgba(255,255,255,0.14)" : "1px solid transparent",
+                  boxShadow: isActive ? "inset 0 1px 0 rgba(255,255,255,0.07), 0 2px 8px rgba(0,0,0,0.3)" : "none",
+                  transition: "all 0.15s",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8.5, color: "rgba(194,159,96,0.55)", fontWeight: 700, letterSpacing: "0.12em" }}>
+                      {formatDateShort(s.date)}
+                    </span>
+                    <span style={{
+                      display: "inline-flex", alignItems: "center", gap: 3,
+                      padding: "2px 7px", borderRadius: 10,
+                      background: s.sessionType === "group" ? "rgba(0,180,200,0.1)" : "rgba(194,159,96,0.07)",
+                      border: `1px solid ${s.sessionType === "group" ? "rgba(0,200,220,0.18)" : "rgba(194,159,96,0.15)"}`,
+                      fontSize: 7.5, fontFamily: "Syne, system-ui, sans-serif", fontWeight: 700,
+                      letterSpacing: "0.1em", textTransform: "uppercase",
+                      color: s.sessionType === "group" ? "rgba(0,200,220,0.7)" : "rgba(194,159,96,0.65)",
                     }}>
-                      <div style={{
-                        height: "100%", borderRadius: 2,
-                        width: `${(completedCount / s.actionItems.length) * 100}%`,
-                        background: "rgba(29,116,88,0.7)",
-                        transition: "width 0.3s",
-                      }} />
-                    </div>
-                    <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, color: "rgba(222,211,200,0.35)", flexShrink: 0 }}>
-                      {completedCount}/{s.actionItems.length}
+                      {s.sessionType === "group" ? <Users style={{ width: 8, height: 8 }} /> : <User style={{ width: 8, height: 8 }} />}
+                      {s.sessionType}
                     </span>
                   </div>
-                )}
-              </button>
-            );
-          })}
+                  <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 13, fontWeight: isActive ? 700 : 600, color: isActive ? "#DED3C8" : "rgba(222,211,200,0.75)", marginBottom: 5, lineHeight: 1.3 }}>
+                    {s.title}
+                  </div>
+                  {isAdmin && s.memberEmail && (
+                    <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 9, color: "rgba(180,140,255,0.5)", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {s.memberEmail}
+                    </div>
+                  )}
+                  {s.actionItems.length > 0 && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                      <div style={{
+                        height: 3, flex: 1, borderRadius: 2,
+                        background: "rgba(255,255,255,0.07)",
+                        overflow: "hidden",
+                      }}>
+                        <div style={{
+                          height: "100%", borderRadius: 2,
+                          width: `${(completedCount / s.actionItems.length) * 100}%`,
+                          background: "rgba(29,116,88,0.7)",
+                          transition: "width 0.3s",
+                        }} />
+                      </div>
+                      <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, color: "rgba(222,211,200,0.35)", flexShrink: 0 }}>
+                        {completedCount}/{s.actionItems.length}
+                      </span>
+                    </div>
+                  )}
+                </button>
+              );
+            })
+          )}
         </div>
       </div>
 
       {/* Right detail */}
       <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
-        {selected ? (
-          <SessionDetail session={selected} onToggleAction={toggleAction} />
+        {!isReady ? (
+          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Loader2 style={{ width: 28, height: 28, color: "rgba(194,159,96,0.3)", animation: "spin 1s linear infinite" }} />
+          </div>
+        ) : selected ? (
+          <SessionDetail session={selected} isAdmin={isAdmin} onToggleAction={toggleAction} />
         ) : (
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: 48 }}>
             <div style={{
@@ -568,20 +648,24 @@ export default function MyJourneyPage() {
               <p style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 13, color: "rgba(222,211,200,0.5)", margin: "0 0 24px" }}>
                 Coaching sessions will appear here as they are added.
               </p>
-              <button onClick={() => setShowAdd(true)} style={{
-                padding: "11px 24px", borderRadius: 8, cursor: "pointer",
-                fontFamily: "Syne, system-ui, sans-serif", fontSize: 10, fontWeight: 700,
-                letterSpacing: "0.14em", textTransform: "uppercase",
-                background: "linear-gradient(180deg, #DEC272 0%, #C8A04C 20%, #A07A28 50%, #D4B462 82%, #E0C878 100%)",
-                color: "#08203A", border: "1.5px solid rgba(240,220,170,0.4)",
-                boxShadow: "0 2px 0 rgba(20,12,0,0.85), 0 4px 12px rgba(0,0,0,0.5)",
-              }}>
-                + Add First Session
-              </button>
+              {isAdmin && (
+                <button onClick={() => setShowAdd(true)} style={{
+                  padding: "11px 24px", borderRadius: 8, cursor: "pointer",
+                  fontFamily: "Syne, system-ui, sans-serif", fontSize: 10, fontWeight: 700,
+                  letterSpacing: "0.14em", textTransform: "uppercase",
+                  background: "linear-gradient(180deg, #DEC272 0%, #C8A04C 20%, #A07A28 50%, #D4B462 82%, #E0C878 100%)",
+                  color: "#08203A", border: "1.5px solid rgba(240,220,170,0.4)",
+                  boxShadow: "0 2px 0 rgba(20,12,0,0.85), 0 4px 12px rgba(0,0,0,0.5)",
+                }}>
+                  + Add First Session
+                </button>
+              )}
             </div>
           </div>
         )}
       </div>
+
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
