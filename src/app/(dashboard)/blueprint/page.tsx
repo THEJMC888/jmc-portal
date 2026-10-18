@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Fingerprint, Save, ChevronDown, ChevronUp, Edit2, ExternalLink, Calendar, Clock, MapPin } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Fingerprint, Save, ChevronDown, ChevronUp, Edit2, ExternalLink, Calendar, Clock, MapPin, Sparkles, Loader2, AlertCircle } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface BirthData {
@@ -695,6 +695,8 @@ export default function BlueprintPage() {
   const [activeTab, setActiveTab] = useState<"genekeys" | "humandesign" | "astrology">("genekeys");
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Blueprint>(EMPTY_BLUEPRINT);
+  const [calculating, setCalculating] = useState(false);
+  const [calcError, setCalcError] = useState("");
 
   useEffect(() => {
     try {
@@ -715,6 +717,60 @@ export default function BlueprintPage() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(draft)); } catch { /* ignore */ }
   };
 
+  const calculate = useCallback(async () => {
+    const bd = blueprint.birthData;
+    if (!bd.date || !bd.time || !bd.city) {
+      setCalcError("Add your birth date, time, and city first (in the Birth Data panel above).");
+      return;
+    }
+    setCalculating(true);
+    setCalcError("");
+    try {
+      const res = await fetch("/api/blueprint/calculate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bd),
+      });
+      const data = await res.json();
+      if (!res.ok) { setCalcError(data.error ?? "Calculation failed"); return; }
+
+      const { astrology: a, humanDesign: hd } = data;
+      setBlueprint(prev => {
+        const next: Blueprint = {
+          ...prev,
+          humanDesign: {
+            ...prev.humanDesign,
+            type:           hd.type,
+            profile:        hd.profile,
+            authority:      hd.authority,
+            strategy:       hd.strategy,
+            definedCenters: hd.definedCenters.join(", "),
+            channels:       hd.channels.join(", "),
+            gates:          hd.gates,
+          },
+          astrology: {
+            ...prev.astrology,
+            sun:      a.sunSign,
+            moon:     a.moonSign,
+            rising:   a.risingSign,
+            mercury:  a.mercurySign,
+            venus:    a.venusSign,
+            mars:     a.marsSign,
+            jupiter:  a.jupiterSign,
+            saturn:   a.saturnSign,
+            northNode: a.northNodeSign,
+          },
+        };
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+        return next;
+      });
+    } catch {
+      setCalcError("Network error — please try again.");
+    } finally {
+      setCalculating(false);
+    }
+  }, [blueprint.birthData]);
+
   const completedSections = [
     Object.values(blueprint.geneKeys).some(v => v.trim()),
     Object.values(blueprint.humanDesign).some(v => v.trim()),
@@ -723,6 +779,7 @@ export default function BlueprintPage() {
 
   return (
     <div style={{ maxWidth: 820, margin: "0 auto" }}>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       {/* Header */}
       <div style={{ marginBottom: 32 }}>
         <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8.5, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", color: "rgba(194,159,96,0.65)", marginBottom: 6 }}>
@@ -743,9 +800,21 @@ export default function BlueprintPage() {
                 </button>
               </>
             ) : (
-              <button onClick={startEdit} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 20px", borderRadius: 7, cursor: "pointer", fontFamily: "Syne, system-ui, sans-serif", fontSize: 9.5, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", background: "rgba(255,255,255,0.06)", color: "rgba(222,211,200,0.75)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.07), 0 2px 8px rgba(0,0,0,0.3)" }}>
-                <Edit2 style={{ width: 12, height: 12 }} /> Edit Blueprint
-              </button>
+              <>
+                <button
+                  onClick={calculate}
+                  disabled={calculating}
+                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", borderRadius: 7, cursor: calculating ? "default" : "pointer", fontFamily: "Syne, system-ui, sans-serif", fontSize: 9.5, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", background: calculating ? "rgba(130,90,220,0.12)" : "linear-gradient(160deg, rgba(130,90,220,0.22) 0%, rgba(80,40,160,0.18) 100%)", color: calculating ? "rgba(180,140,255,0.4)" : "rgba(180,140,255,0.9)", border: "1px solid rgba(130,90,220,0.3)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), 0 2px 8px rgba(0,0,0,0.3)" }}
+                >
+                  {calculating
+                    ? <><Loader2 style={{ width: 12, height: 12, animation: "spin 1s linear infinite" }} /> Calculating…</>
+                    : <><Sparkles style={{ width: 12, height: 12 }} /> Calculate</>
+                  }
+                </button>
+                <button onClick={startEdit} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 20px", borderRadius: 7, cursor: "pointer", fontFamily: "Syne, system-ui, sans-serif", fontSize: 9.5, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", background: "rgba(255,255,255,0.06)", color: "rgba(222,211,200,0.75)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.07), 0 2px 8px rgba(0,0,0,0.3)" }}>
+                  <Edit2 style={{ width: 12, height: 12 }} /> Edit Blueprint
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -760,6 +829,12 @@ export default function BlueprintPage() {
         editing={editing}
         onChange={d => setDraft(prev => ({ ...prev, birthData: d }))}
       />
+      {calcError && (
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 20, padding: "11px 14px", borderRadius: 8, background: "rgba(255,80,80,0.06)", borderLeft: "2px solid rgba(255,80,80,0.4)", borderTop: "1px solid rgba(255,80,80,0.2)" }}>
+          <AlertCircle size={13} color="rgba(255,100,100,0.8)" style={{ flexShrink: 0, marginTop: 1 }} />
+          <span style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 12.5, color: "rgba(255,160,160,0.85)", lineHeight: 1.55 }}>{calcError}</span>
+        </div>
+      )}
 
       {/* Tab bar */}
       <div style={{ display: "flex", gap: 4, marginBottom: 28, borderBottom: "1px solid rgba(255,255,255,0.07)", paddingBottom: 0 }}>
