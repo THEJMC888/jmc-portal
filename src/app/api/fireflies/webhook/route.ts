@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { createHmac } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 
-const ADMIN_EMAIL = "rng@thejourneymencollective.com";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "rng@thejourneymencollective.com";
 const FIREFLIES_GQL = "https://api.fireflies.ai/graphql";
 
 // ─── Fireflies types ──────────────────────────────────────────────────────────
@@ -37,15 +37,14 @@ interface ActionItem {
 // ─── Signature verification ───────────────────────────────────────────────────
 function verifySignature(rawBody: string, sigHeader: string | null): boolean {
   const secret = process.env.FIREFLIES_WEBHOOK_SECRET;
-  if (!secret) return true; // skip in dev if no secret configured
+  if (!secret) return false; // hard-fail when unconfigured — never open in production
   if (!sigHeader) return false;
 
   const expected = "sha256=" + createHmac("sha256", secret).update(rawBody, "utf8").digest("hex");
-  // Timing-safe compare
-  if (expected.length !== sigHeader.length) return false;
-  let diff = 0;
-  for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ sigHeader.charCodeAt(i);
-  return diff === 0;
+  const a = Buffer.from(expected, "utf8");
+  const b = Buffer.from(sigHeader, "utf8");
+  if (a.byteLength !== b.byteLength) return false;
+  return timingSafeEqual(a, b);
 }
 
 // ─── Fireflies GraphQL fetch ──────────────────────────────────────────────────
@@ -200,10 +199,12 @@ export async function POST(req: NextRequest) {
   const sessionType: "solo" | "group" = participants.length > 2 ? "group" : "solo";
 
   // Write to Supabase using service role key (bypasses RLS — webhook has no user session)
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceRoleKey) {
+    console.error("SUPABASE_SERVICE_ROLE_KEY is not configured");
+    return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+  }
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey);
 
   const { error: dbError } = await supabase.from("coaching_sessions").upsert(
     {
@@ -223,9 +224,9 @@ export async function POST(req: NextRequest) {
 
   if (dbError) {
     console.error("Supabase upsert error:", dbError);
-    return NextResponse.json({ error: dbError.message }, { status: 500 });
+    return NextResponse.json({ error: "Internal error processing transcript" }, { status: 500 });
   }
 
-  console.log(`Fireflies webhook processed: ${transcriptId} → ${memberEmail ?? "unassigned"}`);
+  console.log(`Fireflies webhook processed: ${transcriptId}`);
   return NextResponse.json({ ok: true, transcriptId, memberEmail, sessionDate });
 }

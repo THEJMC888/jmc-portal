@@ -715,8 +715,11 @@ function DocumentsTab({ session, isAdmin }: { session: { access_token: string } 
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("/api/blueprint/documents").then(r => r.json()).then(setDocs).catch(() => {});
-  }, []);
+    if (!session?.access_token) return;
+    fetch("/api/blueprint/documents", {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    }).then(r => r.json()).then(setDocs).catch(() => {});
+  }, [session?.access_token]);
 
   const docByKey = (key: string) => docs.find(d => d.label === DOC_SLOTS.find(s => s.key === key)?.label);
 

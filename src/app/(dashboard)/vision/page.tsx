@@ -541,7 +541,9 @@ function renderEls(slide,container){
       d.appendChild(p);
     } else if(el.type==='image'&&el.imageDataUrl){
       const img=document.createElement('img');img.src=el.imageDataUrl;
-      img.style.cssText='width:100%;height:100%;object-fit:'+(el.objectFit||'cover')+'';
+      img.style.width='100%';img.style.height='100%';
+      const safeObjectFit=['cover','contain','fill','none','scale-down'].includes(el.objectFit)?el.objectFit:'cover';
+      img.style.objectFit=safeObjectFit;
       img.alt='';d.appendChild(img);
     }
     container.appendChild(d);

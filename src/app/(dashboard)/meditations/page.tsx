@@ -389,11 +389,14 @@ export default function MeditationsPage() {
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch("/api/meditations")
+    if (!session?.access_token) return;
+    fetch("/api/meditations", {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
       .then(r => r.json())
       .then((data: Meditation[]) => { setMeditations(data); setLoading(false); })
       .catch(() => setLoading(false));
-  }, []);
+  }, [session?.access_token]);
 
   const active = activeIdx !== null ? meditations[activeIdx] : null;
 

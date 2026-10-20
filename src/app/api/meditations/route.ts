@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { put, list, del } from "@vercel/blob";
 import { createClient } from "@supabase/supabase-js";
 
-const ADMIN_EMAIL = "rng@thejourneymencollective.com";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "rng@thejourneymencollective.com";
 const INDEX_PREFIX = "jmc-meditations/index";
 
 export interface Meditation {
@@ -37,7 +37,7 @@ async function setIndex(meditations: Meditation[]): Promise<void> {
   });
 }
 
-async function getAdminUser(request: NextRequest) {
+async function getAuthUser(request: NextRequest) {
   const token = request.headers.get("Authorization")?.replace("Bearer ", "");
   if (!token) return null;
   const supabase = createClient(
@@ -45,10 +45,17 @@ async function getAdminUser(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
   );
   const { data: { user } } = await supabase.auth.getUser(token);
+  return user ?? null;
+}
+
+async function getAdminUser(request: NextRequest) {
+  const user = await getAuthUser(request);
   return user?.email === ADMIN_EMAIL ? user : null;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const user = await getAuthUser(request);
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const meditations = await getIndex();
   return NextResponse.json(meditations);
 }
