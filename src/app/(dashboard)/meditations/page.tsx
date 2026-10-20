@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Play, Pause, SkipBack, SkipForward, Volume2, Upload, Trash2, Loader2, Music, X, ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
-const ADMIN_EMAIL = "rng@thejourneymencollective.com";
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "rng@thejourneymencollective.com";
 
 interface Meditation {
   id: string;
@@ -389,11 +389,14 @@ export default function MeditationsPage() {
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch("/api/meditations")
+    if (!session?.access_token) return;
+    fetch("/api/meditations", {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
       .then(r => r.json())
       .then((data: Meditation[]) => { setMeditations(data); setLoading(false); })
       .catch(() => setLoading(false));
-  }, []);
+  }, [session?.access_token]);
 
   const active = activeIdx !== null ? meditations[activeIdx] : null;
 
