@@ -12,30 +12,6 @@ import {
   getOrCreateKey, encryptText, decryptText, exportKeyAsBase64, importKeyFromBase64,
 } from "@/lib/journalCrypto";
 
-// ─── OpenAI API key (stored locally) ─────────────────────────────────────────
-const OPENAI_KEY = "jmc_openai_key";
-function getOpenAIKey(): string { try { return localStorage.getItem(OPENAI_KEY) ?? ""; } catch { return ""; } }
-function setOpenAIKey(k: string) { try { localStorage.setItem(OPENAI_KEY, k); } catch {} }
-
-async function whisperTranscribe(dataUrl: string, apiKey: string): Promise<string> {
-  const res = await fetch(dataUrl);
-  const blob = await res.blob();
-  const ext = blob.type.includes("mp4") ? "mp4" : blob.type.includes("ogg") ? "ogg" : "webm";
-  const form = new FormData();
-  form.append("file", new File([blob], `audio.${ext}`, { type: blob.type || "audio/webm" }));
-  form.append("model", "whisper-1");
-  const resp = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}` },
-    body: form,
-  });
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}));
-    throw new Error(err?.error?.message ?? `HTTP ${resp.status}`);
-  }
-  const data = await resp.json();
-  return data.text ?? "";
-}
 
 // ─── Live dictation hook (Web Speech API) ────────────────────────────────────
 function useDictation(onWord: (text: string) => void) {
@@ -1055,19 +1031,30 @@ export default function JournalPage() {
   const dictation = useDictation(appendToNotes);
 
   const handleTranscribeClip = useCallback(async (item: JournalMedia) => {
-    let key = getOpenAIKey();
-    if (!key) {
-      key = (prompt("Enter your OpenAI API key to transcribe audio.\nIt will be saved locally and never leave your browser.") ?? "").trim();
-      if (!key) return;
-      setOpenAIKey(key);
-    }
     try {
-      const text = await whisperTranscribe(item.dataUrl, key);
-      appendToNotes(`\n\n[Transcript — ${item.name}]\n${text}`);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) { alert("Not authenticated — please sign in."); return; }
+
+      const res = await fetch(item.dataUrl);
+      const blob = await res.blob();
+      const ext = blob.type.includes("mp4") ? "mp4" : blob.type.includes("ogg") ? "ogg" : "webm";
+      const form = new FormData();
+      form.append("file", new File([blob], `audio.${ext}`, { type: blob.type || "audio/webm" }));
+
+      const resp = await fetch("/api/journal/transcribe", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: form,
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err?.error ?? `HTTP ${resp.status}`);
+      }
+      const data = await resp.json();
+      appendToNotes(`\n\n[Transcript — ${item.name}]\n${data.text}`);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       alert(`Transcription failed: ${msg}`);
-      if (msg.includes("401") || msg.toLowerCase().includes("invalid")) setOpenAIKey("");
     }
   }, [appendToNotes]);
 
