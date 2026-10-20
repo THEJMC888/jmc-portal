@@ -52,7 +52,8 @@ export async function GET(request: NextRequest) {
   const user = await getAuthUser(request);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const docs = await getIndex();
-  return NextResponse.json(docs);
+  // Return proxy URLs instead of direct blob URLs
+  return NextResponse.json(docs.map(d => ({ ...d, url: `/api/blueprint/documents/${d.id}/download` })));
 }
 
 export async function POST(request: NextRequest) {
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
   }
 
   const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  const blob = await put(`jmc-blueprint/docs/${id}.pdf`, file, { access: "public" });
+  const blob = await put(`jmc-blueprint/docs/${id}.pdf`, file, { access: "private" });
 
   const doc: BlueprintDoc = {
     id,

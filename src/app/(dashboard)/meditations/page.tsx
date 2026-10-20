@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Play, Pause, SkipBack, SkipForward, Volume2, Upload, Trash2, Loader2, Music, X, ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
-const ADMIN_EMAIL = "rng@thejourneymencollective.com";
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "rng@thejourneymencollective.com";
 
 interface Meditation {
   id: string;

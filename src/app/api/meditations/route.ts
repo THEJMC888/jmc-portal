@@ -57,7 +57,8 @@ export async function GET(request: NextRequest) {
   const user = await getAuthUser(request);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const meditations = await getIndex();
-  return NextResponse.json(meditations);
+  // Return proxy stream URLs instead of direct blob URLs
+  return NextResponse.json(meditations.map(m => ({ ...m, audioUrl: `/api/meditations/${m.id}/stream` })));
 }
 
 export async function POST(request: NextRequest) {
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest) {
   const ext = file.name.split(".").pop() ?? "mp3";
 
   const blob = await put(`jmc-meditations/audio/${id}.${ext}`, file, {
-    access: "public",
+    access: "private",
   });
 
   const meditation: Meditation = {

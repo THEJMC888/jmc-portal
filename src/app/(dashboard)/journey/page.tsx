@@ -5,7 +5,7 @@ import { Route, Plus, Check, Users, User, ChevronDown, ChevronUp, FileText, X, L
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 
-const ADMIN_EMAIL = "rng@thejourneymencollective.com";
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "rng@thejourneymencollective.com";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ActionItem {

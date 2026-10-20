@@ -16,6 +16,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [mfaStep, setMfaStep] = useState(false);
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
 
   // Redirect if already signed in
   useEffect(() => {
@@ -47,6 +50,17 @@ export default function LoginPage() {
         setError(error.message);
         setLoading(false);
       } else {
+        const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (aal?.nextLevel === "aal2" && aal.nextLevel !== aal.currentLevel) {
+          const { data: factors } = await supabase.auth.mfa.listFactors();
+          const totp = factors?.totp[0];
+          if (totp) {
+            setMfaFactorId(totp.id);
+            setMfaStep(true);
+            setLoading(false);
+            return;
+          }
+        }
         router.push("/dashboard");
       }
     } else {
@@ -59,6 +73,22 @@ export default function LoginPage() {
         setMode("signin");
         setLoading(false);
       }
+    }
+  };
+
+  const handleMfaSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    const { error } = await supabase.auth.mfa.challengeAndVerify({
+      factorId: mfaFactorId!,
+      code: mfaCode.replace(/\s/g, ""),
+    });
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+    } else {
+      router.push("/dashboard");
     }
   };
 
@@ -178,9 +208,9 @@ export default function LoginPage() {
               marginBottom: "0.25rem",
             }}
           >
-            {mode === "signin" ? "Welcome back" : mode === "signup" ? "Create your account" : "Reset your password"}
+            {mfaStep ? "Two-factor auth" : mode === "signin" ? "Welcome back" : mode === "signup" ? "Create your account" : "Reset your password"}
           </h2>
-          {mode === "signup" && (
+          {!mfaStep && mode === "signup" && (
             <p
               style={{
                 fontFamily: "Avenir, Nunito, system-ui, sans-serif",
@@ -192,7 +222,7 @@ export default function LoginPage() {
               Your private space awaits.
             </p>
           )}
-          {mode === "forgot" && (
+          {!mfaStep && mode === "forgot" && (
             <p
               style={{
                 fontFamily: "Avenir, Nunito, system-ui, sans-serif",
@@ -204,6 +234,18 @@ export default function LoginPage() {
               Enter your email and we&apos;ll send you a reset link.
             </p>
           )}
+          {mfaStep && (
+            <p
+              style={{
+                fontFamily: "Avenir, Nunito, system-ui, sans-serif",
+                color: "rgba(222,211,200,0.55)",
+                fontSize: "0.875rem",
+                marginBottom: "1.75rem",
+              }}
+            >
+              Open your authenticator app and enter the 6-digit code.
+            </p>
+          )}
 
           {notice && (
             <p className="mb-4 text-sm rounded-lg px-4 py-3" style={{ color: "#86efac", background: "rgba(134,239,172,0.08)", border: "1px solid rgba(134,239,172,0.2)" }}>
@@ -211,7 +253,77 @@ export default function LoginPage() {
             </p>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          {mfaStep && (
+            <form onSubmit={handleMfaSubmit} className="space-y-5">
+              <div>
+                <label
+                  htmlFor="mfa-code"
+                  className="block mb-2"
+                  style={{
+                    fontFamily: "Syne, system-ui, sans-serif",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.15em",
+                    fontSize: "0.65rem",
+                    color: "rgba(222,211,200,0.6)",
+                  }}
+                >
+                  Authenticator Code
+                </label>
+                <input
+                  id="mfa-code"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9 ]*"
+                  maxLength={7}
+                  value={mfaCode}
+                  onChange={(e) => setMfaCode(e.target.value)}
+                  placeholder="000 000"
+                  autoFocus
+                  className="w-full rounded-lg px-4 py-3 text-sm text-center tracking-widest transition-all focus:outline-none"
+                  style={{
+                    background: "rgba(1,4,14,0.9)",
+                    border: "1.5px solid rgba(194,159,96,0.38)",
+                    borderTop: "1.5px solid rgba(194,159,96,0.22)",
+                    color: "#DED3C8",
+                    fontFamily: "Avenir, Nunito, system-ui, sans-serif",
+                    fontSize: "1.5rem",
+                    letterSpacing: "0.35em",
+                    boxShadow: ["inset 0 2px 8px rgba(0,0,0,0.75)", "inset 0 1px 4px rgba(0,0,0,0.55)"].join(", "),
+                  }}
+                  required
+                />
+              </div>
+              {error && (
+                <p className="text-sm rounded-lg px-4 py-3" style={{ color: "#f87171", background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)" }}>
+                  {error}
+                </p>
+              )}
+              <button
+                type="submit"
+                disabled={loading || mfaCode.replace(/\s/g, "").length < 6}
+                className="w-full py-4 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  fontFamily: "Syne, system-ui, sans-serif",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.14em",
+                  fontSize: "0.8rem",
+                  background: "linear-gradient(180deg, #DEC272 0%, #C8A04C 20%, #A07A28 44%, #BE9642 66%, #D4B462 86%, #E0C878 100%)",
+                  color: "#08203A",
+                  border: "none",
+                  borderTop: "1px solid rgba(240,215,150,0.5)",
+                  borderBottom: "1px solid rgba(30,15,0,0.65)",
+                  boxShadow: ["inset 0 1px 0 rgba(240,220,170,0.4)", "0 2px 0 rgba(20,12,0,0.85)", "0 4px 0 rgba(20,12,0,0.65)", "0 10px 20px rgba(0,0,0,0.6)"].join(", "),
+                  textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                }}
+              >
+                {loading ? "Verifying..." : "Verify Code >"}
+              </button>
+            </form>
+          )}
+
+          {!mfaStep && <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label
                 htmlFor="email"
@@ -437,31 +549,53 @@ export default function LoginPage() {
                 ? (mode === "forgot" ? "Sending..." : mode === "signin" ? "Signing in..." : "Creating account...")
                 : (mode === "forgot" ? "Send Reset Link >" : mode === "signin" ? "Enter The Portal To Clarity" : "Create Account >")}
             </button>
-          </form>
+          </form>}
 
           <div
             className="mt-6 pt-6 text-center space-y-3"
             style={{ borderTop: "1px solid rgba(194,159,96,0.1)" }}
           >
-            <button
-              onClick={() => { setMode(mode === "signup" ? "signin" : mode === "forgot" ? "signin" : "signup"); setError(""); setNotice(""); }}
-              style={{
-                fontFamily: "Syne, system-ui, sans-serif",
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "0.1em",
-                fontSize: "0.65rem",
-                color: "rgba(194,159,96,0.6)",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                transition: "color 0.2s",
-              }}
-              onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#C29F60")}
-              onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "rgba(194,159,96,0.6)")}
-            >
-              {mode === "signin" ? "New member? Create account >" : mode === "forgot" ? "< Back to sign in" : "Already have an account? Sign in >"}
-            </button>
+            {!mfaStep ? (
+              <button
+                onClick={() => { setMode(mode === "signup" ? "signin" : mode === "forgot" ? "signin" : "signup"); setError(""); setNotice(""); }}
+                style={{
+                  fontFamily: "Syne, system-ui, sans-serif",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                  fontSize: "0.65rem",
+                  color: "rgba(194,159,96,0.6)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "color 0.2s",
+                }}
+                onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#C29F60")}
+                onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "rgba(194,159,96,0.6)")}
+              >
+                {mode === "signin" ? "New member? Create account >" : mode === "forgot" ? "< Back to sign in" : "Already have an account? Sign in >"}
+              </button>
+            ) : (
+              <button
+                onClick={() => { setMfaStep(false); setMfaCode(""); setError(""); }}
+                style={{
+                  fontFamily: "Syne, system-ui, sans-serif",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                  fontSize: "0.65rem",
+                  color: "rgba(194,159,96,0.6)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "color 0.2s",
+                }}
+                onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#C29F60")}
+                onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "rgba(194,159,96,0.6)")}
+              >
+                ← Back to sign in
+              </button>
+            )}
           </div>
         </div>
 
