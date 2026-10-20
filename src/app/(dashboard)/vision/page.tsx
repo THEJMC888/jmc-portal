@@ -6,9 +6,10 @@ import {
   Plus, Trash2, Play, Upload, Music, X, Download,
   Type, Image as ImageIcon, Bold, Italic, AlignLeft,
   AlignCenter, AlignRight, ChevronUp, ChevronDown,
-  Layers, Sparkles, ImagePlus,
+  Layers, Sparkles, ImagePlus, FileInput,
 } from "lucide-react";
 import type { VisionVideo, VisionSlide, SlideElement, SlideBackground } from "@/types";
+import { parsePptxFile } from "@/lib/parsePptx";
 import MobileVisionEditor from "@/components/MobileVisionEditor";
 import { PORTAL_PHOTO_BUCKETS, BUCKET_LABELS, type PortalPhotoBucket } from "@/lib/portalPhotos";
 
@@ -610,6 +611,8 @@ export default function VisionPage() {
   const [showMobileProps, setShowMobileProps] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
+  const [isImportingPptx, setIsImportingPptx] = useState(false);
+  const [pptxImportError, setPptxImportError] = useState<string | null>(null);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const [draggingSlideId, setDraggingSlideId] = useState<string | null>(null);
@@ -633,6 +636,7 @@ export default function VisionPage() {
   const visionListRef = useRef<VisionMeta[]>(initStorage().list);
   const slideDragIdRef = useRef<string | null>(null);
   const photoMultiRef = useRef<HTMLInputElement>(null);
+  const pptxImportRef = useRef<HTMLInputElement>(null);
 
   // ─── Derived ──────────────────────────────────────────────────────────────
   const selSlide = vision.slides.find((s) => s.id === selSlideId) ?? vision.slides[0];
@@ -1101,6 +1105,24 @@ export default function VisionPage() {
   };
 
   const addSlide = () => addSlideFromTemplate(SLIDE_TEMPLATES[0]); // fallback (blank)
+
+  const handlePptxImport = async (file: File) => {
+    setIsImportingPptx(true);
+    setPptxImportError(null);
+    try {
+      const imported = await parsePptxFile(file);
+      if (imported.length === 0) throw new Error("No slides found in this file.");
+      save((v) => ({ ...v, slides: [...v.slides, ...imported] }));
+      setSelSlideId(imported[0].id);
+      setSelElId(null);
+      setEditingElId(null);
+    } catch (err) {
+      setPptxImportError(err instanceof Error ? err.message : "Import failed");
+    } finally {
+      setIsImportingPptx(false);
+      if (pptxImportRef.current) pptxImportRef.current.value = "";
+    }
+  };
 
   const loadVisionTemplate = (tmpl: VisionTemplateDef) => {
     const slides = tmpl.build().map((s) => ({
@@ -1847,6 +1869,7 @@ export default function VisionPage() {
       <input ref={bgImgRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleBgImgUpload} />
       <input ref={elImgRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleElImgUpload} />
       <input ref={audioRef} type="file" accept="audio/*" style={{ display: "none" }} onChange={handleAudioUpload} />
+      <input ref={pptxImportRef} type="file" accept=".pptx" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePptxImport(f); }} />
 
       {/* ── Header ── */}
       <div style={{
@@ -2186,6 +2209,25 @@ export default function VisionPage() {
             }}>
               <ImageIcon size={12} /> {isMobile ? "Image" : "Add Image"}
             </button>
+            <button
+              onClick={() => pptxImportRef.current?.click()}
+              disabled={isImportingPptx}
+              style={{
+                display: "flex", alignItems: "center", gap: 5, padding: "5px 12px",
+                borderRadius: 5, border: "1px solid rgba(194,159,96,0.2)",
+                background: "rgba(194,159,96,0.07)", color: isImportingPptx ? "rgba(194,159,96,0.4)" : "#C29F60",
+                fontSize: 11, fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700,
+                letterSpacing: "0.08em", cursor: isImportingPptx ? "wait" : "pointer",
+              }}
+            >
+              <FileInput size={12} /> {isMobile ? "PPTX" : isImportingPptx ? "Importing…" : "Import PPTX"}
+            </button>
+            {pptxImportError && (
+              <span style={{ fontSize: 10, color: "rgba(255,107,107,0.8)", fontFamily: "Syne,system-ui,sans-serif", display: "flex", alignItems: "center", gap: 4 }}>
+                <X size={10} onClick={() => setPptxImportError(null)} style={{ cursor: "pointer" }} />
+                {pptxImportError}
+              </span>
+            )}
             {selElId && (
               <button onClick={() => { setSelElId(null); setEditingElId(null); }} style={{
                 display: "flex", alignItems: "center", gap: 4, padding: "5px 10px",
