@@ -8,6 +8,9 @@ import {
 } from "lucide-react";
 import { useMobile } from "@/hooks/useMobile";
 import { supabase } from "@/lib/supabase";
+import {
+  getOrCreateKey, encryptText, decryptText, exportKeyAsBase64, importKeyFromBase64,
+} from "@/lib/journalCrypto";
 
 // ─── OpenAI API key (stored locally) ─────────────────────────────────────────
 const OPENAI_KEY = "jmc_openai_key";
@@ -122,12 +125,13 @@ function deleteEntry(id: string) {
 }
 
 // ─── Supabase sync helpers ────────────────────────────────────────────────────
-async function syncToSupabase(entry: JournalEntry, userId: string) {
+async function syncToSupabase(entry: JournalEntry, userId: string, cryptoKey: CryptoKey | null) {
+  const text = cryptoKey ? await encryptText(cryptoKey, entry.text) : entry.text;
   await supabase.from("journal_entries").upsert({
     id: entry.id,
     date: entry.date,
     title: entry.title,
-    text: entry.text,
+    text,
     created_at: entry.createdAt,
     updated_at: entry.updatedAt,
     user_id: userId,
@@ -138,20 +142,20 @@ async function deleteFromSupabase(id: string) {
   await supabase.from("journal_entries").delete().eq("id", id);
 }
 
-async function fetchFromSupabase(): Promise<JournalEntry[]> {
+async function fetchFromSupabase(cryptoKey: CryptoKey | null): Promise<JournalEntry[]> {
   const { data } = await supabase
     .from("journal_entries")
     .select("*")
     .order("date", { ascending: false });
-  return (data ?? []).map((row) => ({
+  return Promise.all((data ?? []).map(async (row) => ({
     id: row.id,
     date: row.date,
     title: row.title,
-    text: row.text,
+    text: cryptoKey ? await decryptText(cryptoKey, row.text ?? "") : (row.text ?? ""),
     media: [],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-  }));
+  })));
 }
 
 function formatDate(d: string) {
@@ -798,6 +802,160 @@ function MediaPlayer({ item, onDelete, onTranscribe }: { item: JournalMedia; onD
   );
 }
 
+// ─── E2EE Key Management Modal ───────────────────────────────────────────────
+function KeyManagementModal({
+  cryptoKey,
+  userId,
+  onKeyImported,
+  onClose,
+}: {
+  cryptoKey: CryptoKey | null;
+  userId: string | null;
+  onKeyImported: (key: CryptoKey) => void;
+  onClose: () => void;
+}) {
+  const [exported, setExported] = useState<string | null>(null);
+  const [importValue, setImportValue] = useState("");
+  const [importError, setImportError] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const handleExport = async () => {
+    if (!cryptoKey) return;
+    const b64 = await exportKeyAsBase64(cryptoKey);
+    setExported(b64);
+  };
+
+  const handleCopy = async () => {
+    if (!exported) return;
+    try {
+      await navigator.clipboard.writeText(exported);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // fallback: select the text
+    }
+  };
+
+  const handleImport = async () => {
+    if (!userId || !importValue.trim()) return;
+    setImportError("");
+    const key = await importKeyFromBase64(importValue.trim(), userId);
+    if (!key) {
+      setImportError("Invalid key — must be a 44-character base64 string from a previous export.");
+      return;
+    }
+    onKeyImported(key);
+    onClose();
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%", background: "rgba(2,12,30,0.55)", border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 7, padding: "10px 14px", color: "#DED3C8",
+    fontFamily: "ui-monospace, monospace", fontSize: 11,
+    outline: "none", boxSizing: "border-box",
+    boxShadow: "inset 0 2px 6px rgba(0,0,0,0.35)", wordBreak: "break-all",
+  };
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 200,
+      background: "rgba(2,8,20,0.88)", backdropFilter: "blur(14px)",
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 24,
+    }}>
+      <div style={{
+        width: "100%", maxWidth: 520,
+        background: "linear-gradient(160deg, rgba(13,31,60,0.98) 0%, rgba(4,12,32,0.99) 100%)",
+        borderTop: "1.5px solid rgba(255,255,255,0.14)",
+        borderLeft: "1px solid rgba(255,255,255,0.08)",
+        borderRight: "1px solid rgba(0,0,0,0.3)",
+        borderBottom: "1.5px solid rgba(0,0,0,0.5)",
+        borderRadius: 14, boxShadow: "0 24px 80px rgba(0,0,0,0.85)",
+        padding: "28px 32px",
+      }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
+          <div>
+            <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(110,231,183,0.7)", marginBottom: 4 }}>
+              🔒 End-to-End Encryption
+            </div>
+            <h2 style={{ fontFamily: "Lora, Georgia, serif", fontSize: 20, fontWeight: 600, color: "#DED3C8", margin: 0 }}>
+              Journal Encryption Key
+            </h2>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(222,211,200,0.4)", padding: 4 }}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <p style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 12.5, color: "rgba(222,211,200,0.6)", lineHeight: 1.7, marginBottom: 20 }}>
+          Your journal entries are encrypted in this browser before being stored. Supabase holds only ciphertext — unreadable without your key. Back up your key to access entries on other devices.
+        </p>
+
+        {/* Export */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8.5, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(194,159,96,0.7)", marginBottom: 8 }}>
+            Export Key (Backup)
+          </div>
+          {!exported ? (
+            <button onClick={handleExport} disabled={!cryptoKey} style={{
+              padding: "9px 18px", borderRadius: 7, cursor: cryptoKey ? "pointer" : "not-allowed",
+              fontFamily: "Syne, system-ui, sans-serif", fontSize: 10, fontWeight: 700,
+              letterSpacing: "0.12em", textTransform: "uppercase",
+              background: "rgba(29,116,88,0.15)", border: "1px solid rgba(29,116,88,0.3)",
+              color: "rgba(110,231,183,0.85)", opacity: cryptoKey ? 1 : 0.5,
+            }}>
+              Reveal Key
+            </button>
+          ) : (
+            <div>
+              <div style={{ ...inputStyle, marginBottom: 8, userSelect: "all" as React.CSSProperties["userSelect"] }}>
+                {exported}
+              </div>
+              <button onClick={handleCopy} style={{
+                padding: "7px 14px", borderRadius: 6, cursor: "pointer",
+                fontFamily: "Syne, system-ui, sans-serif", fontSize: 9.5, fontWeight: 700,
+                letterSpacing: "0.1em", textTransform: "uppercase",
+                background: copied ? "rgba(29,116,88,0.2)" : "rgba(194,159,96,0.1)",
+                border: `1px solid ${copied ? "rgba(29,116,88,0.35)" : "rgba(194,159,96,0.25)"}`,
+                color: copied ? "rgba(110,231,183,0.9)" : "rgba(194,159,96,0.85)",
+              }}>
+                {copied ? "✓ Copied" : "Copy to Clipboard"}
+              </button>
+              <p style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 9, color: "rgba(255,150,100,0.7)", marginTop: 8 }}>
+                Save this somewhere safe (password manager). Anyone with this key can decrypt your journal.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Import */}
+        <div>
+          <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8.5, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(194,159,96,0.7)", marginBottom: 8 }}>
+            Import Key (Restore on New Device)
+          </div>
+          <textarea
+            style={{ ...inputStyle, minHeight: 60, resize: "vertical", marginBottom: 8 }}
+            value={importValue}
+            onChange={e => setImportValue(e.target.value)}
+            placeholder="Paste your exported key here…"
+          />
+          {importError && (
+            <p style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 9.5, color: "rgba(255,100,80,0.8)", marginBottom: 8 }}>{importError}</p>
+          )}
+          <button onClick={handleImport} style={{
+            padding: "9px 18px", borderRadius: 7, cursor: "pointer",
+            fontFamily: "Syne, system-ui, sans-serif", fontSize: 10, fontWeight: 700,
+            letterSpacing: "0.12em", textTransform: "uppercase",
+            background: "rgba(0,180,200,0.1)", border: "1px solid rgba(0,180,200,0.25)",
+            color: "rgba(0,210,230,0.85)",
+          }}>
+            Import &amp; Restore
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function JournalPage() {
   const isMobile = useMobile();
@@ -816,14 +974,23 @@ export default function JournalPage() {
   const videoUploadRef = useRef<HTMLInputElement>(null);
   const photoUploadRef = useRef<HTMLInputElement>(null);
   const userIdRef = useRef<string | null>(null);
+  const cryptoKeyRef = useRef<CryptoKey | null>(null);
+  const [e2eeReady, setE2eeReady] = useState(false);
+  const [showKeyExport, setShowKeyExport] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     setList(loadList());
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return;
       userIdRef.current = user.id;
-      fetchFromSupabase().then(async (remoteEntries) => {
+
+      // Initialise encryption key (generates once, persists in IndexedDB)
+      const key = await getOrCreateKey(user.id);
+      cryptoKeyRef.current = key;
+      setE2eeReady(true);
+
+      fetchFromSupabase(key).then(async (remoteEntries) => {
         const remoteMap = new Map(remoteEntries.map((e) => [e.id, e]));
         // Pull remote → local (remote wins if newer)
         remoteEntries.forEach((remote) => {
@@ -837,7 +1004,7 @@ export default function JournalPage() {
         for (const item of localList) {
           if (!remoteMap.has(item.id)) {
             const entry = loadEntry(item.id);
-            if (entry) await syncToSupabase(entry, user.id).catch(() => {});
+            if (entry) await syncToSupabase(entry, user.id, key).catch(() => {});
           }
         }
         setList(loadList());
@@ -868,7 +1035,7 @@ export default function JournalPage() {
     saveTimer.current = setTimeout(() => {
       saveEntry(e);
       setList(loadList());
-      syncToSupabase(e, userIdRef.current ?? "").catch(() => {});
+      syncToSupabase(e, userIdRef.current ?? "", cryptoKeyRef.current).catch(() => {});
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     }, 500);
@@ -1008,6 +1175,16 @@ export default function JournalPage() {
   return (
     <div style={{ minHeight: "100vh", background: "transparent", display: "flex", flexDirection: "column" }}>
 
+      {/* ── E2EE Key Management Modal ── */}
+      {showKeyExport && (
+        <KeyManagementModal
+          cryptoKey={cryptoKeyRef.current}
+          userId={userIdRef.current}
+          onKeyImported={(newKey) => { cryptoKeyRef.current = newKey; }}
+          onClose={() => setShowKeyExport(false)}
+        />
+      )}
+
       {/* ── Header ── */}
       <header style={{
         display: "flex", alignItems: "center", gap: 12,
@@ -1042,6 +1219,22 @@ export default function JournalPage() {
             <Check size={11} /> Saved
           </div>
         )}
+        {/* E2EE lock badge + key export */}
+        <button
+          onClick={() => setShowKeyExport(v => !v)}
+          title={e2eeReady ? "End-to-end encrypted — click to manage key" : "Encryption key not available (private window?)"}
+          style={{
+            display: "flex", alignItems: "center", gap: 4,
+            padding: "4px 9px", borderRadius: 5, cursor: "pointer",
+            fontFamily: "Syne, system-ui, sans-serif", fontSize: 9.5, fontWeight: 700,
+            letterSpacing: "0.12em", textTransform: "uppercase",
+            background: e2eeReady ? "rgba(29,116,88,0.12)" : "rgba(255,100,60,0.1)",
+            border: `1px solid ${e2eeReady ? "rgba(29,116,88,0.3)" : "rgba(255,100,60,0.25)"}`,
+            color: e2eeReady ? "rgba(110,231,183,0.85)" : "rgba(255,150,100,0.8)",
+          }}
+        >
+          {e2eeReady ? "🔒" : "⚠️"} E2EE
+        </button>
         {/* Feed / List toggle */}
         <button
           onClick={() => setViewMode((m) => m === "list" ? "feed" : "list")}
