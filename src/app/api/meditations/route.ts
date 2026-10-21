@@ -11,6 +11,7 @@ export interface Meditation {
   description: string;
   category: string;
   audioUrl: string;
+  imageUrl?: string;
   createdAt: string;
 }
 
@@ -57,7 +58,6 @@ export async function GET(request: NextRequest) {
   const user = await getAuthUser(request);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const meditations = await getIndex();
-  // Return proxy stream URLs instead of direct blob URLs
   return NextResponse.json(meditations.map(m => ({ ...m, audioUrl: `/api/meditations/${m.id}/stream` })));
 }
 
@@ -67,6 +67,7 @@ export async function POST(request: NextRequest) {
 
   const formData = await request.formData();
   const file = formData.get("audio") as File | null;
+  const imageFile = formData.get("image") as File | null;
   const title = (formData.get("title") as string)?.trim();
   const description = (formData.get("description") as string)?.trim() ?? "";
   const category = (formData.get("category") as string)?.trim() ?? "General";
@@ -82,12 +83,22 @@ export async function POST(request: NextRequest) {
     access: "private",
   });
 
+  let imageUrl: string | undefined;
+  if (imageFile && imageFile.size > 0) {
+    const imgExt = imageFile.name.split(".").pop() ?? "jpg";
+    const imgBlob = await put(`jmc-meditations/images/${id}.${imgExt}`, imageFile, {
+      access: "public",
+    });
+    imageUrl = imgBlob.url;
+  }
+
   const meditation: Meditation = {
     id,
     title,
     description,
     category,
     audioUrl: blob.url,
+    imageUrl,
     createdAt: new Date().toISOString(),
   };
 
@@ -95,6 +106,44 @@ export async function POST(request: NextRequest) {
   await setIndex([...existing, meditation]);
 
   return NextResponse.json(meditation, { status: 201 });
+}
+
+export async function PATCH(request: NextRequest) {
+  const admin = await getAdminUser(request);
+  if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const formData = await request.formData();
+  const id = (formData.get("id") as string)?.trim();
+  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+
+  const existing = await getIndex();
+  const idx = existing.findIndex(m => m.id === id);
+  if (idx === -1) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const current = existing[idx];
+  const title = ((formData.get("title") as string)?.trim()) || current.title;
+  const description = (formData.get("description") as string)?.trim() ?? current.description;
+  const category = (formData.get("category") as string)?.trim() || current.category;
+  const imageFile = formData.get("image") as File | null;
+
+  let imageUrl = current.imageUrl;
+  if (imageFile && imageFile.size > 0) {
+    if (current.imageUrl) {
+      try { await del(current.imageUrl); } catch { /* already gone */ }
+    }
+    const imgExt = imageFile.name.split(".").pop() ?? "jpg";
+    const imgBlob = await put(`jmc-meditations/images/${id}.${imgExt}`, imageFile, {
+      access: "public",
+    });
+    imageUrl = imgBlob.url;
+  }
+
+  const updated: Meditation = { ...current, title, description, category, imageUrl };
+  const next = [...existing];
+  next[idx] = updated;
+  await setIndex(next);
+
+  return NextResponse.json(updated);
 }
 
 export async function DELETE(request: NextRequest) {
@@ -108,8 +157,10 @@ export async function DELETE(request: NextRequest) {
   const target = existing.find(m => m.id === id);
   if (!target) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // Remove audio blob
   try { await del(target.audioUrl); } catch { /* already gone */ }
+  if (target.imageUrl) {
+    try { await del(target.imageUrl); } catch { /* already gone */ }
+  }
 
   await setIndex(existing.filter(m => m.id !== id));
   return NextResponse.json({ ok: true });
