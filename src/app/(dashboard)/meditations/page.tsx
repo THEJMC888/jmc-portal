@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Play, Pause, SkipBack, SkipForward, Volume2, Upload, Trash2, Loader2, Music, X, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Play, Pause, SkipBack, SkipForward, Volume2,
+  Upload, Trash2, Loader2, Music, X,
+  ChevronDown, ChevronUp, Pencil, Check,
+  Image as ImageIcon,
+} from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "rng@thejourneymencollective.com";
@@ -12,12 +17,31 @@ interface Meditation {
   description: string;
   category: string;
   audioUrl: string;
+  imageUrl?: string;
   createdAt: string;
+}
+
+interface QueueItem {
+  qid: string;
+  file: File;
+  title: string;
+  category: string;
+  imageFile: File | null;
+  imagePreview: string | null;
+  status: "pending" | "uploading" | "done" | "error";
+  errorMsg?: string;
 }
 
 const CATEGORIES = ["Morning", "Evening", "Breathwork", "Visualization", "Sleep", "Grounding", "General"];
 
-// ─── Utilities ────────────────────────────────────────────────────────────────
+function titleFromFilename(name: string): string {
+  return name
+    .replace(/\.[^.]+$/, "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, c => c.toUpperCase())
+    .trim();
+}
+
 function formatTime(s: number): string {
   if (!isFinite(s) || isNaN(s)) return "0:00";
   const m = Math.floor(s / 60);
@@ -92,20 +116,34 @@ function AudioPlayer({ meditation, onPrev, onNext, hasPrev, hasNext }: {
         preload="metadata"
       />
 
-      {/* Category tag + title */}
-      <div style={{ marginBottom: 4 }}>
-        <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 7.5, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(194,159,96,0.6)" }}>
-          {meditation.category}
-        </span>
+      {/* Album art + metadata */}
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 20 }}>
+        <div style={{
+          width: 88, height: 88, borderRadius: 10, flexShrink: 0, overflow: "hidden",
+          background: "rgba(194,159,96,0.08)",
+          border: "1px solid rgba(194,159,96,0.15)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: meditation.imageUrl ? "0 6px 20px rgba(0,0,0,0.5)" : "none",
+        }}>
+          {meditation.imageUrl
+            ? <img src={meditation.imageUrl} alt={meditation.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            : <Music size={28} color="rgba(194,159,96,0.3)" />
+          }
+        </div>
+        <div style={{ flex: 1, minWidth: 0, paddingTop: 4 }}>
+          <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 7.5, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(194,159,96,0.6)", marginBottom: 4 }}>
+            {meditation.category}
+          </div>
+          <h2 style={{ fontFamily: "Lora, Georgia, serif", fontSize: 22, fontWeight: 600, color: "#DED3C8", margin: "0 0 6px", lineHeight: 1.2 }}>
+            {meditation.title}
+          </h2>
+          {meditation.description && (
+            <p style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 13, color: "rgba(222,211,200,0.5)", margin: 0, lineHeight: 1.65 }}>
+              {meditation.description}
+            </p>
+          )}
+        </div>
       </div>
-      <h2 style={{ fontFamily: "Lora, Georgia, serif", fontSize: 22, fontWeight: 600, color: "#DED3C8", margin: "0 0 6px", lineHeight: 1.2 }}>
-        {meditation.title}
-      </h2>
-      {meditation.description && (
-        <p style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 13, color: "rgba(222,211,200,0.5)", margin: "0 0 20px", lineHeight: 1.65 }}>
-          {meditation.description}
-        </p>
-      )}
 
       {/* Scrubber */}
       <div
@@ -172,13 +210,175 @@ function AudioPlayer({ meditation, onPrev, onNext, hasPrev, hasNext }: {
 }
 
 // ─── Meditation Card ──────────────────────────────────────────────────────────
-function MeditationCard({ meditation, isActive, onClick, onDelete, isAdmin }: {
+function MeditationCard({ meditation, isActive, onClick, onDelete, onUpdate, isAdmin, session }: {
   meditation: Meditation;
   isActive: boolean;
   onClick: () => void;
   onDelete: () => void;
+  onUpdate: (updated: Meditation) => void;
   isAdmin: boolean;
+  session: { access_token: string } | null;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(meditation.title);
+  const [editDesc, setEditDesc] = useState(meditation.description);
+  const [editCat, setEditCat] = useState(meditation.category);
+  const [editImageFile, setEditImageFile] = useState<File | null>(null);
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(meditation.imageUrl ?? null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+
+  // Keep preview in sync if meditation.imageUrl changes externally
+  useEffect(() => {
+    if (!editImageFile) setEditImagePreview(meditation.imageUrl ?? null);
+  }, [meditation.imageUrl, editImageFile]);
+
+  const openEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditTitle(meditation.title);
+    setEditDesc(meditation.description);
+    setEditCat(meditation.category);
+    setEditImageFile(null);
+    setEditImagePreview(meditation.imageUrl ?? null);
+    setSaveError("");
+    setEditing(true);
+  };
+
+  const handleImageChange = (file: File) => {
+    setEditImageFile(file);
+    setEditImagePreview(URL.createObjectURL(file));
+  };
+
+  const saveEdit = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSaving(true);
+    setSaveError("");
+    try {
+      const fd = new FormData();
+      fd.append("id", meditation.id);
+      fd.append("title", editTitle.trim() || meditation.title);
+      fd.append("description", editDesc.trim());
+      fd.append("category", editCat);
+      if (editImageFile) fd.append("image", editImageFile);
+      const res = await fetch("/api/meditations", {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
+        body: fd,
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Save failed");
+      const updated: Meditation = await res.json();
+      onUpdate({ ...updated, audioUrl: meditation.audioUrl });
+      setEditing(false);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inputStyle: React.CSSProperties = {
+    boxSizing: "border-box",
+    padding: "7px 10px", borderRadius: 6,
+    background: "rgba(2,12,30,0.6)",
+    border: "1px solid rgba(255,255,255,0.1)",
+    color: "#DED3C8", fontFamily: "Lora, Georgia, serif", fontSize: 12.5,
+    outline: "none", width: "100%",
+  };
+
+  if (editing) {
+    return (
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          borderRadius: 10,
+          padding: "16px 18px",
+          background: "linear-gradient(160deg, rgba(194,159,96,0.1) 0%, rgba(2,12,30,0.6) 100%)",
+          borderTop: "1px solid rgba(194,159,96,0.3)",
+          borderLeft: "2px solid rgba(194,159,96,0.4)",
+          borderRight: "1px solid rgba(0,0,0,0.15)",
+          borderBottom: "1px solid rgba(0,0,0,0.2)",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+        }}
+      >
+        <div style={{ display: "flex", gap: 12, marginBottom: 10 }}>
+          {/* Cover image picker */}
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            <div style={{
+              width: 64, height: 64, borderRadius: 8, overflow: "hidden",
+              background: "rgba(255,255,255,0.04)",
+              border: "1px dashed rgba(194,159,96,0.3)",
+              cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              {editImagePreview
+                ? <img src={editImagePreview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : <ImageIcon size={18} color="rgba(194,159,96,0.4)" />
+              }
+            </div>
+            <input
+              type="file" accept="image/*"
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleImageChange(f); }}
+              style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }}
+            />
+            <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 7, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(194,159,96,0.4)", textAlign: "center", marginTop: 4 }}>
+              Cover
+            </div>
+          </div>
+
+          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 8 }}>
+              <input
+                value={editTitle}
+                onChange={e => setEditTitle(e.target.value)}
+                placeholder="Title"
+                style={inputStyle}
+                onClick={e => e.stopPropagation()}
+              />
+              <select
+                value={editCat}
+                onChange={e => setEditCat(e.target.value)}
+                style={{ ...inputStyle, cursor: "pointer" }}
+                onClick={e => e.stopPropagation()}
+              >
+                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <input
+              value={editDesc}
+              onChange={e => setEditDesc(e.target.value)}
+              placeholder="Description (optional)"
+              style={inputStyle}
+              onClick={e => e.stopPropagation()}
+            />
+          </div>
+        </div>
+
+        {saveError && (
+          <p style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 11, color: "rgba(255,100,100,0.8)", margin: "0 0 8px" }}>{saveError}</p>
+        )}
+
+        <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+          <button
+            onClick={e => { e.stopPropagation(); setEditing(false); }}
+            style={{ padding: "7px 12px", borderRadius: 6, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(222,211,200,0.5)", fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", cursor: "pointer" }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={saveEdit}
+            disabled={saving}
+            style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 6, cursor: saving ? "default" : "pointer", fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", background: saving ? "rgba(194,159,96,0.2)" : "linear-gradient(180deg, #DEC272 0%, #C8A04C 20%, #A07A28 50%, #D4B462 82%, #E0C878 100%)", color: saving ? "rgba(222,211,200,0.4)" : "#08203A", border: "1.5px solid rgba(240,220,170,0.4)", boxShadow: saving ? "none" : "0 2px 0 rgba(20,12,0,0.85)" }}
+          >
+            {saving
+              ? <><Loader2 size={10} style={{ animation: "spin 1s linear infinite" }} /> Saving…</>
+              : <><Check size={10} /> Save</>
+            }
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       onClick={onClick}
@@ -199,17 +399,20 @@ function MeditationCard({ meditation, isActive, onClick, onDelete, isAdmin }: {
       }}
     >
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-        {/* Icon */}
+        {/* Thumbnail */}
         <div style={{
-          width: 36, height: 36, borderRadius: 8, flexShrink: 0,
-          display: "flex", alignItems: "center", justifyContent: "center",
+          width: 44, height: 44, borderRadius: 8, flexShrink: 0, overflow: "hidden",
           background: isActive ? "rgba(194,159,96,0.15)" : "rgba(255,255,255,0.04)",
           border: `1px solid ${isActive ? "rgba(194,159,96,0.3)" : "rgba(255,255,255,0.06)"}`,
+          display: "flex", alignItems: "center", justifyContent: "center",
         }}>
-          {isActive
-            ? <Play size={14} color="#C29F60" fill="#C29F60" style={{ marginLeft: 2 }} />
-            : <Music size={14} color="rgba(222,211,200,0.3)" />
-          }
+          {meditation.imageUrl ? (
+            <img src={meditation.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : isActive ? (
+            <Play size={14} color="#C29F60" fill="#C29F60" style={{ marginLeft: 2 }} />
+          ) : (
+            <Music size={14} color="rgba(222,211,200,0.3)" />
+          )}
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -227,13 +430,22 @@ function MeditationCard({ meditation, isActive, onClick, onDelete, isAdmin }: {
         </div>
 
         {isAdmin && (
-          <button
-            onClick={e => { e.stopPropagation(); onDelete(); }}
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 4, opacity: 0.4, flexShrink: 0 }}
-            title="Delete"
-          >
-            <Trash2 size={13} color="rgba(255,80,80,0.8)" />
-          </button>
+          <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
+            <button
+              onClick={openEdit}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 5, opacity: 0.45 }}
+              title="Edit"
+            >
+              <Pencil size={12} color="rgba(194,159,96,0.9)" />
+            </button>
+            <button
+              onClick={e => { e.stopPropagation(); onDelete(); }}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 5, opacity: 0.4 }}
+              title="Delete"
+            >
+              <Trash2 size={12} color="rgba(255,80,80,0.8)" />
+            </button>
+          </div>
         )}
       </div>
     </div>
@@ -241,52 +453,75 @@ function MeditationCard({ meditation, isActive, onClick, onDelete, isAdmin }: {
 }
 
 // ─── Upload Panel ─────────────────────────────────────────────────────────────
-function UploadPanel({ session, onUploaded }: { session: { access_token: string } | null; onUploaded: (m: Meditation) => void }) {
+function UploadPanel({ session, onUploaded }: {
+  session: { access_token: string } | null;
+  onUploaded: (m: Meditation) => void;
+}) {
   const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("General");
-  const [file, setFile] = useState<File | null>(null);
+  const [queue, setQueue] = useState<QueueItem[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState("");
 
-  const reset = () => { setTitle(""); setDescription(""); setCategory("General"); setFile(null); setError(""); };
+  const addFiles = (files: FileList | null) => {
+    if (!files) return;
+    const items: QueueItem[] = Array.from(files).map(f => ({
+      qid: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      file: f,
+      title: titleFromFilename(f.name),
+      category: "General",
+      imageFile: null,
+      imagePreview: null,
+      status: "pending",
+    }));
+    setQueue(q => [...q, ...items]);
+  };
 
-  const submit = async () => {
-    if (!file || !title.trim()) { setError("Title and audio file are required."); return; }
+  const setItemImage = (qid: string, file: File) => {
+    setQueue(q => q.map(i => i.qid === qid ? { ...i, imageFile: file, imagePreview: URL.createObjectURL(file) } : i));
+  };
+
+  const removeItem = (qid: string) => setQueue(q => q.filter(i => i.qid !== qid));
+  const clearDone = () => setQueue(q => q.filter(i => i.status !== "done"));
+
+  const pendingCount = queue.filter(i => i.status === "pending").length;
+
+  const uploadAll = async () => {
+    if (!pendingCount || uploading) return;
     setUploading(true);
-    setError("");
-    try {
-      const fd = new FormData();
-      fd.append("audio", file);
-      fd.append("title", title.trim());
-      fd.append("description", description.trim());
-      fd.append("category", category);
-      const res = await fetch("/api/meditations", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
-        body: fd,
-      });
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error ?? "Upload failed"); }
-      const meditation: Meditation = await res.json();
-      onUploaded(meditation);
-      reset();
-      setOpen(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
-    } finally {
-      setUploading(false);
+    for (const item of queue.filter(i => i.status === "pending")) {
+      setQueue(q => q.map(i => i.qid === item.qid ? { ...i, status: "uploading" } : i));
+      try {
+        const fd = new FormData();
+        fd.append("audio", item.file);
+        fd.append("title", item.title.trim() || titleFromFilename(item.file.name));
+        fd.append("description", "");
+        fd.append("category", item.category);
+        if (item.imageFile) fd.append("image", item.imageFile);
+        const res = await fetch("/api/meditations", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
+          body: fd,
+        });
+        if (!res.ok) throw new Error((await res.json()).error ?? "Upload failed");
+        const m: Meditation = await res.json();
+        onUploaded(m);
+        setQueue(q => q.map(i => i.qid === item.qid ? { ...i, status: "done" } : i));
+      } catch (err) {
+        setQueue(q => q.map(i => i.qid === item.qid ? { ...i, status: "error", errorMsg: err instanceof Error ? err.message : "Failed" } : i));
+      }
     }
+    setUploading(false);
   };
 
   const inputStyle: React.CSSProperties = {
-    width: "100%", boxSizing: "border-box",
-    padding: "10px 14px", borderRadius: 7,
+    boxSizing: "border-box",
+    padding: "6px 10px", borderRadius: 6,
     background: "rgba(2,12,30,0.6)",
     border: "1px solid rgba(255,255,255,0.1)",
-    color: "#DED3C8", fontFamily: "Lora, Georgia, serif", fontSize: 13,
-    outline: "none",
+    color: "#DED3C8", fontFamily: "Lora, Georgia, serif", fontSize: 12.5,
+    outline: "none", width: "100%",
   };
+
+  const statusColor = { pending: "rgba(222,211,200,0.3)", uploading: "#C29F60", done: "rgba(80,200,120,0.8)", error: "rgba(255,80,80,0.7)" };
 
   return (
     <div style={{
@@ -305,74 +540,140 @@ function UploadPanel({ session, onUploaded }: { session: { access_token: string 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <Upload size={12} color="rgba(194,159,96,0.8)" />
           <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(194,159,96,0.8)" }}>
-            Upload New Meditation
+            Upload Meditations
           </span>
         </div>
         {open ? <ChevronUp size={13} color="rgba(194,159,96,0.5)" /> : <ChevronDown size={13} color="rgba(194,159,96,0.5)" />}
       </button>
 
       {open && (
-        <div style={{ padding: "0 18px 18px", display: "flex", flexDirection: "column", gap: 12 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
-            <div>
-              <label style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(222,211,200,0.45)", display: "block", marginBottom: 5 }}>Title *</label>
-              <input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Morning Centering" style={inputStyle} />
-            </div>
-            <div>
-              <label style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(222,211,200,0.45)", display: "block", marginBottom: 5 }}>Category</label>
-              <select value={category} onChange={e => setCategory(e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
-                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
+        <div style={{ padding: "0 18px 18px" }}>
+          {/* Drop zone */}
+          <div style={{
+            padding: "18px 20px", borderRadius: 8, textAlign: "center",
+            background: "rgba(2,12,30,0.4)",
+            border: "1px dashed rgba(255,255,255,0.12)",
+            cursor: "pointer", position: "relative",
+            marginBottom: queue.length ? 14 : 0,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+          }}>
+            <input
+              type="file" accept="audio/*" multiple
+              onChange={e => addFiles(e.target.files)}
+              style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }}
+            />
+            <Upload size={14} color="rgba(194,159,96,0.4)" />
+            <span style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 12.5, color: "rgba(222,211,200,0.35)" }}>
+              {queue.length ? "Add more audio files" : "Select audio files (MP3, M4A, WAV) — pick multiple at once"}
+            </span>
           </div>
 
-          <div>
-            <label style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(222,211,200,0.45)", display: "block", marginBottom: 5 }}>Description</label>
-            <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Brief description of this meditation…" rows={2} style={{ ...inputStyle, resize: "vertical" }} />
-          </div>
+          {/* Queue rows */}
+          {queue.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+              {queue.map(item => (
+                <div key={item.qid} style={{
+                  borderRadius: 8, padding: "10px 12px",
+                  background: item.status === "done" ? "rgba(80,200,120,0.04)" : item.status === "error" ? "rgba(255,80,80,0.04)" : "rgba(2,12,30,0.5)",
+                  border: `1px solid ${item.status === "done" ? "rgba(80,200,120,0.2)" : item.status === "error" ? "rgba(255,80,80,0.2)" : "rgba(255,255,255,0.07)"}`,
+                  display: "flex", alignItems: "center", gap: 10,
+                  opacity: item.status === "done" ? 0.7 : 1,
+                }}>
+                  {/* Image thumbnail / picker */}
+                  <div style={{ position: "relative", flexShrink: 0 }}>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 6, overflow: "hidden",
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px dashed rgba(194,159,96,0.25)",
+                      cursor: item.status === "pending" ? "pointer" : "default",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      {item.imagePreview
+                        ? <img src={item.imagePreview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        : <ImageIcon size={13} color="rgba(194,159,96,0.3)" />
+                      }
+                    </div>
+                    {item.status === "pending" && (
+                      <input
+                        type="file" accept="image/*"
+                        onChange={e => { const f = e.target.files?.[0]; if (f) setItemImage(item.qid, f); }}
+                        style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }}
+                      />
+                    )}
+                  </div>
 
-          <div>
-            <label style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(222,211,200,0.45)", display: "block", marginBottom: 5 }}>Audio File * (MP3, M4A, WAV)</label>
-            <div style={{
-              padding: "16px", borderRadius: 7, textAlign: "center",
-              background: file ? "rgba(194,159,96,0.06)" : "rgba(2,12,30,0.4)",
-              border: `1px dashed ${file ? "rgba(194,159,96,0.4)" : "rgba(255,255,255,0.1)"}`,
-              cursor: "pointer", position: "relative",
-            }}>
-              <input
-                type="file"
-                accept="audio/*"
-                onChange={e => setFile(e.target.files?.[0] ?? null)}
-                style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }}
-              />
-              {file ? (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                  <Music size={13} color="rgba(194,159,96,0.8)" />
-                  <span style={{ fontFamily: "Lora, Georgia, serif", fontSize: 12.5, color: "rgba(222,211,200,0.75)" }}>{file.name}</span>
-                  <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 9, color: "rgba(222,211,200,0.4)" }}>({(file.size / 1024 / 1024).toFixed(1)} MB)</span>
+                  {/* Title + category */}
+                  <div style={{ flex: 1, minWidth: 0, display: "flex", gap: 8 }}>
+                    <input
+                      value={item.title}
+                      onChange={e => setQueue(q => q.map(i => i.qid === item.qid ? { ...i, title: e.target.value } : i))}
+                      disabled={item.status !== "pending"}
+                      style={{ ...inputStyle, flex: "2 1 0" }}
+                      placeholder="Title"
+                    />
+                    <select
+                      value={item.category}
+                      onChange={e => setQueue(q => q.map(i => i.qid === item.qid ? { ...i, category: e.target.value } : i))}
+                      disabled={item.status !== "pending"}
+                      style={{ ...inputStyle, flex: "1 1 0", cursor: "pointer" }}
+                    >
+                      {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Status */}
+                  <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 5 }}>
+                    {item.status === "uploading" && <Loader2 size={10} color="#C29F60" style={{ animation: "spin 1s linear infinite" }} />}
+                    <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 7.5, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: statusColor[item.status] }}>
+                      {item.status === "uploading" ? "Uploading" : item.status === "done" ? "Done" : item.status === "error" ? (item.errorMsg ?? "Error") : "Ready"}
+                    </span>
+                  </div>
+
+                  {/* Remove */}
+                  {item.status === "pending" && (
+                    <button
+                      onClick={() => removeItem(item.qid)}
+                      style={{ background: "none", border: "none", cursor: "pointer", padding: 2, opacity: 0.4, flexShrink: 0 }}
+                    >
+                      <X size={12} color="rgba(222,211,200,0.6)" />
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <span style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 12.5, color: "rgba(222,211,200,0.35)" }}>Click to choose a file</span>
-              )}
+              ))}
             </div>
-          </div>
-
-          {error && (
-            <p style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 12, color: "rgba(255,100,100,0.8)", margin: 0 }}>{error}</p>
           )}
 
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-            <button onClick={() => { reset(); setOpen(false); }} style={{ padding: "9px 16px", borderRadius: 7, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(222,211,200,0.5)", fontFamily: "Syne, system-ui, sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", cursor: "pointer" }}>
-              Cancel
-            </button>
-            <button
-              onClick={submit}
-              disabled={uploading}
-              style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 20px", borderRadius: 7, cursor: uploading ? "default" : "pointer", fontFamily: "Syne, system-ui, sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", background: uploading ? "rgba(194,159,96,0.2)" : "linear-gradient(180deg, #DEC272 0%, #C8A04C 20%, #A07A28 50%, #D4B462 82%, #E0C878 100%)", color: uploading ? "rgba(222,211,200,0.4)" : "#08203A", border: "1.5px solid rgba(240,220,170,0.4)", boxShadow: uploading ? "none" : "0 2px 0 rgba(20,12,0,0.85), 0 4px 12px rgba(0,0,0,0.5)" }}
-            >
-              {uploading ? <><Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} /> Uploading…</> : <><Upload size={12} /> Upload</>}
-            </button>
-          </div>
+          {/* Action row */}
+          {queue.length > 0 && (
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", alignItems: "center" }}>
+              {queue.some(i => i.status === "done") && (
+                <button
+                  onClick={clearDone}
+                  style={{ padding: "7px 12px", borderRadius: 6, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(222,211,200,0.4)", fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer" }}
+                >
+                  Clear Done
+                </button>
+              )}
+              <button
+                onClick={() => { setQueue([]); setOpen(false); }}
+                style={{ padding: "7px 12px", borderRadius: 6, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(222,211,200,0.5)", fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", cursor: "pointer" }}
+              >
+                Cancel
+              </button>
+              {pendingCount > 0 && (
+                <button
+                  onClick={uploadAll}
+                  disabled={uploading}
+                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 20px", borderRadius: 7, cursor: uploading ? "default" : "pointer", fontFamily: "Syne, system-ui, sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", background: uploading ? "rgba(194,159,96,0.2)" : "linear-gradient(180deg, #DEC272 0%, #C8A04C 20%, #A07A28 50%, #D4B462 82%, #E0C878 100%)", color: uploading ? "rgba(222,211,200,0.4)" : "#08203A", border: "1.5px solid rgba(240,220,170,0.4)", boxShadow: uploading ? "none" : "0 2px 0 rgba(20,12,0,0.85), 0 4px 12px rgba(0,0,0,0.5)" }}
+                >
+                  {uploading
+                    ? <><Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} /> Uploading…</>
+                    : <><Upload size={12} /> Upload {pendingCount} File{pendingCount !== 1 ? "s" : ""}</>
+                  }
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -418,11 +719,16 @@ export default function MeditationsPage() {
   };
 
   const onUploaded = (m: Meditation) => {
+    const withStream = { ...m, audioUrl: `/api/meditations/${m.id}/stream` };
     setMeditations(prev => {
-      const next = [...prev, m];
+      const next = [...prev, withStream];
       setActiveIdx(next.length - 1);
       return next;
     });
+  };
+
+  const onUpdate = (updated: Meditation) => {
+    setMeditations(prev => prev.map(m => m.id === updated.id ? updated : m));
   };
 
   return (
@@ -442,7 +748,7 @@ export default function MeditationsPage() {
           </p>
         </div>
 
-        {/* Player — shown when a meditation is selected */}
+        {/* Player */}
         {active && (
           <AudioPlayer
             key={active.id}
@@ -454,7 +760,7 @@ export default function MeditationsPage() {
           />
         )}
 
-        {/* Meditation list */}
+        {/* List */}
         {loading ? (
           <div style={{ textAlign: "center", padding: "48px 0", color: "rgba(222,211,200,0.35)", fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 13 }}>
             Loading…
@@ -472,13 +778,15 @@ export default function MeditationsPage() {
                 isActive={activeIdx === i}
                 onClick={() => setActiveIdx(activeIdx === i ? null : i)}
                 onDelete={() => onDelete(m.id)}
+                onUpdate={onUpdate}
                 isAdmin={isAdmin}
+                session={session}
               />
             ))}
           </div>
         )}
 
-        {/* Admin upload panel */}
+        {/* Admin upload */}
         {isAdmin && (
           <UploadPanel session={session} onUploaded={onUploaded} />
         )}
