@@ -7,6 +7,7 @@ import {
   ChevronDown, ChevronUp, Pencil, Check,
   Image as ImageIcon,
 } from "lucide-react";
+import { upload } from "@vercel/blob/client";
 import { useAuth } from "@/lib/auth";
 
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "rng@thejourneymencollective.com";
@@ -490,18 +491,60 @@ function UploadPanel({ session, onUploaded }: {
     for (const item of queue.filter(i => i.status === "pending")) {
       setQueue(q => q.map(i => i.qid === item.qid ? { ...i, status: "uploading" } : i));
       try {
-        const fd = new FormData();
-        fd.append("audio", item.file);
-        fd.append("title", item.title.trim() || titleFromFilename(item.file.name));
-        fd.append("description", "");
-        fd.append("category", item.category);
-        if (item.imageFile) fd.append("image", item.imageFile);
+        const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const ext = item.file.name.split(".").pop()?.toLowerCase() ?? "mp3";
+
+        // Upload audio directly to Vercel Blob — bypasses the 4.5 MB serverless body limit
+        const audioBlob = await upload(
+          `jmc-meditations/audio/${id}.${ext}`,
+          item.file,
+          {
+            access: "public",
+            handleUploadUrl: "/api/meditations/upload-url",
+            clientPayload: session?.access_token ?? "",
+            multipart: true,
+          }
+        );
+
+        // Upload cover image if provided
+        let imageBlobUrl: string | undefined;
+        if (item.imageFile) {
+          const imgExt = item.imageFile.name.split(".").pop()?.toLowerCase() ?? "jpg";
+          const imageBlob = await upload(
+            `jmc-meditations/images/${id}.${imgExt}`,
+            item.imageFile,
+            {
+              access: "public",
+              handleUploadUrl: "/api/meditations/upload-url",
+              clientPayload: session?.access_token ?? "",
+            }
+          );
+          imageBlobUrl = imageBlob.url;
+        }
+
+        // Save metadata to index
         const res = await fetch("/api/meditations", {
           method: "POST",
-          headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
-          body: fd,
+          headers: {
+            Authorization: `Bearer ${session?.access_token ?? ""}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id,
+            audioUrl: audioBlob.url,
+            imageUrl: imageBlobUrl,
+            title: item.title.trim() || titleFromFilename(item.file.name),
+            description: "",
+            category: item.category,
+          }),
         });
-        if (!res.ok) throw new Error((await res.json()).error ?? "Upload failed");
+
+        if (!res.ok) {
+          const errMsg = await res.json()
+            .then((d: { error?: string }) => d.error)
+            .catch(() => `HTTP ${res.status}`);
+          throw new Error(errMsg ?? "Failed to save");
+        }
         const m: Meditation = await res.json();
         onUploaded(m);
         setQueue(q => q.map(i => i.qid === item.qid ? { ...i, status: "done" } : i));

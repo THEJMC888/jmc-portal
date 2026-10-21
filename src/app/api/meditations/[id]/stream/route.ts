@@ -43,7 +43,6 @@ export async function GET(
   if (!blobs.length) return new Response(null, { status: 404 });
 
   const blobInfo = await head(blobs[0].url);
-  // Redirect to the signed download URL; the browser <audio> element follows the redirect
-  // and the CDN handles range requests for seeking.
-  return NextResponse.redirect(blobInfo.downloadUrl, { status: 302 });
+  // downloadUrl is signed for private blobs; for public blobs fall back to the plain URL.
+  return NextResponse.redirect(blobInfo.downloadUrl ?? blobs[0].url, { status: 302 });
 }
