@@ -502,7 +502,6 @@ function UploadPanel({ session, onUploaded }: {
             access: "public",
             handleUploadUrl: "/api/meditations/upload-url",
             clientPayload: session?.access_token ?? "",
-            multipart: true,
           }
         );
 
