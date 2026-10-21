@@ -65,6 +65,31 @@ export async function POST(request: NextRequest) {
   const admin = await getAdminUser(request);
   if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
+  const contentType = request.headers.get("content-type") ?? "";
+
+  if (contentType.includes("application/json")) {
+    const body = await request.json();
+    const { id: clientId, audioUrl, imageUrl, title, description = "", category = "General" } = body;
+
+    if (!clientId || !audioUrl || !(title as string)?.trim()) {
+      return NextResponse.json({ error: "id, audioUrl, and title are required" }, { status: 400 });
+    }
+
+    const meditation: Meditation = {
+      id: clientId as string,
+      title: (title as string).trim(),
+      description: (description as string).trim(),
+      category: ((category as string).trim()) || "General",
+      audioUrl: audioUrl as string,
+      imageUrl: imageUrl as string | undefined,
+      createdAt: new Date().toISOString(),
+    };
+
+    const existing = await getIndex();
+    await setIndex([...existing, meditation]);
+    return NextResponse.json(meditation, { status: 201 });
+  }
+
   const formData = await request.formData();
   const file = formData.get("audio") as File | null;
   const imageFile = formData.get("image") as File | null;
@@ -80,7 +105,7 @@ export async function POST(request: NextRequest) {
   const ext = file.name.split(".").pop() ?? "mp3";
 
   const blob = await put(`jmc-meditations/audio/${id}.${ext}`, file, {
-    access: "private",
+    access: "public",
   });
 
   let imageUrl: string | undefined;
