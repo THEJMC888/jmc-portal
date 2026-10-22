@@ -31,6 +31,9 @@ interface QueueItem {
   imagePreview: string | null;
   status: "pending" | "uploading" | "done" | "error";
   errorMsg?: string;
+  progress?: number;
+  bytesLoaded?: number;
+  bytesTotal?: number;
 }
 
 const CATEGORIES = ["Morning", "Evening", "Breathwork", "Visualization", "Sleep", "Grounding", "General"];
@@ -48,6 +51,11 @@ function formatTime(s: number): string {
   const m = Math.floor(s / 60);
   const sec = Math.floor(s % 60);
   return `${m}:${sec.toString().padStart(2, "0")}`;
+}
+
+function formatBytes(b: number): string {
+  if (b < 1024 * 1024) return `${(b / 1024).toFixed(0)} KB`;
+  return `${(b / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 // ─── Audio Player ─────────────────────────────────────────────────────────────
@@ -502,6 +510,10 @@ function UploadPanel({ session, onUploaded }: {
             access: "public",
             handleUploadUrl: "/api/meditations/upload-url",
             clientPayload: session?.access_token ?? "",
+            onUploadProgress: ({ loaded, total }: { loaded: number; total: number }) => {
+              const pct = total ? Math.round((loaded / total) * 100) : 0;
+              setQueue(q => q.map(i => i.qid === item.qid ? { ...i, progress: pct, bytesLoaded: loaded, bytesTotal: total } : i));
+            },
           }
         );
 
@@ -616,11 +628,12 @@ function UploadPanel({ session, onUploaded }: {
               {queue.map(item => (
                 <div key={item.qid} style={{
                   borderRadius: 8, padding: "10px 12px",
-                  background: item.status === "done" ? "rgba(80,200,120,0.04)" : item.status === "error" ? "rgba(255,80,80,0.04)" : "rgba(2,12,30,0.5)",
-                  border: `1px solid ${item.status === "done" ? "rgba(80,200,120,0.2)" : item.status === "error" ? "rgba(255,80,80,0.2)" : "rgba(255,255,255,0.07)"}`,
-                  display: "flex", alignItems: "center", gap: 10,
+                  background: item.status === "done" ? "rgba(80,200,120,0.04)" : item.status === "error" ? "rgba(255,80,80,0.04)" : item.status === "uploading" ? "rgba(194,159,96,0.06)" : "rgba(2,12,30,0.5)",
+                  border: `1px solid ${item.status === "done" ? "rgba(80,200,120,0.2)" : item.status === "error" ? "rgba(255,80,80,0.2)" : item.status === "uploading" ? "rgba(194,159,96,0.25)" : "rgba(255,255,255,0.07)"}`,
+                  display: "flex", flexDirection: "column", gap: 10,
                   opacity: item.status === "done" ? 0.7 : 1,
                 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   {/* Image thumbnail / picker */}
                   <div style={{ position: "relative", flexShrink: 0 }}>
                     <div style={{
@@ -679,6 +692,33 @@ function UploadPanel({ session, onUploaded }: {
                     >
                       <X size={12} color="rgba(222,211,200,0.6)" />
                     </button>
+                  )}
+                  </div>
+
+                  {item.status === "uploading" && (
+                    <div>
+                      <div style={{ height: 14, borderRadius: 7, background: "rgba(2,12,30,0.7)", overflow: "hidden", border: "1px solid rgba(194,159,96,0.2)", position: "relative" }}>
+                        <div style={{
+                          position: "absolute", inset: "0 auto 0 0",
+                          width: `${item.progress ?? 0}%`,
+                          background: "linear-gradient(90deg, #7A5010 0%, #C29F60 30%, #F0E098 50%, #C8A04C 70%, #8B6020 100%)",
+                          backgroundSize: "200% 100%",
+                          animation: "shimmer-gold 1.8s linear infinite",
+                          borderRadius: 7,
+                          transition: "width 0.4s ease",
+                        }} />
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
+                        <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(194,159,96,0.6)" }}>
+                          {item.bytesLoaded && item.bytesTotal
+                            ? `${formatBytes(item.bytesLoaded)} / ${formatBytes(item.bytesTotal)}`
+                            : "Uploading…"}
+                        </span>
+                        <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: "#DEC272" }}>
+                          {item.progress ?? 0}%
+                        </span>
+                      </div>
+                    </div>
                   )}
                 </div>
               ))}
@@ -775,7 +815,13 @@ export default function MeditationsPage() {
 
   return (
     <>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes shimmer-gold {
+          0% { background-position: 200% center; }
+          100% { background-position: -200% center; }
+        }
+      `}</style>
       <div style={{ maxWidth: 680, margin: "0 auto" }}>
         {/* Header */}
         <div style={{ marginBottom: 32 }}>
