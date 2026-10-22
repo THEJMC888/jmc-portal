@@ -512,7 +512,11 @@ function UploadPanel({ session, onUploaded }: {
             clientPayload: session?.access_token ?? "",
             onUploadProgress: ({ loaded, total }: { loaded: number; total: number }) => {
               const pct = total ? Math.round((loaded / total) * 100) : 0;
-              setQueue(q => q.map(i => i.qid === item.qid ? { ...i, progress: pct, bytesLoaded: loaded, bytesTotal: total } : i));
+              setQueue(q => q.map(i => {
+                if (i.qid !== item.qid) return i;
+                if (pct < (i.progress ?? 0)) return i; // never go backwards
+                return { ...i, progress: pct, bytesLoaded: loaded, bytesTotal: total };
+              }));
             },
           }
         );
