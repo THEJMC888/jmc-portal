@@ -641,7 +641,8 @@ function UploadPanel({ session, onUploaded }: {
     if (!pendingCount || uploading) return;
     setUploading(true);
     for (const item of queue.filter(i => i.status === "pending")) {
-      setQueue(q => q.map(i => i.qid === item.qid ? { ...i, status: "uploading", startedAt: Date.now() } : i));
+      const { qid } = item;
+      setQueue(q => q.map(i => i.qid === qid ? { ...i, status: "uploading", startedAt: Date.now() } : i));
       try {
         const fd = new FormData();
         fd.append("file", item.file);
@@ -649,20 +650,34 @@ function UploadPanel({ session, onUploaded }: {
         fd.append("category", item.category);
         if (item.imageFile) fd.append("image", item.imageFile);
 
-        const res = await fetch("/api/meditations/upload", {
-          method: "POST",
-          headers: { "x-supabase-token": session?.access_token ?? "" },
-          body: fd,
+        const responseText = await new Promise<string>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("POST", "/api/meditations/upload");
+          xhr.setRequestHeader("x-supabase-token", session?.access_token ?? "");
+          xhr.upload.addEventListener("progress", (e) => {
+            if (!e.lengthComputable) return;
+            // Cap at 99% — server-side Bunny.net transfer is the final 1%
+            const pct = Math.min(99, Math.round((e.loaded / e.total) * 99));
+            setQueue(q => q.map(i => i.qid === qid
+              ? { ...i, progress: pct, bytesLoaded: e.loaded, bytesTotal: e.total }
+              : i));
+          });
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve(xhr.responseText);
+            } else {
+              let msg = `HTTP ${xhr.status}`;
+              try { msg = JSON.parse(xhr.responseText).error ?? msg; } catch { /* no-op */ }
+              reject(new Error(msg));
+            }
+          };
+          xhr.onerror = () => reject(new Error("Network error"));
+          xhr.send(fd);
         });
 
-        if (!res.ok) {
-          const errMsg = await res.json().then((d: { error?: string }) => d.error).catch(() => `HTTP ${res.status}`);
-          throw new Error(errMsg ?? "Upload failed");
-        }
-
-        const m: Meditation = await res.json();
+        const m: Meditation = JSON.parse(responseText);
         onUploaded(m);
-        setQueue(q => q.map(i => i.qid === item.qid ? { ...i, status: "done", progress: 100 } : i));
+        setQueue(q => q.map(i => i.qid === qid ? { ...i, status: "done", progress: 100 } : i));
       } catch (err) {
         setQueue(q => q.map(i => i.qid === item.qid ? { ...i, status: "error", errorMsg: err instanceof Error ? err.message : "Failed" } : i));
       }
@@ -768,19 +783,73 @@ function UploadPanel({ session, onUploaded }: {
                   {item.status === "uploading" && (() => {
                     const pct = item.progress ?? 0;
                     const isSending = pct >= 99;
-                    const elapsed = item.startedAt ? Math.floor((Date.now() - item.startedAt) / 1000) : 0;
-                    const mm = Math.floor(elapsed / 60);
-                    const ss = elapsed % 60;
+                    const elapsedSec = item.startedAt ? (Date.now() - item.startedAt) / 1000 : 0;
+                    const mm = Math.floor(elapsedSec / 60);
+                    const ss = Math.floor(elapsedSec % 60);
+                    const mbps = (!isSending && item.bytesLoaded && elapsedSec > 0.5)
+                      ? (item.bytesLoaded / (1024 * 1024)) / elapsedSec
+                      : null;
                     return (
                       <div>
-                        <div style={{ height: 14, borderRadius: 7, background: "rgba(2,12,30,0.7)", overflow: "hidden", border: `1px solid ${isSending ? "rgba(194,159,96,0.4)" : "rgba(194,159,96,0.2)"}`, position: "relative" }}>
-                          <div style={{ position: "absolute", inset: "0 auto 0 0", width: isSending ? "100%" : `${pct}%`, background: "linear-gradient(90deg, #7A5010 0%, #C29F60 30%, #F0E098 50%, #C8A04C 70%, #8B6020 100%)", backgroundSize: "200% 100%", animation: "shimmer-gold 1.8s linear infinite", borderRadius: 7, transition: isSending ? "none" : "width 0.4s ease" }} />
+                        {/* Track */}
+                        <div style={{
+                          height: 22, borderRadius: 11,
+                          background: "rgba(2,12,30,0.8)",
+                          border: `1px solid ${isSending ? "rgba(194,159,96,0.45)" : "rgba(194,159,96,0.22)"}`,
+                          boxShadow: "inset 0 2px 6px rgba(0,0,0,0.55)",
+                          position: "relative", overflow: "hidden",
+                        }}>
+                          {/* Fill */}
+                          <div style={{
+                            position: "absolute", inset: "0 auto 0 0",
+                            width: isSending ? "100%" : `${pct}%`,
+                            background: "linear-gradient(90deg, #7A5010 0%, #C29F60 28%, #F0E098 50%, #C8A04C 72%, #8B6020 100%)",
+                            backgroundSize: "200% 100%",
+                            animation: "shimmer-gold 1.8s linear infinite",
+                            borderRadius: 11,
+                            transition: isSending ? "none" : "width 0.35s ease",
+                            boxShadow: "0 0 14px rgba(194,159,96,0.55), 0 0 28px rgba(194,159,96,0.28)",
+                          }} />
+                          {/* Percentage overlay */}
+                          {!isSending && pct > 0 && (
+                            <span style={{
+                              position: "absolute", inset: 0,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              fontFamily: "Syne, system-ui, sans-serif", fontSize: 9,
+                              fontWeight: 800, letterSpacing: "0.08em",
+                              color: pct > 50 ? "rgba(8,32,58,0.9)" : "rgba(240,220,170,0.85)",
+                              mixBlendMode: pct > 50 ? "multiply" : "normal",
+                              pointerEvents: "none",
+                            }}>
+                              {pct}%
+                            </span>
+                          )}
+                          {isSending && (
+                            <span style={{
+                              position: "absolute", inset: 0,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              fontFamily: "Syne, system-ui, sans-serif", fontSize: 8,
+                              fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase",
+                              color: "rgba(8,32,58,0.85)", pointerEvents: "none",
+                            }}>
+                              Sending to cloud…
+                            </span>
+                          )}
                         </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
-                          <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(194,159,96,0.6)" }}>
-                            {isSending ? `Sending to cloud — ${mm}:${ss.toString().padStart(2, "0")} elapsed` : item.bytesTotal ? `${formatBytes(item.bytesLoaded ?? 0)} / ${formatBytes(item.bytesTotal)}` : "Uploading…"}
+                        {/* Metadata row */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 5 }}>
+                          <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(194,159,96,0.55)" }}>
+                            {isSending
+                              ? `Processing — ${mm}:${ss.toString().padStart(2, "0")} elapsed`
+                              : item.bytesTotal
+                                ? `${formatBytes(item.bytesLoaded ?? 0)} of ${formatBytes(item.bytesTotal)}`
+                                : "Uploading…"}
                           </span>
-                          {!isSending && <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: "#DEC272" }}>{pct}%</span>}
+                          {mbps !== null && (
+                            <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.08em", color: "rgba(194,159,96,0.45)" }}>
+                              {mbps >= 1 ? `${mbps.toFixed(1)} MB/s` : `${(mbps * 1024).toFixed(0)} KB/s`}
+                            </span>
+                          )}
                         </div>
                       </div>
                     );
