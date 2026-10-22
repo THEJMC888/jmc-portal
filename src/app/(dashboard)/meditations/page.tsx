@@ -7,7 +7,6 @@ import {
   ChevronDown, ChevronUp, Pencil, Check,
   Image as ImageIcon,
 } from "lucide-react";
-import { upload } from "@vercel/blob/client";
 import { useAuth } from "@/lib/auth";
 
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "rng@thejourneymencollective.com";
@@ -508,76 +507,28 @@ function UploadPanel({ session, onUploaded }: {
     for (const item of queue.filter(i => i.status === "pending")) {
       setQueue(q => q.map(i => i.qid === item.qid ? { ...i, status: "uploading", startedAt: Date.now() } : i));
       try {
-        const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-        const ext = item.file.name.split(".").pop()?.toLowerCase() ?? "mp3";
+        const fd = new FormData();
+        fd.append("file", item.file);
+        fd.append("title", item.title.trim() || titleFromFilename(item.file.name));
+        fd.append("category", item.category);
+        if (item.imageFile) fd.append("image", item.imageFile);
 
-        // Vercel Blob client upload — streaming fetch (duplex:"half") is the only
-        // browser-to-blob path that works. Direct XHR is blocked by CORS because
-        // Vercel redirects real-store PUTs to a regional endpoint without CORS headers.
-        // onUploadProgress forces streaming mode; the transform-stream fires quickly
-        // (Chrome eagerly buffers), so progress jumps to 99% fast — the UI treats
-        // ≥99% as "sending" and shows elapsed time instead of a misleading percentage.
-        const audioBlob = await upload(
-          `jmc-meditations/audio/${id}.${ext}`,
-          item.file,
-          {
-            access: "public",
-            handleUploadUrl: "/api/meditations/upload-url",
-            clientPayload: session?.access_token ?? "",
-            onUploadProgress: ({ percentage, loaded, total }) => {
-              setQueue(q => q.map(i => i.qid === item.qid ? {
-                ...i,
-                progress: Math.min(99, Math.round(percentage)),
-                bytesLoaded: loaded,
-                bytesTotal: total,
-              } : i));
-            },
-          }
-        );
-        const audioUrl = audioBlob.url;
-
-        // Upload cover image if provided
-        let imageBlobUrl: string | undefined;
-        if (item.imageFile) {
-          const imgExt = item.imageFile.name.split(".").pop()?.toLowerCase() ?? "jpg";
-          const imgBlob = await upload(
-            `jmc-meditations/images/${id}.${imgExt}`,
-            item.imageFile,
-            {
-              access: "public",
-              handleUploadUrl: "/api/meditations/upload-url",
-              clientPayload: session?.access_token ?? "",
-            }
-          );
-          imageBlobUrl = imgBlob.url;
-        }
-
-        // Save metadata to index
-        const res = await fetch("/api/meditations", {
+        const res = await fetch("/api/meditations/upload", {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${session?.access_token ?? ""}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            id,
-            audioUrl,
-            imageUrl: imageBlobUrl,
-            title: item.title.trim() || titleFromFilename(item.file.name),
-            description: "",
-            category: item.category,
-          }),
+          headers: { "x-supabase-token": session?.access_token ?? "" },
+          body: fd,
         });
 
         if (!res.ok) {
           const errMsg = await res.json()
             .then((d: { error?: string }) => d.error)
             .catch(() => `HTTP ${res.status}`);
-          throw new Error(errMsg ?? "Failed to save");
+          throw new Error(errMsg ?? "Upload failed");
         }
+
         const m: Meditation = await res.json();
         onUploaded(m);
-        setQueue(q => q.map(i => i.qid === item.qid ? { ...i, status: "done" } : i));
+        setQueue(q => q.map(i => i.qid === item.qid ? { ...i, status: "done", progress: 100 } : i));
       } catch (err) {
         setQueue(q => q.map(i => i.qid === item.qid ? { ...i, status: "error", errorMsg: err instanceof Error ? err.message : "Failed" } : i));
       }
@@ -832,9 +783,8 @@ export default function MeditationsPage() {
   };
 
   const onUploaded = (m: Meditation) => {
-    const withStream = { ...m, audioUrl: `/api/meditations/${m.id}/stream` };
     setMeditations(prev => {
-      const next = [...prev, withStream];
+      const next = [...prev, m];
       setActiveIdx(next.length - 1);
       return next;
     });
