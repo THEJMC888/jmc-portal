@@ -832,7 +832,7 @@ function UploadPanel({ session, onUploaded }: {
                               fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase",
                               color: "rgba(8,32,58,0.85)", pointerEvents: "none",
                             }}>
-                              Sending to cloud…
+                              Enhancing audio…
                             </span>
                           )}
                         </div>
@@ -840,7 +840,7 @@ function UploadPanel({ session, onUploaded }: {
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 5 }}>
                           <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(194,159,96,0.55)" }}>
                             {isSending
-                              ? `Processing — ${mm}:${ss.toString().padStart(2, "0")} elapsed`
+                              ? `Enhancing — ${mm}:${ss.toString().padStart(2, "0")} elapsed`
                               : item.bytesTotal
                                 ? `${formatBytes(item.bytesLoaded ?? 0)} of ${formatBytes(item.bytesTotal)}`
                                 : "Uploading…"}
