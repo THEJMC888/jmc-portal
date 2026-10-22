@@ -382,79 +382,89 @@ function MeditationGridCard({ meditation, isActive, onClick, onDelete, onUpdate,
 
   return (
     <>
-      {/* Card */}
+      {/* Card — same structure as VideoCard */}
       <div
         onClick={onClick}
-        onMouseEnter={() => setHovering(true)}
-        onMouseLeave={() => setHovering(false)}
+        onMouseEnter={(e) => {
+          setHovering(true);
+          const el = e.currentTarget as HTMLElement;
+          el.style.transform = "translateY(-4px)";
+          el.style.boxShadow = [
+            "inset 0 3px 0 rgba(255,255,255,0.28)",
+            "inset 0 1px 0 rgba(255,255,255,0.45)",
+            "inset 2px 0 0 rgba(255,255,255,0.08)",
+            "inset 0 -3px 8px rgba(0,0,0,0.55)",
+            "inset -2px 0 5px rgba(0,0,0,0.25)",
+            "0 2px 0 rgba(0,0,0,0.90)", "0 4px 0 rgba(0,0,0,0.75)", "0 6px 0 rgba(0,0,0,0.58)",
+            "0 8px 0 rgba(0,0,0,0.42)", "0 10px 0 rgba(0,0,0,0.28)", "0 12px 0 rgba(0,0,0,0.16)",
+            "0 14px 0 rgba(0,0,0,0.08)", "0 16px 0 rgba(0,0,0,0.04)",
+            "0 26px 35px rgba(0,0,0,0.82)", "0 46px 78px rgba(0,0,0,0.65)",
+            "5px 0 16px rgba(0,0,0,0.45)", "0 0 0 1px rgba(0,0,0,0.6)",
+            ...(isActive ? ["0 0 0 2px rgba(194,159,96,0.45)"] : []),
+          ].join(", ");
+        }}
+        onMouseLeave={(e) => {
+          setHovering(false);
+          const el = e.currentTarget as HTMLElement;
+          el.style.transform = "translateY(0)";
+          el.style.boxShadow = isActive ? CARD_SHADOW + ", 0 0 0 2px rgba(194,159,96,0.45)" : CARD_SHADOW;
+        }}
         style={{
-          borderRadius: 12,
+          borderRadius: 16,
           overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
           cursor: "pointer",
-          position: "relative",
-          boxShadow: isActive
-            ? [...CARD_SHADOW.split(", "), "0 0 0 2px rgba(194,159,96,0.45)"].join(", ")
-            : CARD_SHADOW,
-          transform: hovering && !isActive ? "translateY(-4px)" : "translateY(0)",
-          transition: "transform 0.2s ease, box-shadow 0.2s ease",
+          background: "linear-gradient(175deg, rgba(255,255,255,0.09) 0%, rgba(20,55,130,0.28) 20%, rgba(6,18,55,0.48) 50%, rgba(3,8,26,0.68) 100%)",
+          backdropFilter: "blur(28px) saturate(200%)",
+          WebkitBackdropFilter: "blur(28px) saturate(200%)",
+          borderTop: "2px solid rgba(255,255,255,0.35)",
+          borderLeft: "1px solid rgba(255,255,255,0.18)",
+          borderRight: "1.5px solid rgba(194,159,96,0.15)",
+          borderBottom: "1.5px solid rgba(140,145,155,0.5)",
+          boxShadow: isActive ? CARD_SHADOW + ", 0 0 0 2px rgba(194,159,96,0.45)" : CARD_SHADOW,
+          transition: "transform 0.28s cubic-bezier(0.23,1,0.32,1), box-shadow 0.28s cubic-bezier(0.23,1,0.32,1)",
         }}
       >
-        {/* Thumbnail area */}
-        <div style={{ position: "relative", aspectRatio: "4 / 3" }}>
-          {meditation.imageUrl ? (
-            <img src={meditation.imageUrl} alt={meditation.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-          ) : (
-            <div style={{ width: "100%", height: "100%", background: COSMIC_BG, position: "relative" }}>
-              {/* Orb rings */}
-              <div style={{
-                position: "absolute", top: "50%", left: "50%",
-                width: "58%", height: "58%",
-                transform: "translate(-50%, -54%)",
-                borderRadius: "50%",
-                border: "1px solid rgba(0,210,235,0.22)",
-                boxShadow: "0 0 32px rgba(0,210,235,0.14), inset 0 0 24px rgba(0,190,225,0.09)",
-              }} />
-              <div style={{
-                position: "absolute", top: "50%", left: "50%",
-                width: "38%", height: "38%",
-                transform: "translate(-50%, -54%)",
-                borderRadius: "50%",
-                border: "1px solid rgba(0,235,250,0.32)",
-                boxShadow: "0 0 22px rgba(0,235,250,0.18)",
-              }} />
-              <div style={{
-                position: "absolute", top: "50%", left: "50%",
-                width: "18%", height: "18%",
-                transform: "translate(-50%, -54%)",
-                borderRadius: "50%",
-                background: "radial-gradient(circle, rgba(0,240,255,0.35) 0%, transparent 70%)",
-              }} />
-            </div>
+        {/* Thumbnail — fixed height 200px, matches VideoCard */}
+        <div style={{ position: "relative", height: 200, flexShrink: 0, background: COSMIC_BG }}>
+          {meditation.imageUrl && (
+            <img src={meditation.imageUrl} alt={meditation.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
           )}
 
-          {/* Bottom gradient */}
-          <div style={{
-            position: "absolute", inset: 0,
-            background: "linear-gradient(0deg, rgba(1,8,22,0.95) 0%, rgba(1,8,22,0.45) 32%, transparent 58%)",
-          }} />
+          {/* Play button — centered, always visible */}
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div
+              style={{
+                width: 48, height: 48, borderRadius: "50%",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "transform 0.2s",
+                background: isActive
+                  ? "linear-gradient(180deg, #DEC272 0%, #C8A04C 20%, #A07A28 50%, #D4B462 82%, #E0C878 100%)"
+                  : "rgba(194,159,96,0.15)",
+                border: isActive ? "none" : "1px solid rgba(194,159,96,0.3)",
+                boxShadow: isActive ? "0 2px 0 rgba(20,12,0,0.85), 0 4px 20px rgba(194,159,96,0.45)" : "none",
+              }}
+            >
+              <Play size={20} color={isActive ? "#08203A" : "#C29F60"} fill={isActive ? "#08203A" : "#C29F60"} style={{ marginLeft: 2 }} />
+            </div>
+          </div>
 
-          {/* Category badge */}
+          {/* Category badge — bottom right, matching VideoCard's duration badge position */}
           <div style={{
-            position: "absolute", top: 10, left: 10,
-            fontFamily: "Syne, system-ui, sans-serif", fontSize: 7.5, fontWeight: 700,
-            letterSpacing: "0.13em", textTransform: "uppercase",
-            padding: "4px 9px", borderRadius: 20,
-            background: "rgba(1,6,18,0.72)",
-            border: "1px solid rgba(194,159,96,0.22)",
-            color: "rgba(194,159,96,0.88)",
-            backdropFilter: "blur(10px)",
+            position: "absolute", bottom: 8, right: 8,
+            display: "flex", alignItems: "center", gap: 4,
+            borderRadius: 4, padding: "2px 8px",
+            background: "rgba(4,13,28,0.8)",
           }}>
-            {CATEGORY_ICONS[meditation.category] ?? "🧘"} {meditation.category}
+            <span style={{ fontSize: "0.68rem", color: "rgba(222,211,200,0.5)", fontFamily: "Avenir, Nunito, system-ui, sans-serif" }}>
+              {CATEGORY_ICONS[meditation.category] ?? "🧘"} {meditation.category}
+            </span>
           </div>
 
           {/* Admin controls — visible on hover */}
-          {isAdmin && (hovering || isActive) && (
-            <div style={{ position: "absolute", top: 10, right: 10, display: "flex", gap: 4 }}>
+          {isAdmin && hovering && (
+            <div style={{ position: "absolute", top: 8, right: 8, display: "flex", gap: 4 }}>
               <button
                 onClick={openEdit}
                 style={{ width: 28, height: 28, borderRadius: 6, background: "rgba(1,6,18,0.78)", border: "1px solid rgba(194,159,96,0.22)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(10px)" }}
@@ -471,58 +481,50 @@ function MeditationGridCard({ meditation, isActive, onClick, onDelete, onUpdate,
               </button>
             </div>
           )}
-
-          {/* Play overlay */}
-          <div style={{
-            position: "absolute", inset: 0,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            opacity: hovering || isActive ? 1 : 0,
-            transition: "opacity 0.2s",
-          }}>
-            <div style={{
-              width: 52, height: 52, borderRadius: "50%",
-              background: isActive
-                ? "linear-gradient(180deg, #DEC272 0%, #C8A04C 20%, #A07A28 50%, #D4B462 82%, #E0C878 100%)"
-                : "rgba(1,8,22,0.72)",
-              border: isActive ? "none" : "2px solid rgba(255,255,255,0.45)",
-              boxShadow: isActive
-                ? "0 2px 0 rgba(20,12,0,0.85), 0 4px 20px rgba(194,159,96,0.45)"
-                : "0 4px 24px rgba(0,0,0,0.55)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              backdropFilter: "blur(8px)",
-            }}>
-              <Play size={18} color={isActive ? "#08203A" : "white"} fill={isActive ? "#08203A" : "white"} style={{ marginLeft: 2 }} />
-            </div>
-          </div>
         </div>
 
-        {/* Card info */}
-        <div style={{
-          padding: "12px 14px 15px",
-          background: isActive
-            ? "linear-gradient(160deg, rgba(194,159,96,0.1) 0%, rgba(1,10,28,0.96) 100%)"
-            : "linear-gradient(160deg, rgba(3,15,40,0.97) 0%, rgba(1,10,26,0.99) 100%)",
-          borderTop: isActive ? "1px solid rgba(194,159,96,0.12)" : "1px solid rgba(255,255,255,0.03)",
-        }}>
+        {/* Info section — fixed height 170px, matches VideoCard */}
+        <div style={{ padding: "1rem", display: "flex", flexDirection: "column", height: 170, flexShrink: 0 }}>
+          <p style={{
+            fontFamily: "Syne, system-ui, sans-serif",
+            fontWeight: 700,
+            textTransform: "uppercase" as const,
+            letterSpacing: "0.12em",
+            fontSize: "0.6rem",
+            color: "#C29F60",
+            margin: "0 0 4px",
+          }}>
+            {meditation.category}
+          </p>
+
           <h3 style={{
-            fontFamily: "Lora, Georgia, serif",
-            fontSize: 14.5, fontWeight: 600,
-            color: isActive ? "#DED3C8" : "rgba(222,211,200,0.85)",
-            margin: 0, lineHeight: 1.35,
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            fontFamily: '"Lora", Georgia, serif',
+            fontWeight: 700,
+            fontSize: "0.9rem",
+            color: "#DED3C8",
+            lineHeight: 1.35,
+            margin: "0 0 4px",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical" as const,
+            overflow: "hidden",
           }}>
             {meditation.title}
           </h3>
-          {meditation.description && (
-            <p style={{
-              fontFamily: "Lora, Georgia, serif", fontStyle: "italic",
-              fontSize: 11.5, color: "rgba(222,211,200,0.38)",
-              margin: "4px 0 0", lineHeight: 1.45,
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            }}>
-              {meditation.description}
-            </p>
-          )}
+
+          <p style={{
+            fontFamily: "Avenir, Nunito, system-ui, sans-serif",
+            fontSize: "0.78rem",
+            color: "rgba(222,211,200,0.5)",
+            lineHeight: 1.5,
+            margin: 0,
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical" as const,
+            overflow: "hidden",
+          }}>
+            {meditation.description}
+          </p>
         </div>
       </div>
 
