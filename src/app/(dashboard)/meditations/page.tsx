@@ -892,6 +892,8 @@ export default function MeditationsPage() {
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [clearConfirm, setClearConfirm] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
     if (!session?.access_token) return;
@@ -941,6 +943,22 @@ export default function MeditationsPage() {
     setMeditations(prev => prev.map(m => m.id === updated.id ? updated : m));
   };
 
+  const clearLibrary = async () => {
+    if (!clearConfirm) { setClearConfirm(true); return; }
+    setClearing(true);
+    try {
+      await fetch("/api/meditations/clear", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
+      });
+      setMeditations([]);
+      setActiveIdx(null);
+    } finally {
+      setClearing(false);
+      setClearConfirm(false);
+    }
+  };
+
   return (
     <>
       <style>{`
@@ -969,6 +987,34 @@ export default function MeditationsPage() {
 
         {/* Admin upload */}
         {isAdmin && <UploadPanel session={session} onUploaded={onUploaded} />}
+
+        {/* Admin: clear library */}
+        {isAdmin && meditations.length > 0 && (
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button
+              onClick={() => { if (!clearing) clearLibrary(); }}
+              onBlur={() => setClearConfirm(false)}
+              disabled={clearing}
+              style={{
+                fontFamily: "Syne, system-ui, sans-serif",
+                fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                padding: "6px 14px", borderRadius: 8, cursor: clearing ? "default" : "pointer",
+                border: clearConfirm
+                  ? "1.5px solid rgba(220,60,60,0.8)"
+                  : "1.5px solid rgba(220,60,60,0.35)",
+                background: clearConfirm
+                  ? "rgba(220,60,60,0.18)"
+                  : "rgba(220,60,60,0.07)",
+                color: clearConfirm ? "rgba(255,120,120,0.95)" : "rgba(220,80,80,0.6)",
+                transition: "all 0.2s ease",
+                opacity: clearing ? 0.5 : 1,
+              }}
+            >
+              {clearing ? "Clearing…" : clearConfirm ? `Confirm — clear all ${meditations.length} meditations?` : "Clear Library"}
+            </button>
+          </div>
+        )}
 
         {/* Search */}
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
