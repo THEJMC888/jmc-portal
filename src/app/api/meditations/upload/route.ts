@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const ADMIN_EMAIL     = process.env.ADMIN_EMAIL ?? "rng@thejourneymencollective.com";
-const STORAGE_ZONE    = process.env.BUNNY_STORAGE_ZONE!;
+const ADMIN_EMAIL      = process.env.ADMIN_EMAIL ?? "rng@thejourneymencollective.com";
+const STORAGE_ZONE     = process.env.BUNNY_STORAGE_ZONE!;
 const STORAGE_PASSWORD = process.env.BUNNY_STORAGE_PASSWORD!;
-const CDN_URL         = (process.env.BUNNY_CDN_URL ?? "").replace(/\/$/, "");
+const STORAGE_ENDPOINT = (process.env.BUNNY_STORAGE_ENDPOINT ?? "https://storage.bunnycdn.com").replace(/\/$/, "");
+const CDN_URL          = (process.env.BUNNY_CDN_URL ?? "").replace(/\/$/, "");
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   // Auth: verify admin session token
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   // Upload to Bunny.net Storage
   const uploadRes = await fetch(
-    `https://storage.bunnycdn.com/${STORAGE_ZONE}/${remotePath}`,
+    `${STORAGE_ENDPOINT}/${STORAGE_ZONE}/${remotePath}`,
     {
       method: "PUT",
       headers: {
@@ -68,9 +69,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const indexCdn  = `${cdnBase}/${indexPath}`;
 
   let meditations: object[] = [];
-  const indexRes = await fetch(indexCdn, { cache: "no-store" }).catch(() => null);
-  if (indexRes?.ok) {
-    meditations = await indexRes.json().catch(() => []);
+  const indexStorageRes = await fetch(`${STORAGE_ENDPOINT}/${STORAGE_ZONE}/${indexPath}`, {
+    headers: { "AccessKey": STORAGE_PASSWORD },
+  }).catch(() => null);
+  if (indexStorageRes?.ok) {
+    meditations = await indexStorageRes.json().catch(() => []);
   }
 
   meditations.push({
@@ -82,7 +85,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     createdAt: new Date().toISOString(),
   });
 
-  await fetch(`https://storage.bunnycdn.com/${STORAGE_ZONE}/${indexPath}`, {
+  await fetch(`${STORAGE_ENDPOINT}/${STORAGE_ZONE}/${indexPath}`, {
     method: "PUT",
     headers: {
       "AccessKey": STORAGE_PASSWORD,

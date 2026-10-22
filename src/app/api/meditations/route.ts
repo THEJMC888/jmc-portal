@@ -5,6 +5,7 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "rng@thejourneymencollective.com"
 
 const STORAGE_ZONE     = process.env.BUNNY_STORAGE_ZONE!;
 const STORAGE_PASSWORD = process.env.BUNNY_STORAGE_PASSWORD!;
+const STORAGE_ENDPOINT = (process.env.BUNNY_STORAGE_ENDPOINT ?? "https://storage.bunnycdn.com").replace(/\/$/, "");
 const CDN_URL          = (process.env.BUNNY_CDN_URL ?? "").replace(/\/$/, "");
 
 function cdnBase() {
@@ -33,7 +34,7 @@ async function getIndex(): Promise<Meditation[]> {
 
 async function setIndex(meditations: Meditation[]): Promise<void> {
   await fetch(
-    `https://storage.bunnycdn.com/${STORAGE_ZONE}/meditations/index.json`,
+    `${STORAGE_ENDPOINT}/${STORAGE_ZONE}/meditations/index.json`,
     {
       method: "PUT",
       headers: {
@@ -118,7 +119,7 @@ export async function PATCH(request: NextRequest) {
     const imgExt = imageFile.name.split(".").pop() ?? "jpg";
     const imgPath = `meditations/images/${id}.${imgExt}`;
     const imgRes = await fetch(
-      `https://storage.bunnycdn.com/${STORAGE_ZONE}/${imgPath}`,
+      `${STORAGE_ENDPOINT}/${STORAGE_ZONE}/${imgPath}`,
       {
         method: "PUT",
         headers: {
@@ -153,7 +154,7 @@ export async function DELETE(request: NextRequest) {
   // Best-effort delete from Bunny.net storage
   const extractPath = (url: string) => url.replace(cdnBase() + "/", "");
   const deletePath = async (path: string) => {
-    await fetch(`https://storage.bunnycdn.com/${STORAGE_ZONE}/${path}`, {
+    await fetch(`${STORAGE_ENDPOINT}/${STORAGE_ZONE}/${path}`, {
       method: "DELETE",
       headers: { "AccessKey": STORAGE_PASSWORD },
     }).catch(() => {});

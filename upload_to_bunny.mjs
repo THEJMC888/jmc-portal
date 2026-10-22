@@ -8,7 +8,7 @@ import { basename } from "path";
 import { createReadStream } from "fs";
 
 // ── Load env from .env.local ──────────────────────────────────────────────────
-const envPath = "/Users/robertgrover/Illuminate App/.env.local";
+const envPath = "/Users/robertgrover/Illuminate App/.claude/worktrees/elegant-hamilton-cbd500/.env.local";
 try {
   const envLines = readFileSync(envPath, "utf8").split("\n");
   for (const line of envLines) {
@@ -21,6 +21,7 @@ try {
 
 const STORAGE_ZONE     = process.env.BUNNY_STORAGE_ZONE;
 const STORAGE_PASSWORD = process.env.BUNNY_STORAGE_PASSWORD;
+const STORAGE_ENDPOINT = (process.env.BUNNY_STORAGE_ENDPOINT || "https://storage.bunnycdn.com").replace(/\/$/, "");
 const CDN_URL          = (process.env.BUNNY_CDN_URL || "").replace(/\/$/, "");
 
 if (!STORAGE_ZONE || !STORAGE_PASSWORD) {
@@ -54,7 +55,7 @@ const start = Date.now();
 const tick = setInterval(() => process.stdout.write(`\r  Elapsed: ${((Date.now()-start)/1000).toFixed(0)}s`), 500);
 
 // ── Upload audio file ─────────────────────────────────────────────────────────
-const uploadUrl = `https://storage.bunnycdn.com/${STORAGE_ZONE}/${remotePath}`;
+const uploadUrl = `${STORAGE_ENDPOINT}/${STORAGE_ZONE}/${remotePath}`;
 const fileBuffer = readFileSync(filePath);
 
 const uploadRes = await fetch(uploadUrl, {
@@ -84,15 +85,18 @@ console.log(`  URL: ${audioUrl}`);
 
 // ── Update meditations index in Bunny.net ─────────────────────────────────────
 const INDEX_PATH = "meditations/index.json";
-const indexUrl   = `https://storage.bunnycdn.com/${STORAGE_ZONE}/${INDEX_PATH}`;
+const indexUrl   = `${STORAGE_ENDPOINT}/${STORAGE_ZONE}/${INDEX_PATH}`;
 const indexCdn   = `${cdnBase}/${INDEX_PATH}`;
 
 console.log("\nUpdating meditations index...");
 
 let meditations = [];
-const indexRes = await fetch(indexCdn, { cache: "no-store" }).catch(() => null);
-if (indexRes?.ok) {
-  meditations = await indexRes.json().catch(() => []);
+// Read index from storage API (not CDN) to avoid stale cache
+const indexStorageRes = await fetch(indexUrl, {
+  headers: { "AccessKey": STORAGE_PASSWORD },
+}).catch(() => null);
+if (indexStorageRes?.ok) {
+  meditations = await indexStorageRes.json().catch(() => []);
 }
 
 meditations.push({
