@@ -1,11 +1,85 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+export const maxDuration = 300; // Dolby.io processing needs up to 5 min (Vercel Pro required)
+
 const ADMIN_EMAIL      = process.env.ADMIN_EMAIL ?? "rng@thejourneymencollective.com";
 const STORAGE_ZONE     = process.env.BUNNY_STORAGE_ZONE!;
 const STORAGE_PASSWORD = process.env.BUNNY_STORAGE_PASSWORD!;
 const STORAGE_ENDPOINT = (process.env.BUNNY_STORAGE_ENDPOINT ?? "https://storage.bunnycdn.com").replace(/\/$/, "");
 const CDN_URL          = (process.env.BUNNY_CDN_URL ?? "").replace(/\/$/, "");
+
+// ─── Dolby.io Audio Enhancement ──────────────────────────────────────────────
+// Sends audio through Dolby.io's Enhance API (noise reduction, EQ, compression).
+// Returns the original buffer untouched if DOLBY_APP_KEY / DOLBY_APP_SECRET are
+// not set, or if the job fails for any reason — never blocks a successful upload.
+async function enhanceAudio(buf: ArrayBuffer, ext: string): Promise<ArrayBuffer> {
+  const appKey    = process.env.DOLBY_APP_KEY;
+  const appSecret = process.env.DOLBY_APP_SECRET;
+  if (!appKey || !appSecret) return buf;
+
+  try {
+    const auth    = Buffer.from(`${appKey}:${appSecret}`).toString("base64");
+    const headers = { Authorization: `Basic ${auth}`, "Content-Type": "application/json" };
+    const jobSlug = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const inputDlb  = `dlb://in/${jobSlug}.${ext}`;
+    const outputDlb = `dlb://out/${jobSlug}.${ext}`;
+    const mimeType  = ext === "mp3" ? "audio/mpeg" : ext === "m4a" ? "audio/mp4" : `audio/${ext}`;
+
+    // 1. Get presigned upload URL
+    const inputRes = await fetch(
+      `https://api.dolby.com/media/input?url=${encodeURIComponent(inputDlb)}`,
+      { method: "POST", headers, body: "{}" },
+    );
+    if (!inputRes.ok) return buf;
+    const { url: uploadUrl } = await inputRes.json() as { url: string };
+
+    // 2. Upload raw audio to Dolby input storage
+    const putRes = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": mimeType },
+      body: buf,
+    });
+    if (!putRes.ok) return buf;
+
+    // 3. Start enhancement job (podcast profile = best for voice/meditation)
+    const enhRes = await fetch("https://api.dolby.com/media/enhance", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ input: inputDlb, output: outputDlb, content: { type: "podcast" } }),
+    });
+    if (!enhRes.ok) return buf;
+    const { job_id } = await enhRes.json() as { job_id: string };
+
+    // 4. Poll until complete (max 4 min, 4-second intervals)
+    const deadline = Date.now() + 240_000;
+    let done = false;
+    while (Date.now() < deadline) {
+      await new Promise(r => setTimeout(r, 4000));
+      const poll = await fetch(`https://api.dolby.com/media/enhance?job_id=${encodeURIComponent(job_id)}`, { headers });
+      if (!poll.ok) break;
+      const { status } = await poll.json() as { status: string };
+      if (status === "Success") { done = true; break; }
+      if (status === "Failed" || status === "Canceled") break;
+    }
+    if (!done) return buf;
+
+    // 5. Get presigned download URL
+    const outRes = await fetch(
+      `https://api.dolby.com/media/output?url=${encodeURIComponent(outputDlb)}`,
+      { method: "POST", headers, body: "{}" },
+    );
+    if (!outRes.ok) return buf;
+    const { url: downloadUrl } = await outRes.json() as { url: string };
+
+    // 6. Download enhanced audio
+    const dlRes = await fetch(downloadUrl);
+    if (!dlRes.ok) return buf;
+    return await dlRes.arrayBuffer();
+  } catch {
+    return buf; // always fall back to original
+  }
+}
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   // Auth: verify admin session token
@@ -42,6 +116,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const remotePath = `meditations/audio/${id}.${ext}`;
   const contentType = ext === "mp3" ? "audio/mpeg" : ext === "m4a" ? "audio/mp4" : `audio/${ext}`;
 
+  // Enhance audio quality via Dolby.io (no-op if API keys not set)
+  const rawBuffer      = await file.arrayBuffer();
+  const audioBuffer    = await enhanceAudio(rawBuffer, ext);
+
   // Upload to Bunny.net Storage
   const uploadRes = await fetch(
     `${STORAGE_ENDPOINT}/${STORAGE_ZONE}/${remotePath}`,
@@ -51,7 +129,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         "AccessKey": STORAGE_PASSWORD,
         "Content-Type": contentType,
       },
-      body: await file.arrayBuffer(),
+      body: audioBuffer,
     }
   );
 
