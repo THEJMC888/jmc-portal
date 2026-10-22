@@ -7,6 +7,7 @@ import {
   ChevronDown, ChevronUp, Pencil, Check,
   Image as ImageIcon,
 } from "lucide-react";
+import { upload } from "@vercel/blob/client";
 import { useAuth } from "@/lib/auth";
 
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "rng@thejourneymencollective.com";
@@ -33,6 +34,7 @@ interface QueueItem {
   progress?: number;
   bytesLoaded?: number;
   bytesTotal?: number;
+  startedAt?: number;
 }
 
 const CATEGORIES = ["Morning", "Evening", "Breathwork", "Visualization", "Sleep", "Grounding", "General"];
@@ -460,65 +462,6 @@ function MeditationCard({ meditation, isActive, onClick, onDelete, onUpdate, isA
   );
 }
 
-// ─── XHR Upload ───────────────────────────────────────────────────────────────
-// Bypasses @vercel/blob's streaming-fetch path. On Chrome, blobFetch buffers
-// the entire body into memory before sending — so the progress callback fires
-// instantly at 99% then hangs for the full upload duration. XHR fires
-// upload.onprogress from actual TCP transmission: real bytes, real numbers.
-async function blobXhrUpload(
-  pathname: string,
-  file: File,
-  accessToken: string,
-  onProgress: (pct: number, loaded: number, total: number) => void
-): Promise<{ url: string }> {
-  const tokenRes = await fetch("/api/meditations/upload-url", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      type: "blob.generate-client-token",
-      payload: { pathname, clientPayload: accessToken },
-    }),
-  });
-  if (!tokenRes.ok) throw new Error(`Token fetch failed: ${tokenRes.status}`);
-  const { clientToken } = (await tokenRes.json()) as { clientToken: string };
-  // vercel_blob_client_<storeId>_<base64payload>
-  const storeId = clientToken.split("_")[3];
-  const requestId = `${storeId}:${Date.now()}:${Math.random().toString(16).slice(2)}`;
-
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", `https://vercel.com/api/blob/?${new URLSearchParams({ pathname })}`, true);
-    xhr.setRequestHeader("x-api-version", "13");
-    xhr.setRequestHeader("x-vercel-blob-store-id", storeId);
-    xhr.setRequestHeader("x-api-blob-request-id", requestId);
-    xhr.setRequestHeader("x-api-blob-request-attempt", "0");
-    xhr.setRequestHeader("x-content-length", String(file.size));
-    xhr.setRequestHeader("authorization", `Bearer ${clientToken}`);
-    if (file.type) xhr.setRequestHeader("content-type", file.type);
-
-    xhr.upload.addEventListener("progress", (e) => {
-      if (e.lengthComputable) {
-        onProgress(Math.round((e.loaded / e.total) * 100), e.loaded, e.total);
-      }
-    });
-
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          resolve(JSON.parse(xhr.responseText) as { url: string });
-        } catch {
-          reject(new Error("Failed to parse upload response"));
-        }
-      } else {
-        reject(new Error(`Upload failed: HTTP ${xhr.status} — ${xhr.responseText.slice(0, 200)}`));
-      }
-    };
-    xhr.onerror = () => reject(new Error("Network error during upload"));
-    xhr.ontimeout = () => reject(new Error("Upload timed out"));
-    xhr.send(file);
-  });
-}
-
 // ─── Upload Panel ─────────────────────────────────────────────────────────────
 function UploadPanel({ session, onUploaded }: {
   session: { access_token: string } | null;
@@ -527,6 +470,14 @@ function UploadPanel({ session, onUploaded }: {
   const [open, setOpen] = useState(false);
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [, setTick] = useState(0);
+
+  // Re-render every second while uploading so elapsed time stays current
+  useEffect(() => {
+    if (!uploading) return;
+    const id = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [uploading]);
 
   const addFiles = (files: FileList | null) => {
     if (!files) return;
@@ -555,31 +506,48 @@ function UploadPanel({ session, onUploaded }: {
     if (!pendingCount || uploading) return;
     setUploading(true);
     for (const item of queue.filter(i => i.status === "pending")) {
-      setQueue(q => q.map(i => i.qid === item.qid ? { ...i, status: "uploading" } : i));
+      setQueue(q => q.map(i => i.qid === item.qid ? { ...i, status: "uploading", startedAt: Date.now() } : i));
       try {
         const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const ext = item.file.name.split(".").pop()?.toLowerCase() ?? "mp3";
 
-        const audioBlob = await blobXhrUpload(
+        // Vercel Blob client upload — streaming fetch (duplex:"half") is the only
+        // browser-to-blob path that works. Direct XHR is blocked by CORS because
+        // Vercel redirects real-store PUTs to a regional endpoint without CORS headers.
+        // onUploadProgress forces streaming mode; the transform-stream fires quickly
+        // (Chrome eagerly buffers), so progress jumps to 99% fast — the UI treats
+        // ≥99% as "sending" and shows elapsed time instead of a misleading percentage.
+        const audioBlob = await upload(
           `jmc-meditations/audio/${id}.${ext}`,
           item.file,
-          session?.access_token ?? "",
-          (pct, loaded, total) => {
-            setQueue(q => q.map(i => i.qid === item.qid ? { ...i, progress: pct, bytesLoaded: loaded, bytesTotal: total } : i));
+          {
+            access: "public",
+            handleUploadUrl: "/api/meditations/upload-url",
+            clientPayload: session?.access_token ?? "",
+            onUploadProgress: ({ percentage, loaded, total }) => {
+              setQueue(q => q.map(i => i.qid === item.qid ? {
+                ...i,
+                progress: Math.min(99, Math.round(percentage)),
+                bytesLoaded: loaded,
+                bytesTotal: total,
+              } : i));
+            },
           }
         );
         const audioUrl = audioBlob.url;
-        setQueue(q => q.map(i => i.qid === item.qid ? { ...i, progress: 100, bytesLoaded: item.file.size, bytesTotal: item.file.size } : i));
 
         // Upload cover image if provided
         let imageBlobUrl: string | undefined;
         if (item.imageFile) {
           const imgExt = item.imageFile.name.split(".").pop()?.toLowerCase() ?? "jpg";
-          const imgBlob = await blobXhrUpload(
+          const imgBlob = await upload(
             `jmc-meditations/images/${id}.${imgExt}`,
             item.imageFile,
-            session?.access_token ?? "",
-            () => {}
+            {
+              access: "public",
+              handleUploadUrl: "/api/meditations/upload-url",
+              clientPayload: session?.access_token ?? "",
+            }
           );
           imageBlobUrl = imgBlob.url;
         }
@@ -746,31 +714,43 @@ function UploadPanel({ session, onUploaded }: {
                   )}
                   </div>
 
-                  {item.status === "uploading" && (
-                    <div>
-                      <div style={{ height: 14, borderRadius: 7, background: "rgba(2,12,30,0.7)", overflow: "hidden", border: "1px solid rgba(194,159,96,0.2)", position: "relative" }}>
-                        <div style={{
-                          position: "absolute", inset: "0 auto 0 0",
-                          width: `${item.progress ?? 0}%`,
-                          background: "linear-gradient(90deg, #7A5010 0%, #C29F60 30%, #F0E098 50%, #C8A04C 70%, #8B6020 100%)",
-                          backgroundSize: "200% 100%",
-                          animation: "shimmer-gold 1.8s linear infinite",
-                          borderRadius: 7,
-                          transition: "width 0.4s ease",
-                        }} />
+                  {item.status === "uploading" && (() => {
+                    const pct = item.progress ?? 0;
+                    const isSending = pct >= 99;
+                    const elapsed = item.startedAt ? Math.floor((Date.now() - item.startedAt) / 1000) : 0;
+                    const mm = Math.floor(elapsed / 60);
+                    const ss = elapsed % 60;
+                    const elapsedStr = `${mm}:${ss.toString().padStart(2, "0")}`;
+                    return (
+                      <div>
+                        <div style={{ height: 14, borderRadius: 7, background: "rgba(2,12,30,0.7)", overflow: "hidden", border: `1px solid ${isSending ? "rgba(194,159,96,0.4)" : "rgba(194,159,96,0.2)"}`, position: "relative" }}>
+                          <div style={{
+                            position: "absolute", inset: "0 auto 0 0",
+                            width: isSending ? "100%" : `${pct}%`,
+                            background: "linear-gradient(90deg, #7A5010 0%, #C29F60 30%, #F0E098 50%, #C8A04C 70%, #8B6020 100%)",
+                            backgroundSize: "200% 100%",
+                            animation: "shimmer-gold 1.8s linear infinite",
+                            borderRadius: 7,
+                            transition: isSending ? "none" : "width 0.4s ease",
+                          }} />
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
+                          <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(194,159,96,0.6)" }}>
+                            {isSending
+                              ? `Sending to cloud — ${elapsedStr} elapsed`
+                              : item.bytesTotal
+                                ? `${formatBytes(item.bytesLoaded ?? 0)} / ${formatBytes(item.bytesTotal)}`
+                                : "Uploading…"}
+                          </span>
+                          {!isSending && (
+                            <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: "#DEC272" }}>
+                              {pct}%
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
-                        <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(194,159,96,0.6)" }}>
-                          {item.bytesLoaded && item.bytesTotal
-                            ? `${formatBytes(item.bytesLoaded)} / ${formatBytes(item.bytesTotal)}`
-                            : "Uploading…"}
-                        </span>
-                        <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: "#DEC272" }}>
-                          {item.progress ?? 0}%
-                        </span>
-                      </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
               ))}
             </div>
