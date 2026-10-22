@@ -7,8 +7,57 @@ import {
   ChevronDown, ChevronUp, Pencil, Check,
   Image as ImageIcon,
 } from "lucide-react";
-import { upload } from "@vercel/blob/client";
 import { useAuth } from "@/lib/auth";
+
+// Direct XHR upload to Vercel Blob — no library callbacks, no completion handshake.
+// 1. POST to our server to get a signed clientToken for the pathname.
+// 2. PUT the file straight to blob.vercel-storage.com with the token as a Bearer header.
+// 3. Resolve with the blob URL from the JSON response.
+async function uploadBlob(
+  pathname: string,
+  file: File,
+  accessToken: string,
+  onProgress?: (pct: number, loaded: number, total: number) => void
+): Promise<string> {
+  const tokenRes = await fetch("/api/meditations/upload-url", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ pathname, clientPayload: accessToken }),
+  });
+  if (!tokenRes.ok) throw new Error(`Token error ${tokenRes.status}`);
+  const { clientToken } = await tokenRes.json() as { clientToken: string };
+
+  return new Promise<string>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", `https://blob.vercel-storage.com/?pathname=${encodeURIComponent(pathname)}`);
+    xhr.setRequestHeader("authorization", `Bearer ${clientToken}`);
+    xhr.setRequestHeader("x-api-version", "13");
+    xhr.setRequestHeader("x-content-length", String(file.size));
+
+    xhr.upload.addEventListener("progress", (e) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress(Math.min(99, Math.round((e.loaded / e.total) * 100)), e.loaded, e.total);
+      }
+    });
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText) as { url: string };
+          onProgress?.(100, file.size, file.size);
+          resolve(data.url);
+        } catch {
+          reject(new Error("Invalid response from blob storage"));
+        }
+      } else {
+        reject(new Error(`Blob upload failed: ${xhr.status} ${xhr.statusText}`));
+      }
+    };
+    xhr.onerror = () => reject(new Error("Network error during upload"));
+    xhr.ontimeout = () => reject(new Error("Upload timed out"));
+    xhr.send(file);
+  });
+}
 
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "rng@thejourneymencollective.com";
 
@@ -502,21 +551,13 @@ function UploadPanel({ session, onUploaded }: {
         const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const ext = item.file.name.split(".").pop()?.toLowerCase() ?? "mp3";
 
-        // Upload audio directly to Vercel Blob — bypasses the 4.5 MB serverless body limit
-        const audioBlob = await upload(
+        // Upload audio directly to Vercel Blob via our own XHR (no library callbacks)
+        const audioUrl = await uploadBlob(
           `jmc-meditations/audio/${id}.${ext}`,
           item.file,
-          {
-            access: "public",
-            handleUploadUrl: "/api/meditations/upload-url",
-            clientPayload: session?.access_token ?? "",
-            onUploadProgress: ({ loaded, total }: { loaded: number; total: number }) => {
-              // Filter out small helper requests (token fetch, completion callbacks).
-              // The actual file upload will have total ≈ file size.
-              if (total < item.file.size / 10) return;
-              const pct = total ? Math.round((loaded / total) * 100) : 0;
-              setQueue(q => q.map(i => i.qid === item.qid ? { ...i, progress: pct, bytesLoaded: loaded, bytesTotal: total } : i));
-            },
+          session?.access_token ?? "",
+          (pct, loaded, total) => {
+            setQueue(q => q.map(i => i.qid === item.qid ? { ...i, progress: pct, bytesLoaded: loaded, bytesTotal: total } : i));
           }
         );
 
@@ -524,16 +565,11 @@ function UploadPanel({ session, onUploaded }: {
         let imageBlobUrl: string | undefined;
         if (item.imageFile) {
           const imgExt = item.imageFile.name.split(".").pop()?.toLowerCase() ?? "jpg";
-          const imageBlob = await upload(
+          imageBlobUrl = await uploadBlob(
             `jmc-meditations/images/${id}.${imgExt}`,
             item.imageFile,
-            {
-              access: "public",
-              handleUploadUrl: "/api/meditations/upload-url",
-              clientPayload: session?.access_token ?? "",
-            }
+            session?.access_token ?? ""
           );
-          imageBlobUrl = imageBlob.url;
         }
 
         // Save metadata to index
@@ -545,7 +581,7 @@ function UploadPanel({ session, onUploaded }: {
           },
           body: JSON.stringify({
             id,
-            audioUrl: audioBlob.url,
+            audioUrl,
             imageUrl: imageBlobUrl,
             title: item.title.trim() || titleFromFilename(item.file.name),
             description: "",
