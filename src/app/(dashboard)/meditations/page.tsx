@@ -511,6 +511,9 @@ function UploadPanel({ session, onUploaded }: {
             handleUploadUrl: "/api/meditations/upload-url",
             clientPayload: session?.access_token ?? "",
             onUploadProgress: ({ loaded, total }: { loaded: number; total: number }) => {
+              // Filter out small helper requests (token fetch, completion callbacks).
+              // The actual file upload will have total ≈ file size.
+              if (total < item.file.size / 10) return;
               const pct = total ? Math.round((loaded / total) * 100) : 0;
               setQueue(q => q.map(i => i.qid === item.qid ? { ...i, progress: pct, bytesLoaded: loaded, bytesTotal: total } : i));
             },
