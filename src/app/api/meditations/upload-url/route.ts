@@ -7,12 +7,6 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "rng@thejourneymencollective.com"
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const body = (await request.json()) as HandleUploadBody;
 
-  // Skip the completion round-trip entirely — our onUploadCompleted is a no-op
-  // and waiting for it causes the upload() promise to hang after 100%.
-  if ((body as { type?: string }).type === "blob.upload-completed") {
-    return NextResponse.json({ type: "blob.upload-completed", response: {} });
-  }
-
   const jsonResponse = await handleUpload({
     body,
     request,
@@ -33,7 +27,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         addRandomSuffix: false,
       };
     },
-    onUploadCompleted: async () => {},
+    // onUploadCompleted intentionally omitted — without it no callbackUrl is
+    // embedded in the token, so Vercel returns 200 immediately after storing
+    // the file instead of waiting for a server round-trip. Metadata is saved
+    // client-side after upload() resolves.
+    onUploadCompleted: undefined,
   });
 
   return NextResponse.json(jsonResponse);
