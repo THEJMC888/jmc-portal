@@ -502,6 +502,16 @@ function UploadPanel({ session, onUploaded }: {
         const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const ext = item.file.name.split(".").pop()?.toLowerCase() ?? "mp3";
 
+        // onUploadProgress is intentionally omitted: the library's blobFetch fires
+        // progress as bytes are queued by the transform stream (instant for any size),
+        // not as bytes are actually sent — causing a 99% hang for the full upload
+        // duration. Timer-based progress is less precise but doesn't hang.
+        const _t0 = Date.now();
+        const _estSecs = Math.max(5, item.file.size / (3 * 1024 * 1024 / 8));
+        const _timer = setInterval(() => {
+          const pct = Math.min(95, Math.round(((Date.now() - _t0) / 1000 / _estSecs) * 100));
+          setQueue(q => q.map(i => i.qid === item.qid ? { ...i, progress: pct } : i));
+        }, 400);
         const audioBlob = await upload(
           `jmc-meditations/audio/${id}.${ext}`,
           item.file,
@@ -509,12 +519,8 @@ function UploadPanel({ session, onUploaded }: {
             access: "public",
             handleUploadUrl: "/api/meditations/upload-url",
             clientPayload: session?.access_token ?? "",
-            onUploadProgress: ({ percentage, loaded, total }) => {
-              if (total < item.file.size / 10) return;
-              setQueue(q => q.map(i => i.qid === item.qid ? { ...i, progress: Math.min(99, Math.round(percentage)), bytesLoaded: loaded, bytesTotal: total } : i));
-            },
           }
-        );
+        ).finally(() => clearInterval(_timer));
         const audioUrl = audioBlob.url;
         setQueue(q => q.map(i => i.qid === item.qid ? { ...i, progress: 100, bytesLoaded: item.file.size, bytesTotal: item.file.size } : i));
 
