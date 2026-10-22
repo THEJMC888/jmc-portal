@@ -7,6 +7,12 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "rng@thejourneymencollective.com"
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const body = (await request.json()) as HandleUploadBody;
 
+  // Skip the completion round-trip entirely — our onUploadCompleted is a no-op
+  // and waiting for it causes the upload() promise to hang after 100%.
+  if ((body as { type?: string }).type === "blob.upload-completed") {
+    return NextResponse.json({ type: "blob.upload-completed", response: {} });
+  }
+
   const jsonResponse = await handleUpload({
     body,
     request,
