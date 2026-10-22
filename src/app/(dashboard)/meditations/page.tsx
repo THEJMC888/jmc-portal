@@ -7,7 +7,6 @@ import {
   ChevronDown, ChevronUp, Pencil, Check,
   Image as ImageIcon,
 } from "lucide-react";
-import { upload } from "@vercel/blob/client";
 import { useAuth } from "@/lib/auth";
 
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "rng@thejourneymencollective.com";
@@ -461,6 +460,65 @@ function MeditationCard({ meditation, isActive, onClick, onDelete, onUpdate, isA
   );
 }
 
+// ─── XHR Upload ───────────────────────────────────────────────────────────────
+// Bypasses @vercel/blob's streaming-fetch path. On Chrome, blobFetch buffers
+// the entire body into memory before sending — so the progress callback fires
+// instantly at 99% then hangs for the full upload duration. XHR fires
+// upload.onprogress from actual TCP transmission: real bytes, real numbers.
+async function blobXhrUpload(
+  pathname: string,
+  file: File,
+  accessToken: string,
+  onProgress: (pct: number, loaded: number, total: number) => void
+): Promise<{ url: string }> {
+  const tokenRes = await fetch("/api/meditations/upload-url", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      type: "blob.generate-client-token",
+      payload: { pathname, clientPayload: accessToken },
+    }),
+  });
+  if (!tokenRes.ok) throw new Error(`Token fetch failed: ${tokenRes.status}`);
+  const { clientToken } = (await tokenRes.json()) as { clientToken: string };
+  // vercel_blob_client_<storeId>_<base64payload>
+  const storeId = clientToken.split("_")[3];
+  const requestId = `${storeId}:${Date.now()}:${Math.random().toString(16).slice(2)}`;
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", `https://vercel.com/api/blob/?${new URLSearchParams({ pathname })}`, true);
+    xhr.setRequestHeader("x-api-version", "13");
+    xhr.setRequestHeader("x-vercel-blob-store-id", storeId);
+    xhr.setRequestHeader("x-api-blob-request-id", requestId);
+    xhr.setRequestHeader("x-api-blob-request-attempt", "0");
+    xhr.setRequestHeader("x-content-length", String(file.size));
+    xhr.setRequestHeader("authorization", `Bearer ${clientToken}`);
+    if (file.type) xhr.setRequestHeader("content-type", file.type);
+
+    xhr.upload.addEventListener("progress", (e) => {
+      if (e.lengthComputable) {
+        onProgress(Math.round((e.loaded / e.total) * 100), e.loaded, e.total);
+      }
+    });
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          resolve(JSON.parse(xhr.responseText) as { url: string });
+        } catch {
+          reject(new Error("Failed to parse upload response"));
+        }
+      } else {
+        reject(new Error(`Upload failed: HTTP ${xhr.status} — ${xhr.responseText.slice(0, 200)}`));
+      }
+    };
+    xhr.onerror = () => reject(new Error("Network error during upload"));
+    xhr.ontimeout = () => reject(new Error("Upload timed out"));
+    xhr.send(file);
+  });
+}
+
 // ─── Upload Panel ─────────────────────────────────────────────────────────────
 function UploadPanel({ session, onUploaded }: {
   session: { access_token: string } | null;
@@ -502,25 +560,14 @@ function UploadPanel({ session, onUploaded }: {
         const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const ext = item.file.name.split(".").pop()?.toLowerCase() ?? "mp3";
 
-        // onUploadProgress is intentionally omitted: the library's blobFetch fires
-        // progress as bytes are queued by the transform stream (instant for any size),
-        // not as bytes are actually sent — causing a 99% hang for the full upload
-        // duration. Timer-based progress is less precise but doesn't hang.
-        const _t0 = Date.now();
-        const _estSecs = Math.max(5, item.file.size / (3 * 1024 * 1024 / 8));
-        const _timer = setInterval(() => {
-          const pct = Math.min(95, Math.round(((Date.now() - _t0) / 1000 / _estSecs) * 100));
-          setQueue(q => q.map(i => i.qid === item.qid ? { ...i, progress: pct } : i));
-        }, 400);
-        const audioBlob = await upload(
+        const audioBlob = await blobXhrUpload(
           `jmc-meditations/audio/${id}.${ext}`,
           item.file,
-          {
-            access: "public",
-            handleUploadUrl: "/api/meditations/upload-url",
-            clientPayload: session?.access_token ?? "",
+          session?.access_token ?? "",
+          (pct, loaded, total) => {
+            setQueue(q => q.map(i => i.qid === item.qid ? { ...i, progress: pct, bytesLoaded: loaded, bytesTotal: total } : i));
           }
-        ).finally(() => clearInterval(_timer));
+        );
         const audioUrl = audioBlob.url;
         setQueue(q => q.map(i => i.qid === item.qid ? { ...i, progress: 100, bytesLoaded: item.file.size, bytesTotal: item.file.size } : i));
 
@@ -528,14 +575,11 @@ function UploadPanel({ session, onUploaded }: {
         let imageBlobUrl: string | undefined;
         if (item.imageFile) {
           const imgExt = item.imageFile.name.split(".").pop()?.toLowerCase() ?? "jpg";
-          const imgBlob = await upload(
+          const imgBlob = await blobXhrUpload(
             `jmc-meditations/images/${id}.${imgExt}`,
             item.imageFile,
-            {
-              access: "public",
-              handleUploadUrl: "/api/meditations/upload-url",
-              clientPayload: session?.access_token ?? "",
-            }
+            session?.access_token ?? "",
+            () => {}
           );
           imageBlobUrl = imgBlob.url;
         }
