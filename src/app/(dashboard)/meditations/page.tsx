@@ -25,7 +25,7 @@ async function uploadBlob(
     body: JSON.stringify({ pathname, clientPayload: accessToken }),
   });
   if (!tokenRes.ok) throw new Error(`Token error ${tokenRes.status}`);
-  const { clientToken } = await tokenRes.json() as { clientToken: string };
+  const { clientToken, storeId } = await tokenRes.json() as { clientToken: string; storeId: string };
 
   return new Promise<string>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -33,6 +33,9 @@ async function uploadBlob(
     xhr.setRequestHeader("authorization", `Bearer ${clientToken}`);
     xhr.setRequestHeader("x-api-version", "13");
     xhr.setRequestHeader("x-content-length", String(file.size));
+    xhr.setRequestHeader("x-vercel-blob-store-id", storeId);
+    xhr.setRequestHeader("x-access", "public");
+    if (file.type) xhr.setRequestHeader("content-type", file.type);
 
     xhr.upload.addEventListener("progress", (e) => {
       if (e.lengthComputable && onProgress) {

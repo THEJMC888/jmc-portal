@@ -20,6 +20,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const rwToken = process.env.BLOB_READ_WRITE_TOKEN ?? "";
   const clientToken = await generateClientTokenFromReadWriteToken({
     pathname,
     allowedContentTypes: [
@@ -28,8 +29,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     ],
     maximumSizeInBytes: 200 * 1024 * 1024,
     addRandomSuffix: false,
-    token: process.env.BLOB_READ_WRITE_TOKEN,
+    token: rwToken,
   });
 
-  return NextResponse.json({ clientToken });
+  // storeId is the 4th underscore-delimited segment of the read-write token
+  // (format: vercel_blob_rw_{storeId}) — needed as x-vercel-blob-store-id header
+  const storeId = rwToken.split("_")[3] ?? "";
+
+  return NextResponse.json({ clientToken, storeId });
 }
