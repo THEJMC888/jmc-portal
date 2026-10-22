@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [keepSignedIn, setKeepSignedIn] = useState(true);
   const [mfaStep, setMfaStep] = useState(false);
   const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
@@ -60,6 +61,11 @@ export default function LoginPage() {
             setLoading(false);
             return;
           }
+        }
+        if (!keepSignedIn) {
+          window.addEventListener("beforeunload", () => {
+            supabase.auth.signOut();
+          });
         }
         router.push("/dashboard");
       }
@@ -477,6 +483,43 @@ export default function LoginPage() {
                 </p>
               )}
             </div>}
+
+            {mode === "signin" && (
+              <label
+                style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}
+                onClick={() => setKeepSignedIn(k => !k)}
+              >
+                <div style={{
+                  width: 18, height: 18, borderRadius: 4, flexShrink: 0,
+                  background: keepSignedIn
+                    ? "linear-gradient(180deg, #DEC272 0%, #C8A04C 20%, #A07A28 50%, #D4B462 82%, #E0C878 100%)"
+                    : "rgba(1,4,14,0.9)",
+                  border: keepSignedIn ? "none" : "1.5px solid rgba(194,159,96,0.38)",
+                  boxShadow: keepSignedIn
+                    ? "0 1px 0 rgba(20,12,0,0.85), inset 0 1px 0 rgba(240,220,170,0.4)"
+                    : "inset 0 2px 6px rgba(0,0,0,0.6)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  transition: "all 0.15s",
+                }}>
+                  {keepSignedIn && (
+                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                      <path d="M1 4L3.5 6.5L9 1" stroke="#08203A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </div>
+                <span style={{
+                  fontFamily: "Syne, system-ui, sans-serif",
+                  fontSize: "0.65rem",
+                  fontWeight: 600,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  color: "rgba(222,211,200,0.55)",
+                  userSelect: "none",
+                }}>
+                  Keep me signed in
+                </span>
+              </label>
+            )}
 
             {error && (
               <p className="text-sm rounded-lg px-4 py-3" style={{ color: "#f87171", background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)" }}>
