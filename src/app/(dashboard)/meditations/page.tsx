@@ -100,13 +100,17 @@ interface QueueItem {
   startedAt?: number;
 }
 
-const CATEGORIES = ["Morning", "Evening", "Breathwork", "Visualization", "Sleep", "Grounding", "General"];
+const CATEGORIES = ["Journey", "Cleanse", "Healing", "Community", "Morning", "Evening", "Breathwork", "Visualization", "Sleep", "Grounding", "General"];
 
 const CATEGORY_ICONS: Record<string, string> = {
+  Journey: "🚀",
+  Cleanse: "✨",
+  Healing: "💫",
+  Community: "🤝",
   Morning: "🌅",
   Evening: "🌙",
   Breathwork: "🌬️",
-  Visualization: "✨",
+  Visualization: "🔮",
   Sleep: "😴",
   Grounding: "🌿",
   General: "🧘",
