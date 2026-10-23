@@ -95,7 +95,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const remotePath  = `meditations/audio/${id}.${ext}`;
   const contentType = ext === "mp3" ? "audio/mpeg" : ext === "m4a" ? "audio/mp4" : `audio/${ext}`;
 
-  // Upload to Bunny.net Storage
   const uploadRes = await fetch(
     `${STORAGE_ENDPOINT}/${STORAGE_ZONE}/${remotePath}`,
     {
