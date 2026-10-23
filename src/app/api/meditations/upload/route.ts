@@ -7,9 +7,7 @@ import { writeFile, readFile, unlink } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
 
-export const maxDuration = 300; // FFmpeg processing can take a while for long files (Vercel Pro)
-
-export const maxDuration = 300; // Dolby.io processing needs up to 5 min (Vercel Pro required)
+export const maxDuration = 300;
 
 const ADMIN_EMAIL      = process.env.ADMIN_EMAIL ?? "rng@thejourneymencollective.com";
 const STORAGE_ZONE     = process.env.BUNNY_STORAGE_ZONE!;
@@ -19,14 +17,6 @@ const CDN_URL          = (process.env.BUNNY_CDN_URL ?? "").replace(/\/$/, "");
 
 const execFileAsync = promisify(execFile);
 
-// ─── FFmpeg Audio Enhancement ─────────────────────────────────────────────────
-// Applies a broadcast-quality filter chain to the uploaded audio:
-//   • highpass(80Hz)  — remove low-frequency room rumble
-//   • lowpass(16kHz)  — gentle high-freq roll-off to soften harshness
-//   • equalizer(8kHz) — -3dB cut on the "tinny" upper-mid range
-//   • acompressor     — gentle compression for consistent dynamics
-//   • loudnorm        — EBU R128 loudness normalization (-16 LUFS broadcast standard)
-// Always outputs MP3 at 192kbps. Falls back to original on any failure.
 async function enhanceAudio(
   buf: ArrayBuffer,
   inputExt: string,
@@ -69,7 +59,6 @@ async function enhanceAudio(
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  // Auth: verify admin session token
   const authHeader = request.headers.get("x-supabase-token");
   if (!authHeader) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -88,7 +77,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Bunny.net not configured" }, { status: 500 });
   }
 
-  // Parse multipart form: file + metadata
   const formData = await request.formData();
   const file     = formData.get("file") as File | null;
   const title    = (formData.get("title") as string) || "";
@@ -101,16 +89,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const inputExt = file.name.split(".").pop()?.toLowerCase() ?? "mp3";
   const id       = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-  // Enhance audio — always outputs MP3 on success, original format on fallback
   const rawBuffer              = await file.arrayBuffer();
   const { buffer: audioBuffer, ext } = await enhanceAudio(rawBuffer, inputExt);
 
   const remotePath  = `meditations/audio/${id}.${ext}`;
   const contentType = ext === "mp3" ? "audio/mpeg" : ext === "m4a" ? "audio/mp4" : `audio/${ext}`;
-
-  // Enhance audio quality via Dolby.io (no-op if API keys not set)
-  const rawBuffer      = await file.arrayBuffer();
-  const audioBuffer    = await enhanceAudio(rawBuffer, ext);
 
   // Upload to Bunny.net Storage
   const uploadRes = await fetch(
@@ -131,7 +114,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const audioUrl     = `${cdnBase}/${remotePath}`;
   const displayTitle = title || file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 
-  // Read + update meditations index in Bunny.net
   const indexPath = "meditations/index.json";
   let meditations: object[] = [];
   const indexRes = await fetch(`${STORAGE_ENDPOINT}/${STORAGE_ZONE}/${indexPath}`, {
