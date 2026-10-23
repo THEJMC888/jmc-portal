@@ -24,7 +24,10 @@ export interface Meditation {
 
 async function getIndex(): Promise<Meditation[]> {
   try {
-    const res = await fetch(`${cdnBase()}/meditations/index.json`, { cache: "no-store" });
+    const res = await fetch(
+      `${STORAGE_ENDPOINT}/${STORAGE_ZONE}/meditations/index.json`,
+      { headers: { "AccessKey": STORAGE_PASSWORD }, cache: "no-store" },
+    );
     if (!res.ok) return [];
     return res.json();
   } catch {
