@@ -9,6 +9,8 @@ import { join } from "path";
 
 export const maxDuration = 300; // FFmpeg processing can take a while for long files (Vercel Pro)
 
+export const maxDuration = 300; // Dolby.io processing needs up to 5 min (Vercel Pro required)
+
 const ADMIN_EMAIL      = process.env.ADMIN_EMAIL ?? "rng@thejourneymencollective.com";
 const STORAGE_ZONE     = process.env.BUNNY_STORAGE_ZONE!;
 const STORAGE_PASSWORD = process.env.BUNNY_STORAGE_PASSWORD!;
@@ -105,6 +107,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const remotePath  = `meditations/audio/${id}.${ext}`;
   const contentType = ext === "mp3" ? "audio/mpeg" : ext === "m4a" ? "audio/mp4" : `audio/${ext}`;
+
+  // Enhance audio quality via Dolby.io (no-op if API keys not set)
+  const rawBuffer      = await file.arrayBuffer();
+  const audioBuffer    = await enhanceAudio(rawBuffer, ext);
 
   // Upload to Bunny.net Storage
   const uploadRes = await fetch(
