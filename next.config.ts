@@ -27,6 +27,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  experimental: {
+    middlewareClientMaxBodySize: 200 * 1024 * 1024, // 200 MB — needed for large meditation file uploads
+  },
   images: {
     domains: [
       "vz-cdn.b-cdn.net",       // Bunny.net CDN
