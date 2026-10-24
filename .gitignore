@@ -27,3 +27,9 @@ yarn-error.log*
 # Vercel
 .vercel
 .env*
+
+# Supabase CLI runtime files
+supabase/.temp/
+
+# TypeScript build info
+tsconfig.tsbuildinfo
