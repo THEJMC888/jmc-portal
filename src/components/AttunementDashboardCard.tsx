@@ -24,56 +24,33 @@ export default function AttunementDashboardCard() {
 
   if (!mounted) return null;
 
-  const hasBg = !!card?.backgroundImageDataUrl;
-  const grad = card?.backgroundGradient ?? { from: "#08254D", to: "#0B4B32", angle: 160 };
-
   return (
-    <Link
-      href="/vision/attunement"
-      style={{ textDecoration: "none" }}
-    >
+    <Link href="/vision/attunement" style={{ textDecoration: "none" }}>
       <div
         className="card-luxury"
         style={{
-          position: "relative", overflow: "hidden",
-          padding: "16px 14px", cursor: "pointer",
+          position: "relative",
+          padding: "16px 14px",
+          cursor: "pointer",
           minHeight: 110,
-          boxShadow: "0 4px 24px rgba(194,159,96,0.1)",
-          transition: "transform 0.2s, box-shadow 0.2s",
-        }}
-        onMouseEnter={e => {
-          (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
-          (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 32px rgba(194,159,96,0.18)";
-        }}
-        onMouseLeave={e => {
-          (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
-          (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 24px rgba(194,159,96,0.1)";
         }}
       >
-        {/* Background */}
-        {card && (
-          hasBg ? (
-            <>
-              <div style={{
-                position: "absolute", inset: 0,
-                backgroundImage: `url(${card.backgroundImageDataUrl})`,
-                backgroundSize: "cover", backgroundPosition: "center",
-                opacity: 0.3,
-              }} />
-              <div style={{ position: "absolute", inset: 0, background: "rgba(4,13,28,0.6)" }} />
-            </>
-          ) : (
-            <div style={{
-              position: "absolute", inset: 0,
-              background: `linear-gradient(${grad.angle}deg, ${grad.from}88, ${grad.to}88)`,
-            }} />
-          )
+        {/* Subtle vision image hint — behind glass, not on top of it */}
+        {card?.backgroundImageDataUrl && (
+          <div style={{
+            position: "absolute", inset: 0,
+            backgroundImage: `url(${card.backgroundImageDataUrl})`,
+            backgroundSize: "cover", backgroundPosition: "center",
+            opacity: 0.12,
+            borderRadius: 16,
+          }} />
         )}
 
-        {/* Gold top line */}
+        {/* Gold accent top line */}
         <div style={{
-          position: "absolute", top: 0, left: 0, right: 0, height: 2,
-          background: "linear-gradient(90deg, transparent, rgba(194,159,96,0.6), transparent)",
+          position: "absolute", top: 0, left: "20%", right: "20%", height: 2,
+          background: "linear-gradient(90deg, transparent, rgba(194,159,96,0.7), transparent)",
+          borderRadius: "0 0 4px 4px",
         }} />
 
         {/* Content */}
@@ -82,7 +59,7 @@ export default function AttunementDashboardCard() {
             <div style={{
               width: 28, height: 28, borderRadius: 7,
               background: "rgba(194,159,96,0.12)",
-              border: "1px solid rgba(194,159,96,0.25)",
+              border: "1px solid rgba(194,159,96,0.28)",
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 13, flexShrink: 0,
             }}>
