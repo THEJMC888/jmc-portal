@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { LayoutDashboard, PlaySquare, Users, Sparkles, BookOpen, LogOut, ChevronRight, NotebookPen, Wind, Lock, Route, Fingerprint } from "lucide-react";
+import { LayoutDashboard, PlaySquare, Users, Sparkles, BookOpen, LogOut, ChevronRight, NotebookPen, Wind, Lock, Route, Fingerprint, Eye } from "lucide-react";
 import { clsx } from "clsx";
 import BrandLogo from "./BrandLogo";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth";
 import PhotoSlideshow from "./PhotoSlideshow";
+
+const ADMIN_EMAIL = "rng@thejourneymencollective.com";
 
 interface NavChild { label: string; href: string; icon: React.ElementType; }
 interface NavItem {
@@ -38,6 +41,8 @@ const NAV_ITEMS: NavItem[] = [
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { user } = useAuth();
+  const isAdmin = user?.email === ADMIN_EMAIL;
   const [statementsReady, setStatementsReady] = useState(false);
   const [showEditorPrompt, setShowEditorPrompt] = useState(false);
 
@@ -364,6 +369,31 @@ export default function Sidebar() {
             </p>
           </div>
         </div>
+
+        {isAdmin && (
+          <div style={{ marginBottom: 4 }}>
+            <p style={{
+              fontSize: "0.5rem", letterSpacing: "0.12em", textTransform: "uppercase",
+              color: "rgba(194,159,96,0.4)", fontFamily: "Syne,system-ui,sans-serif",
+              fontWeight: 700, padding: "0 12px 4px",
+            }}>
+              Admin
+            </p>
+            <Link
+              href="/admin/vision-review"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
+              style={{
+                color: pathname.startsWith("/admin/vision-review") ? "#C29F60" : "rgba(222,211,200,0.5)",
+                background: pathname.startsWith("/admin/vision-review") ? "rgba(194,159,96,0.08)" : "transparent",
+                fontFamily: "Syne, system-ui, sans-serif",
+                textDecoration: "none",
+              }}
+            >
+              <Eye className="w-4 h-4" />
+              Vision Review
+            </Link>
+          </div>
+        )}
 
         <button
           onClick={handleSignOut}
