@@ -29,6 +29,7 @@ const NAV_ITEMS: NavItem[] = [
     children: [
       { label: "My Statements", href: "/statements", icon: BookOpen },
       { label: "Editor", href: "/vision", icon: Sparkles },
+      { label: "My Attunements", href: "/vision/attunement", icon: Sparkles },
     ],
   },
   { label: "Journal", href: "/journal", icon: NotebookPen },
