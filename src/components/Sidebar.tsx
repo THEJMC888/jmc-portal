@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { LayoutDashboard, PlaySquare, Users, Sparkles, BookOpen, LogOut, ChevronRight, NotebookPen, Wind, Lock, Route, Fingerprint, Eye } from "lucide-react";
+import { LayoutDashboard, PlaySquare, Users, Sparkles, BookOpen, LogOut, ChevronRight, NotebookPen, Wind, Lock, Route, Fingerprint, Eye, GraduationCap } from "lucide-react";
 import { clsx } from "clsx";
 import BrandLogo from "./BrandLogo";
 import { supabase } from "@/lib/supabase";
@@ -23,7 +23,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Video Library", href: "/library", icon: PlaySquare },
+  { label: "Course Library", href: "/library", icon: GraduationCap },
   {
     label: "Vision Video", href: "/vision", icon: Sparkles,
     children: [
@@ -392,6 +392,19 @@ export default function Sidebar() {
             >
               <Eye className="w-4 h-4" />
               Vision Review
+            </Link>
+            <Link
+              href="/admin/courses"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
+              style={{
+                color: pathname.startsWith("/admin/courses") ? "#C29F60" : "rgba(222,211,200,0.5)",
+                background: pathname.startsWith("/admin/courses") ? "rgba(194,159,96,0.08)" : "transparent",
+                fontFamily: "Syne, system-ui, sans-serif",
+                textDecoration: "none",
+              }}
+            >
+              <GraduationCap className="w-4 h-4" />
+              Course Access
             </Link>
           </div>
         )}
