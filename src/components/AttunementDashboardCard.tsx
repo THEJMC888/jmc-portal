@@ -25,14 +25,17 @@ export default function AttunementDashboardCard() {
   if (!mounted) return null;
 
   return (
-    <Link href="/vision/attunement" style={{ textDecoration: "none" }}>
+    <Link href="/vision/attunement" style={{ textDecoration: "none", display: "block", height: "100%" }}>
       <div
         className="card-luxury"
         style={{
           position: "relative",
           padding: "16px 14px",
           cursor: "pointer",
-          minHeight: 110,
+          height: "100%",
+          boxSizing: "border-box" as const,
+          outline: "1.5px solid rgba(194,159,96,0.55)",
+          outlineOffset: "-1px",
         }}
       >
         {/* Subtle vision image hint — behind glass, not on top of it */}

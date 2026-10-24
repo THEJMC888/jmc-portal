@@ -34,7 +34,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 animate-fade-in-up animate-fade-in-up-delay-1">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 animate-fade-in-up animate-fade-in-up-delay-1" style={{ alignItems: "stretch" }}>
+        {/* Primary Attunement — first and featured */}
+        <AttunementDashboardCard />
         {[
           { icon: PlayCircle, label: "In Progress", value: inProgressVideos.length, color: "#C29F60", bg: "rgba(194,159,96,0.1)", glow: "rgba(194,159,96,0.12)" },
           { icon: CheckCircle, label: "Completed", value: completedCount, color: "#1D7458", bg: "rgba(29,116,88,0.1)", glow: "rgba(29,116,88,0.08)" },
@@ -43,7 +45,7 @@ export default function DashboardPage() {
           <div
             key={label}
             className="card-luxury p-4 md:p-5"
-            style={{ boxShadow: `0 4px 24px ${glow}` }}
+            style={{ boxShadow: `0 4px 24px ${glow}`, height: "100%", boxSizing: "border-box" }}
           >
             <div className="flex items-center gap-2 md:gap-3 mb-3">
               <div
@@ -60,8 +62,6 @@ export default function DashboardPage() {
             <p style={{ ...avenir, fontSize: "0.7rem", color: "rgba(222,211,200,0.4)" }}>videos</p>
           </div>
         ))}
-        {/* Primary Attunement card — client component reads localStorage */}
-        <AttunementDashboardCard />
       </div>
 
       {/* Continue Watching */}
