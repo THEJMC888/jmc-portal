@@ -102,6 +102,45 @@ export interface AttunementCard {
   updatedAt: string;
 }
 
+export interface Course {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle?: string;
+  description?: string;
+  thumbnail_url?: string;
+  bunny_library_id?: string;
+  is_published: boolean;
+  requires_access: boolean;
+  order_index: number;
+  created_at: string;
+  // Computed client-side from user_course_access
+  hasAccess?: boolean;
+  videoCount?: number;
+}
+
+export interface CourseVideo {
+  id: string;
+  course_id: string;
+  title: string;
+  description?: string;
+  bunny_video_id: string;
+  duration_seconds: number;
+  thumbnail_url?: string;
+  is_published: boolean;
+  order_index: number;
+  created_at: string;
+}
+
+export interface UserCourseAccess {
+  id: string;
+  user_id: string;
+  course_id: string;
+  granted_at: string;
+  granted_by?: string;
+  expires_at?: string;
+}
+
 export interface VisionSubmission {
   id: string;
   userId: string;

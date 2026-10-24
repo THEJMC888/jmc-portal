@@ -1,222 +1,223 @@
 "use client";
 
-import { useState } from "react";
-import { Search, SlidersHorizontal } from "lucide-react";
-import VideoCard from "@/components/VideoCard";
-import { MOCK_VIDEOS, MOCK_CATEGORIES } from "@/lib/mockData";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { Lock, Play, ChevronRight } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import type { Course } from "@/types";
 
-const CARD_SHADOW = [
-  "inset 0 3px 0 rgba(255,255,255,0.22)", "inset 0 1px 0 rgba(255,255,255,0.38)",
-  "inset 2px 0 0 rgba(255,255,255,0.06)", "inset 0 -3px 8px rgba(0,0,0,0.55)",
-  "inset -2px 0 5px rgba(0,0,0,0.25)",
-  "0 2px 0 rgba(0,0,0,0.90)", "0 4px 0 rgba(0,0,0,0.75)", "0 6px 0 rgba(0,0,0,0.58)",
-  "0 8px 0 rgba(0,0,0,0.42)", "0 10px 0 rgba(0,0,0,0.28)", "0 12px 0 rgba(0,0,0,0.16)",
-  "0 14px 0 rgba(0,0,0,0.08)", "0 16px 0 rgba(0,0,0,0.04)",
-  "0 20px 28px rgba(0,0,0,0.75)", "0 38px 65px rgba(0,0,0,0.58)",
-  "5px 0 16px rgba(0,0,0,0.45)", "0 0 0 1px rgba(0,0,0,0.6)",
-].join(", ");
+const syne  = { fontFamily: "Syne, system-ui, sans-serif" };
+const lora  = { fontFamily: '"Lora", Georgia, serif' };
+const avenir = { fontFamily: "Avenir, Nunito, system-ui, sans-serif" };
 
-const GOLD_BTN_SHADOW = [
-  "inset 0 1px 0 rgba(240,220,170,0.4)", "inset 0 -2px 4px rgba(0,0,0,0.25)",
-  "0 2px 0 rgba(20,12,0,0.85)", "0 4px 0 rgba(20,12,0,0.65)",
-  "0 6px 0 rgba(20,12,0,0.40)", "0 8px 0 rgba(20,12,0,0.20)",
-  "0 10px 20px rgba(0,0,0,0.60)", "0 4px 30px rgba(194,159,96,0.25)",
-].join(", ");
+const GOLD = "#C29F60";
 
-const pillBase = {
-  fontFamily: "Syne, system-ui, sans-serif",
-  fontSize: "0.78rem",
-  fontWeight: 600,
-  letterSpacing: "0.06em",
-  padding: "8px 18px",
-  borderRadius: 24,
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  gap: 6,
-  border: "none",
-  transition: "transform 0.15s",
-} as React.CSSProperties;
+const COURSE_ICONS: Record<string, string> = {
+  "4444-journey": "⟁",
+  "222-journey":  "◈",
+  "vision-creation": "✦",
+};
 
-const pillInactive = {
-  ...pillBase,
-  background: "linear-gradient(180deg, rgba(255,255,255,0.055) 0%, rgba(8,20,52,0.55) 60%, rgba(2,8,28,0.72) 100%)",
-  border: "1px solid rgba(255,255,255,0.09)",
-  borderBottom: "1px solid rgba(0,0,0,0.45)",
-  boxShadow: [
-    "inset 0 1px 0 rgba(255,255,255,0.07)",
-    "inset 0 -1px 0 rgba(0,0,0,0.2)",
-    "0 2px 4px rgba(0,0,0,0.45)",
-    "0 4px 10px rgba(0,0,0,0.25)",
-    "0 0 0 1px rgba(0,0,0,0.3)",
-  ].join(", "),
-  color: "rgba(222,211,200,0.72)",
-} as React.CSSProperties;
+const COURSE_COLORS: Record<string, { accent: string; bg: string }> = {
+  "4444-journey":  { accent: "#C29F60", bg: "rgba(194,159,96,0.08)" },
+  "222-journey":   { accent: "#7B9EC4", bg: "rgba(123,158,196,0.08)" },
+  "vision-creation": { accent: "#A87DCF", bg: "rgba(168,125,207,0.08)" },
+};
 
-const pillActive = {
-  ...pillBase,
-  fontWeight: 700,
-  background: "linear-gradient(180deg, #DEC272 0%, #C8A04C 20%, #A07A28 44%, #BE9642 66%, #D4B462 86%, #E0C878 100%)",
-  boxShadow: GOLD_BTN_SHADOW,
-  color: "#08203A",
-} as React.CSSProperties;
-
-export default function LibraryPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-
-  const filteredVideos = MOCK_VIDEOS.filter((video) => {
-    const matchesSearch =
-      !searchQuery ||
-      video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      video.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      video.tags.some((t) =>
-        t.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-
-    const matchesCategory =
-      !selectedCategory || video.categoryId === selectedCategory;
-
-    return matchesSearch && matchesCategory;
-  });
+function CourseCard({ course }: { course: Course }) {
+  const icon   = COURSE_ICONS[course.slug] ?? "◉";
+  const colors = COURSE_COLORS[course.slug] ?? { accent: GOLD, bg: "rgba(194,159,96,0.08)" };
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <p className="brand-subtitle text-gold text-xs mb-2 tracking-[0.25em]">
-          Content Library
-        </p>
-        <h1 className="brand-title text-3xl text-white mb-1">
-          Video Library
-        </h1>
-        <p className="text-muted text-sm">
-          {MOCK_VIDEOS.length} videos across {MOCK_CATEGORIES.length} categories
-        </p>
-      </div>
+    <Link
+      href={course.hasAccess ? `/courses/${course.slug}` : `/courses/${course.slug}`}
+      style={{ textDecoration: "none", display: "block" }}
+    >
+      <div
+        className="card-luxury"
+        style={{
+          padding: "28px 24px",
+          cursor: "pointer",
+          outline: course.hasAccess
+            ? `1.5px solid ${colors.accent}55`
+            : "1.5px solid rgba(255,255,255,0.07)",
+          outlineOffset: "-1px",
+          transition: "transform 0.18s, outline-color 0.18s",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* Accent bar top */}
+        <div style={{
+          position: "absolute", top: 0, left: "15%", right: "15%", height: 2,
+          background: course.hasAccess
+            ? `linear-gradient(90deg, transparent, ${colors.accent}88, transparent)`
+            : "linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)",
+          borderRadius: "0 0 4px 4px",
+        }} />
 
-      {/* Search & Filters */}
-      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-        <div style={{ position: "relative", flex: 1 }}>
-          <Search style={{
-            position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)",
-            width: 16, height: 16, color: "rgba(222,211,200,0.35)", pointerEvents: "none",
-          }} />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search videos..."
-            style={{
-              width: "100%",
-              background: "linear-gradient(180deg, rgba(1,8,22,0.88) 0%, rgba(4,15,38,0.72) 100%)",
-              boxShadow: [
-                "inset 0 3px 10px rgba(0,0,0,0.65)",
-                "inset 0 1px 5px rgba(0,0,0,0.5)",
-                "inset 0 6px 20px rgba(0,0,0,0.38)",
-                "inset 0 0 0 1.5px rgba(0,0,0,0.45)",
-                "inset 2px 0 8px rgba(0,0,0,0.22)",
-                "0 1px 0 rgba(255,255,255,0.07)",
-              ].join(", "),
-              border: "1.5px solid rgba(255,255,255,0.06)",
-              borderTop: "1.5px solid rgba(0,0,0,0.55)",
-              borderRadius: 10,
-              padding: "14px 16px 14px 48px",
-              color: "#DED3C8",
-              fontFamily: "Syne, system-ui, sans-serif",
-              fontSize: "0.85rem",
-              outline: "none",
-            }}
-            onFocus={(e) => {
-              e.currentTarget.style.borderColor = "rgba(194,159,96,0.25)";
-              e.currentTarget.style.boxShadow = [
-                "inset 0 3px 10px rgba(0,0,0,0.65)",
-                "inset 0 1px 5px rgba(0,0,0,0.5)",
-                "inset 0 6px 20px rgba(0,0,0,0.38)",
-                "inset 0 0 0 1.5px rgba(0,0,0,0.45)",
-                "0 0 0 2px rgba(194,159,96,0.12)",
-                "0 1px 0 rgba(255,255,255,0.07)",
-              ].join(", ");
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)";
-              e.currentTarget.style.borderTopColor = "rgba(0,0,0,0.55)";
-              e.currentTarget.style.boxShadow = [
-                "inset 0 3px 10px rgba(0,0,0,0.65)",
-                "inset 0 1px 5px rgba(0,0,0,0.5)",
-                "inset 0 6px 20px rgba(0,0,0,0.38)",
-                "inset 0 0 0 1.5px rgba(0,0,0,0.45)",
-                "inset 2px 0 8px rgba(0,0,0,0.22)",
-                "0 1px 0 rgba(255,255,255,0.07)",
-              ].join(", ");
-            }}
-          />
+        {/* Header row */}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 18 }}>
+          <div style={{
+            width: 52, height: 52, borderRadius: 14, flexShrink: 0,
+            background: colors.bg,
+            border: `1px solid ${colors.accent}33`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 22, color: colors.accent,
+          }}>
+            {icon}
+          </div>
+
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ ...syne, fontSize: "0.55rem", fontWeight: 700, letterSpacing: "0.12em",
+              textTransform: "uppercase" as const, color: `${colors.accent}99`, marginBottom: 4 }}>
+              {course.hasAccess ? "Full Access" : course.requires_access ? "Access Required" : "Open"}
+            </p>
+            <h3 style={{ ...lora, fontWeight: 700, fontSize: "1.05rem", color: "#DED3C8", lineHeight: 1.2 }}>
+              {course.title}
+            </h3>
+            {course.subtitle && (
+              <p style={{ ...avenir, fontSize: "0.75rem", color: "rgba(222,211,200,0.5)", marginTop: 2 }}>
+                {course.subtitle}
+              </p>
+            )}
+          </div>
+
+          {/* Status icon */}
+          <div style={{
+            width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+            background: course.hasAccess ? `${colors.accent}18` : "rgba(255,255,255,0.04)",
+            border: course.hasAccess ? `1px solid ${colors.accent}33` : "1px solid rgba(255,255,255,0.08)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            {course.hasAccess
+              ? <ChevronRight size={14} style={{ color: colors.accent }} />
+              : <Lock size={12} style={{ color: "rgba(222,211,200,0.3)" }} />
+            }
+          </div>
         </div>
-        <button style={{
-          ...pillInactive,
-          borderRadius: 10,
-          padding: "14px 18px",
-          gap: 8,
-          flexShrink: 0,
-        }}>
-          <SlidersHorizontal style={{ width: 15, height: 15 }} />
-          <span style={{ fontSize: "0.82rem" }}>Filter</span>
-        </button>
-      </div>
 
-      {/* Category Pills */}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <button
-          onClick={() => setSelectedCategory(null)}
-          style={!selectedCategory ? pillActive : pillInactive}
-          onMouseEnter={(e) => { if (selectedCategory) (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
-        >
-          All
-        </button>
-        {MOCK_CATEGORIES.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
-            style={selectedCategory === cat.id ? pillActive : pillInactive}
-            onMouseEnter={(e) => { if (selectedCategory !== cat.id) (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
-          >
-            <span>{cat.icon}</span>
-            {cat.name}
-          </button>
-        ))}
-      </div>
+        {/* Description */}
+        {course.description && (
+          <p style={{ ...avenir, fontSize: "0.78rem", color: "rgba(222,211,200,0.55)",
+            lineHeight: 1.55, marginBottom: 18 }}>
+            {course.description}
+          </p>
+        )}
 
-      {/* Results Count */}
-      {(searchQuery || selectedCategory) && (
-        <p className="text-sm text-muted">
-          Showing {filteredVideos.length} of {MOCK_VIDEOS.length} videos
+        {/* CTA */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {course.hasAccess ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 6,
+              padding: "6px 14px", borderRadius: 20,
+              background: `${colors.accent}18`,
+              border: `1px solid ${colors.accent}33` }}>
+              <Play size={10} style={{ color: colors.accent }} />
+              <span style={{ ...syne, fontSize: "0.62rem", fontWeight: 700,
+                letterSpacing: "0.1em", textTransform: "uppercase" as const, color: colors.accent }}>
+                Watch Now
+              </span>
+            </div>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: 6,
+              padding: "6px 14px", borderRadius: 20,
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.08)" }}>
+              <Lock size={10} style={{ color: "rgba(222,211,200,0.3)" }} />
+              <span style={{ ...syne, fontSize: "0.62rem", fontWeight: 700,
+                letterSpacing: "0.1em", textTransform: "uppercase" as const,
+                color: "rgba(222,211,200,0.3)" }}>
+                Request Access
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+export default function LibraryPage() {
+  const { session } = useAuth();
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!session?.access_token) return;
+    fetch("/api/courses", {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then(r => r.json())
+      .then(data => { if (Array.isArray(data)) setCourses(data); })
+      .finally(() => setLoading(false));
+  }, [session]);
+
+  const myCourses  = courses.filter(c => c.hasAccess);
+  const otherCourses = courses.filter(c => !c.hasAccess);
+
+  return (
+    <div className="space-y-10">
+      {/* Header */}
+      <div className="animate-fade-in-up">
+        <p style={{ ...syne, fontWeight: 700, textTransform: "uppercase" as const,
+          letterSpacing: "0.22em", fontSize: "0.62rem", color: GOLD, marginBottom: "0.5rem", opacity: 0.85 }}>
+          Course Library
         </p>
-      )}
+        <h1 style={{ ...lora, fontWeight: 600, fontSize: "clamp(1.75rem, 4vw, 2.5rem)",
+          color: "#DED3C8", lineHeight: 1.1, marginBottom: "0.4rem" }}>
+          Your Journeys
+        </h1>
+        <p style={{ ...avenir, color: "rgba(222,211,200,0.62)", fontSize: "0.9rem" }}>
+          Each course is a complete transformational arc. Your active courses are unlocked below.
+        </p>
+      </div>
 
-      {/* Video Grid */}
-      {filteredVideos.length > 0 ? (
-        <div className="grid grid-cols-3 gap-5">
-          {filteredVideos.map((video) => (
-            <VideoCard key={video.id} video={video} />
+      {loading && (
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="card-luxury animate-pulse" style={{ height: 180 }} />
           ))}
         </div>
-      ) : (
-        <div className="text-center py-20">
-          <p className="text-muted text-lg mb-2">No videos found</p>
-          <p className="text-muted/60 text-sm">
-            Try a different search or category
+      )}
+
+      {!loading && myCourses.length > 0 && (
+        <section className="animate-fade-in-up">
+          <div className="flex items-center gap-3 mb-5">
+            <h2 style={{ ...lora, fontWeight: 600, fontSize: "1.1rem", color: "#DED3C8" }}>
+              Active Courses
+            </h2>
+            <div className="flex-1 glow-line" />
+            <span style={{ ...syne, fontSize: "0.6rem", fontWeight: 700,
+              letterSpacing: "0.12em", textTransform: "uppercase" as const,
+              color: "rgba(222,211,200,0.35)" }}>
+              {myCourses.length} course{myCourses.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+          <div className="space-y-4">
+            {myCourses.map(c => <CourseCard key={c.id} course={c} />)}
+          </div>
+        </section>
+      )}
+
+      {!loading && otherCourses.length > 0 && (
+        <section className="animate-fade-in-up">
+          <div className="flex items-center gap-3 mb-5">
+            <h2 style={{ ...lora, fontWeight: 600, fontSize: "1.1rem", color: "#DED3C8" }}>
+              Available Courses
+            </h2>
+            <div className="flex-1 glow-line" />
+          </div>
+          <div className="space-y-4">
+            {otherCourses.map(c => <CourseCard key={c.id} course={c} />)}
+          </div>
+        </section>
+      )}
+
+      {!loading && courses.length === 0 && (
+        <div className="card-luxury" style={{ padding: "48px 32px", textAlign: "center" as const }}>
+          <p style={{ ...avenir, color: "rgba(222,211,200,0.4)", fontSize: "0.9rem" }}>
+            No courses available yet. Check back soon.
           </p>
-          <button
-            onClick={() => {
-              setSearchQuery("");
-              setSelectedCategory(null);
-            }}
-            className="mt-4 text-sm text-gold hover:text-gold-light transition-colors"
-          >
-            Clear filters
-          </button>
         </div>
       )}
     </div>
