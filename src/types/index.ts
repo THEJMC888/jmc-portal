@@ -87,3 +87,18 @@ export interface VisionVideo {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface VisionSubmission {
+  id: string;
+  userId: string;
+  userEmail: string;
+  userName: string;
+  visionId: string;
+  visionTitle: string;
+  status: "pending" | "approved" | "needs_revision";
+  feedback?: string;
+  submittedAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  slideCount: number;
+}

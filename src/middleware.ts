@@ -12,6 +12,7 @@ const PROTECTED_PATHS = [
   "/statements",
   "/video",
   "/settings",
+  "/admin",
 ];
 
 export async function middleware(request: NextRequest) {

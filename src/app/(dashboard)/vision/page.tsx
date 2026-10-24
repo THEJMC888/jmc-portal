@@ -6,12 +6,13 @@ import {
   Plus, Trash2, Play, Upload, Music, X, Download,
   Type, Image as ImageIcon, Bold, Italic, AlignLeft,
   AlignCenter, AlignRight, ChevronUp, ChevronDown,
-  Layers, Sparkles, ImagePlus, FileInput,
+  Layers, Sparkles, ImagePlus, FileInput, Send, CheckCircle,
 } from "lucide-react";
 import type { VisionVideo, VisionSlide, SlideElement, SlideBackground } from "@/types";
 import { parsePptxFile } from "@/lib/parsePptx";
 import MobileVisionEditor from "@/components/MobileVisionEditor";
 import { PORTAL_PHOTO_BUCKETS, BUCKET_LABELS, type PortalPhotoBucket } from "@/lib/portalPhotos";
+import { useAuth } from "@/lib/auth";
 
 // ─── Virtual canvas ────────────────────────────────────────────────────────
 const VW = 1600;
@@ -593,6 +594,7 @@ document.addEventListener('mousemove',()=>{
 
 export default function VisionPage() {
   const router = useRouter();
+  const { session } = useAuth();
 
   // ─── State ──────────────────────────────────────────────────────────────
   const [vision, setVision] = useState<VisionVideo>(() => initStorage().vision);
@@ -622,6 +624,9 @@ export default function VisionPage() {
   const [jmcBucket, setJmcBucket] = useState<PortalPhotoBucket | "all">("all");
   const [jmcLoadingId, setJmcLoadingId] = useState<string | null>(null);
   const [controlTab, setControlTab] = useState<"bg" | "style" | "music" | "photos">("bg");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
+  const [submitMsg, setSubmitMsg] = useState("");
 
   // ─── Refs ────────────────────────────────────────────────────────────────
   const outerRef = useRef<HTMLDivElement>(null);
@@ -1316,6 +1321,45 @@ export default function VisionPage() {
     }
   };
 
+  const handleSubmitForReview = async () => {
+    if (isSubmitting || !session?.access_token) return;
+    if (vision.slides.length === 0) {
+      setSubmitStatus("error");
+      setSubmitMsg("Add at least one slide before submitting.");
+      setTimeout(() => setSubmitStatus("idle"), 4000);
+      return;
+    }
+    setIsSubmitting(true);
+    setSubmitStatus("idle");
+    try {
+      const res = await fetch("/api/vision-submissions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          visionId: currentId,
+          visionTitle: vision.title || "Untitled Vision",
+          visionData: vision,
+          slideCount: vision.slides.length,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error ?? "Submission failed");
+      }
+      setSubmitStatus("success");
+      setSubmitMsg("Vision submitted for review!");
+    } catch (e) {
+      setSubmitStatus("error");
+      setSubmitMsg(e instanceof Error ? e.message : "Submission failed");
+    } finally {
+      setIsSubmitting(false);
+      setTimeout(() => setSubmitStatus("idle"), 5000);
+    }
+  };
+
   const exportVision = async () => {
     if (isExporting) return;
     setIsExporting(true);
@@ -1966,6 +2010,42 @@ export default function VisionPage() {
             <Download size={12} />
             {isExporting ? `Exporting… ${exportProgress}%` : "Export MP4 Movie"}
           </button>
+        )}
+        <button
+          onClick={handleSubmitForReview}
+          disabled={isSubmitting}
+          title="Submit this Vision for admin review"
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            padding: isMobile ? "8px 12px" : "6px 14px",
+            borderRadius: 6,
+            border: submitStatus === "success"
+              ? "1px solid rgba(29,116,88,0.5)"
+              : "1px solid rgba(194,159,96,0.35)",
+            background: submitStatus === "success"
+              ? "rgba(29,116,88,0.15)"
+              : "rgba(194,159,96,0.08)",
+            color: submitStatus === "success" ? "#1D7458" : "rgba(194,159,96,0.8)",
+            fontSize: 12, fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700,
+            letterSpacing: "0.08em",
+            cursor: isSubmitting ? "not-allowed" : "pointer",
+            opacity: isSubmitting ? 0.7 : 1,
+            transition: "all 0.3s",
+          }}
+        >
+          {submitStatus === "success"
+            ? <><CheckCircle size={12} />{!isMobile && " Submitted!"}</>
+            : <><Send size={12} />{!isMobile && (isSubmitting ? " Submitting…" : " Submit for Review")}</>
+          }
+        </button>
+        {submitStatus === "error" && (
+          <span style={{
+            fontSize: 11, color: "#ff6b6b",
+            fontFamily: "Syne,system-ui,sans-serif",
+            flexShrink: 0,
+          }}>
+            {submitMsg}
+          </span>
         )}
       </div>
 
