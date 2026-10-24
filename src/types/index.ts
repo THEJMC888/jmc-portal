@@ -88,6 +88,20 @@ export interface VisionVideo {
   updatedAt: string;
 }
 
+export interface AttunementCard {
+  id: string;
+  title: string;
+  line1: string;
+  line2: string;
+  backgroundImageDataUrl?: string;
+  backgroundGradient?: { from: string; to: string; angle: number };
+  overlayOpacity?: number;
+  generationMode: "manual" | "auto" | "ai";
+  visionId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface VisionSubmission {
   id: string;
   userId: string;
