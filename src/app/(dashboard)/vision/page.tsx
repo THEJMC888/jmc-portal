@@ -1701,17 +1701,18 @@ export default function VisionPage() {
 
       {bgTab === "gradient" && (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 4 }}>
             {BG_GRADIENTS.map((g) => (
               <button
                 key={g.label}
+                title={g.label}
                 onClick={() => updateBg({ type: "gradient", gradient: { from: g.from, to: g.to, angle: g.angle } })}
                 style={{
-                  height: 36, borderRadius: 6, cursor: "pointer",
+                  height: 22, borderRadius: 5, cursor: "pointer",
                   background: `linear-gradient(${g.angle}deg, ${g.from}, ${g.to})`,
                   border: selSlide?.background.gradient?.from === g.from ? "2px solid #C29F60" : "2px solid transparent",
-                  fontSize: 9, color: "rgba(255,255,255,0.7)", fontFamily: "Syne,system-ui,sans-serif",
-                  fontWeight: 700, letterSpacing: "0.08em",
+                  fontSize: 8, color: "rgba(255,255,255,0.7)", fontFamily: "Syne,system-ui,sans-serif",
+                  fontWeight: 700, letterSpacing: "0.06em",
                 }}
               >
                 {g.label}
@@ -1719,25 +1720,19 @@ export default function VisionPage() {
             ))}
           </div>
           {selSlide?.background.gradient && (
-            <div>
-              <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-                <div style={{ flex: 1 }}>
-                  <Label>From</Label>
-                  <input type="color" value={selSlide.background.gradient.from}
-                    onChange={(e) => updateBg({ gradient: { ...selSlide!.background.gradient!, from: e.target.value } })}
-                    style={{ width: "100%", height: 28, borderRadius: 4, border: "1px solid rgba(194,159,96,0.2)", cursor: "pointer" }} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <Label>To</Label>
-                  <input type="color" value={selSlide.background.gradient.to}
-                    onChange={(e) => updateBg({ gradient: { ...selSlide!.background.gradient!, to: e.target.value } })}
-                    style={{ width: "100%", height: 28, borderRadius: 4, border: "1px solid rgba(194,159,96,0.2)", cursor: "pointer" }} />
-                </div>
-              </div>
-              <Label>Angle: {selSlide.background.gradient.angle}°</Label>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontFamily: "Syne,system-ui,sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(194,159,96,0.7)", flexShrink: 0 }}>From</span>
+              <input type="color" value={selSlide.background.gradient.from}
+                onChange={(e) => updateBg({ gradient: { ...selSlide!.background.gradient!, from: e.target.value } })}
+                style={{ width: 32, height: 22, borderRadius: 4, border: "1px solid rgba(194,159,96,0.2)", cursor: "pointer", flexShrink: 0 }} />
+              <span style={{ fontFamily: "Syne,system-ui,sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(194,159,96,0.7)", flexShrink: 0 }}>To</span>
+              <input type="color" value={selSlide.background.gradient.to}
+                onChange={(e) => updateBg({ gradient: { ...selSlide!.background.gradient!, to: e.target.value } })}
+                style={{ width: 32, height: 22, borderRadius: 4, border: "1px solid rgba(194,159,96,0.2)", cursor: "pointer", flexShrink: 0 }} />
               <input type="range" min={0} max={360} value={selSlide.background.gradient.angle}
                 onChange={(e) => updateBg({ gradient: { ...selSlide!.background.gradient!, angle: Number(e.target.value) } })}
-                style={{ width: "100%", accentColor: "#C29F60" }} />
+                style={{ flex: 1, accentColor: "#C29F60" }} />
+              <span style={{ fontFamily: "Syne,system-ui,sans-serif", fontSize: 9, color: "rgba(222,211,200,0.5)", flexShrink: 0, minWidth: 28, textAlign: "right" }}>{selSlide.background.gradient.angle}°</span>
             </div>
           )}
         </>
