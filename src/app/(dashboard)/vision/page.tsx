@@ -1901,7 +1901,7 @@ export default function VisionPage() {
   return (
     <div style={{
       display: "flex", flexDirection: "column",
-      height: "calc(100vh - 64px)", margin: "-2rem -2rem 0",
+      height: "100vh", margin: "-2rem -2rem -2rem",
       background: "#080f1e",
     }}>
       {/* ── Hidden inputs ── */}
