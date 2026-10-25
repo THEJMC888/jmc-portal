@@ -420,19 +420,17 @@ export default function MyJourneyPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const loadSessions = useCallback(async () => {
     if (!session) return;
     setLoading(true);
-    setError(null);
     const { data, error: dbError } = await supabase
       .from("coaching_sessions")
       .select("*")
       .order("date", { ascending: false });
 
     if (dbError) {
-      setError(dbError.message);
+      console.error("coaching_sessions load error:", dbError.message);
     } else if (data) {
       const mapped = data.map(dbToSession);
       setSessions(mapped);
@@ -550,10 +548,6 @@ export default function MyJourneyPage() {
           {!isReady ? (
             <div style={{ display: "flex", justifyContent: "center", paddingTop: 32 }}>
               <Loader2 style={{ width: 20, height: 20, color: "rgba(194,159,96,0.4)", animation: "spin 1s linear infinite" }} />
-            </div>
-          ) : error ? (
-            <div style={{ padding: "16px 12px", fontFamily: "Syne, system-ui, sans-serif", fontSize: 11, color: "rgba(255,100,100,0.7)" }}>
-              {error}
             </div>
           ) : sessions.length === 0 ? (
             <div style={{ padding: "24px 12px", textAlign: "center", fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 12, color: "rgba(222,211,200,0.35)" }}>
