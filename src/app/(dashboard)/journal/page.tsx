@@ -957,6 +957,7 @@ export default function JournalPage() {
   const cryptoKeyRef = useRef<CryptoKey | null>(null);
   const [e2eeReady, setE2eeReady] = useState(false);
   const [showKeyExport, setShowKeyExport] = useState(false);
+  const [deleteConfirmPending, setDeleteConfirmPending] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -1102,7 +1103,13 @@ export default function JournalPage() {
   };
 
   const handleDeleteEntry = () => {
-    if (!activeId || !confirm("Delete this journal entry?")) return;
+    if (!activeId) return;
+    setDeleteConfirmPending(true);
+  };
+
+  const confirmDelete = () => {
+    if (!activeId) return;
+    setDeleteConfirmPending(false);
     deleteEntry(activeId);
     deleteFromSupabase(activeId).catch(() => {});
     setList(loadList());
@@ -1648,14 +1655,37 @@ export default function JournalPage() {
                   <div style={{ height: 1, background: "linear-gradient(to right, rgba(0,200,240,0.2), rgba(194,159,96,0.1), transparent)", marginTop: 6 }} />
 
                   {/* Delete */}
-                  <button
-                    onClick={handleDeleteEntry}
-                    style={{ position: "absolute", top: 20, right: 20, background: "none", border: "none", cursor: "pointer", opacity: 0.35, transition: "opacity 0.15s" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = "0.35"; }}
-                  >
-                    <Trash2 size={14} color="#ff6b6b" />
-                  </button>
+                  {deleteConfirmPending ? (
+                    <div style={{ position: "absolute", top: 14, right: 14, display: "flex", alignItems: "center", gap: 6 }}>
+                      <button
+                        onClick={confirmDelete}
+                        style={{
+                          background: "rgba(255,80,80,0.18)", border: "1px solid rgba(255,80,80,0.4)",
+                          borderRadius: 5, cursor: "pointer", padding: "4px 10px",
+                          fontFamily: "Syne, system-ui, sans-serif", fontSize: 10, fontWeight: 700,
+                          letterSpacing: "0.08em", textTransform: "uppercase", color: "#ff6b6b",
+                        }}
+                      >Delete</button>
+                      <button
+                        onClick={() => setDeleteConfirmPending(false)}
+                        style={{
+                          background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)",
+                          borderRadius: 5, cursor: "pointer", padding: "4px 10px",
+                          fontFamily: "Syne, system-ui, sans-serif", fontSize: 10, fontWeight: 700,
+                          letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(222,211,200,0.6)",
+                        }}
+                      >Cancel</button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleDeleteEntry}
+                      style={{ position: "absolute", top: 20, right: 20, background: "none", border: "none", cursor: "pointer", opacity: 0.35, transition: "opacity 0.15s" }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = "0.35"; }}
+                    >
+                      <Trash2 size={14} color="#ff6b6b" />
+                    </button>
+                  )}
                 </div>
 
                 {/* ── Text body ── */}
