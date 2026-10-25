@@ -1564,7 +1564,7 @@ export default function JournalPage() {
                       <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: isActive ? "#00d8ff" : "rgba(0,200,240,0.55)", marginBottom: 3 }}>
                         {formatShortDate(item.date)}
                       </div>
-                      <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 12, fontWeight: isActive ? 700 : 500, color: isActive ? "#DED3C8" : "rgba(222,211,200,0.75)", lineHeight: 1.3, marginBottom: 2 }}>
+                      <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 12, fontWeight: isActive ? 700 : 500, color: isActive ? "#DED3C8" : "rgba(222,211,200,0.75)", lineHeight: 1.3, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {item.title || <span style={{ fontStyle: "italic", opacity: 0.5 }}>Untitled</span>}
                       </div>
                     </button>
