@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   NotebookPen, Plus, Mic, MicOff, Video, VideoOff,
   Upload, Play, Pause, Trash2, Check, X, ChevronLeft,
-  FileText, Loader, Image, LayoutList, BookOpen,
+  FileText, Loader, Image, LayoutList, BookOpen, Search,
 } from "lucide-react";
 import { useMobile } from "@/hooks/useMobile";
 import { supabase } from "@/lib/supabase";
@@ -942,6 +942,10 @@ export default function JournalPage() {
   const [saved, setSaved] = useState(false);
   const [showList, setShowList] = useState(true); // mobile toggle
   const [viewMode, setViewMode] = useState<"list" | "feed">("list");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterMonth, setFilterMonth] = useState<number | null>(null);
+  const [filterWeekday, setFilterWeekday] = useState<number | null>(null);
+  const [filterYear, setFilterYear] = useState<number | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const audioRec = useRecorder("audio");
@@ -1029,6 +1033,30 @@ export default function JournalPage() {
   }, [persistEntry]);
 
   const dictation = useDictation(appendToNotes);
+
+  const availableYears = useMemo(() => {
+    const years = new Set(list.map(item => new Date(item.date + "T12:00:00").getFullYear()));
+    return Array.from(years).sort((a, b) => b - a);
+  }, [list]);
+
+  const filteredList = useMemo(() => {
+    return list.filter((item) => {
+      const d = new Date(item.date + "T12:00:00");
+      if (filterMonth !== null && d.getMonth() !== filterMonth) return false;
+      if (filterWeekday !== null && d.getDay() !== filterWeekday) return false;
+      if (filterYear !== null && d.getFullYear() !== filterYear) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        if (item.title.toLowerCase().includes(q)) return true;
+        const full = loadEntry(item.id);
+        if (full && full.text.toLowerCase().includes(q)) return true;
+        return false;
+      }
+      return true;
+    });
+  }, [list, searchQuery, filterMonth, filterWeekday, filterYear]);
+
+  const hasActiveFilters = searchQuery.trim() !== "" || filterMonth !== null || filterWeekday !== null || filterYear !== null;
 
   const handleTranscribeClip = useCallback(async (item: JournalMedia) => {
     try {
@@ -1254,6 +1282,134 @@ export default function JournalPage() {
         </button>
       </header>
 
+      {/* ── Search + filter bar ── */}
+      <div style={{
+        padding: isMobile ? "10px 14px" : "10px 20px",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        background: "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(3,8,26,0.18) 100%)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+      }}>
+        {/* Search input */}
+        <div style={{ position: "relative" }}>
+          <Search size={12} color="rgba(0,200,240,0.5)" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search entries…"
+            style={{
+              width: "100%", boxSizing: "border-box",
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 8,
+              padding: "8px 34px 8px 34px",
+              color: "#DED3C8",
+              fontFamily: "Syne, system-ui, sans-serif",
+              fontSize: 12,
+              outline: "none",
+              boxShadow: "inset 0 2px 6px rgba(0,0,0,0.25)",
+              transition: "border-color 0.18s",
+            }}
+            onFocus={(e) => { (e.target as HTMLInputElement).style.borderColor = "rgba(0,200,240,0.35)"; }}
+            onBlur={(e) => { (e.target as HTMLInputElement).style.borderColor = "rgba(255,255,255,0.1)"; }}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "rgba(222,211,200,0.4)", padding: 2, display: "flex" }}
+            >
+              <X size={11} />
+            </button>
+          )}
+        </div>
+
+        {/* Filter row */}
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+          {(["Month", "Weekday", "Year"] as const).map((label) => {
+            const selectStyle: React.CSSProperties = {
+              background: "rgba(2,10,30,0.6)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 6,
+              padding: "5px 8px",
+              color: "rgba(222,211,200,0.8)",
+              fontFamily: "Syne, system-ui, sans-serif",
+              fontSize: 10,
+              fontWeight: 600,
+              letterSpacing: "0.05em",
+              outline: "none",
+              cursor: "pointer",
+              appearance: "none" as React.CSSProperties["appearance"],
+              WebkitAppearance: "none" as React.CSSProperties["WebkitAppearance"],
+              paddingRight: 22,
+              backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(0,200,240,0.5)'/%3E%3C/svg%3E\")",
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "right 7px center",
+            };
+
+            if (label === "Month") {
+              const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+              const active = filterMonth !== null;
+              return (
+                <select key="month" value={filterMonth ?? ""} onChange={(e) => setFilterMonth(e.target.value !== "" ? parseInt(e.target.value) : null)}
+                  style={{ ...selectStyle, border: `1px solid ${active ? "rgba(0,200,240,0.35)" : "rgba(255,255,255,0.1)"}`, color: active ? "#00c8f0" : "rgba(222,211,200,0.8)" }}>
+                  <option value="">All Months</option>
+                  {months.map((m, i) => <option key={m} value={i}>{m}</option>)}
+                </select>
+              );
+            }
+            if (label === "Weekday") {
+              const days = [["Sun",0],["Mon",1],["Tue",2],["Wed",3],["Thu",4],["Fri",5],["Sat",6]] as [string,number][];
+              const active = filterWeekday !== null;
+              return (
+                <select key="weekday" value={filterWeekday ?? ""} onChange={(e) => setFilterWeekday(e.target.value !== "" ? parseInt(e.target.value) : null)}
+                  style={{ ...selectStyle, border: `1px solid ${active ? "rgba(0,200,240,0.35)" : "rgba(255,255,255,0.1)"}`, color: active ? "#00c8f0" : "rgba(222,211,200,0.8)" }}>
+                  <option value="">All Days</option>
+                  {days.map(([d,i]) => <option key={d} value={i}>{d}</option>)}
+                </select>
+              );
+            }
+            // Year
+            const active = filterYear !== null;
+            return (
+              <select key="year" value={filterYear ?? ""} onChange={(e) => setFilterYear(e.target.value !== "" ? parseInt(e.target.value) : null)}
+                style={{ ...selectStyle, border: `1px solid ${active ? "rgba(0,200,240,0.35)" : "rgba(255,255,255,0.1)"}`, color: active ? "#00c8f0" : "rgba(222,211,200,0.8)" }}>
+                <option value="">All Years</option>
+                {availableYears.map((y: number) => <option key={y} value={y}>{y}</option>)}
+              </select>
+            );
+          })}
+
+          {hasActiveFilters && (
+            <button
+              onClick={() => { setSearchQuery(""); setFilterMonth(null); setFilterWeekday(null); setFilterYear(null); }}
+              style={{
+                background: "rgba(255,100,80,0.1)",
+                border: "1px solid rgba(255,100,80,0.25)",
+                borderRadius: 6,
+                padding: "5px 10px",
+                color: "rgba(255,140,120,0.85)",
+                fontFamily: "Syne, system-ui, sans-serif",
+                fontSize: 9.5, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+                cursor: "pointer",
+                display: "flex", alignItems: "center", gap: 4,
+              }}
+            >
+              <X size={10} /> Clear
+            </button>
+          )}
+
+          {hasActiveFilters && (
+            <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 9.5, color: "rgba(0,200,240,0.6)", letterSpacing: "0.05em" }}>
+              {filteredList.length} of {list.length}
+            </span>
+          )}
+        </div>
+      </div>
+
       {/* ── Feed view ── */}
       {viewMode === "feed" && (
         <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "20px 16px" : "36px 44px", maxWidth: 860, margin: "0 auto", width: "100%" }}>
@@ -1265,9 +1421,16 @@ export default function JournalPage() {
                 No entries yet. Tap &ldquo;New Entry&rdquo; to begin.
               </p>
             </div>
+          ) : filteredList.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "60px 20px" }}>
+              <Search size={28} color="rgba(0,200,240,0.2)" style={{ marginBottom: 12 }} />
+              <p style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 13, color: "rgba(222,211,200,0.35)" }}>
+                No entries match your search.
+              </p>
+            </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
-              {list.map((item) => {
+              {filteredList.map((item) => {
                 const fullEntry = loadEntry(item.id);
                 if (!fullEntry) return null;
                 const photos = fullEntry.media.filter((m) => m.type === "image");
@@ -1343,9 +1506,16 @@ export default function JournalPage() {
                   Your journal is empty. Tap &ldquo;New Entry&rdquo; to begin.
                 </p>
               </div>
+            ) : filteredList.length === 0 ? (
+              <div style={{ padding: "28px 12px", textAlign: "center" }}>
+                <Search size={22} color="rgba(0,200,240,0.2)" style={{ marginBottom: 10 }} />
+                <p style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 11, color: "rgba(222,211,200,0.35)", lineHeight: 1.6 }}>
+                  No matching entries.
+                </p>
+              </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                {list.map((item) => {
+                {filteredList.map((item) => {
                   const isActive = item.id === activeId;
                   return (
                     <button
