@@ -81,7 +81,6 @@ export const MORNING_PHOTOS = [
 ];
 
 export const AFTERNOON_PHOTOS = [
-  "https://images.unsplash.com/photo-1469474968028-56623f02e42e",
   "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
   "https://images.unsplash.com/photo-1590079055098-d0fb8e034f1f",
   "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b",
