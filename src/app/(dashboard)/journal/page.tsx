@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   NotebookPen, Plus, Mic, MicOff, Video, VideoOff,
-  Upload, Play, Pause, Trash2, Check, X, ChevronLeft,
+  Upload, Play, Pause, Trash2, Check, X, ChevronLeft, ChevronRight,
   FileText, Loader, Image, LayoutList, BookOpen, Search,
 } from "lucide-react";
 import { useMobile } from "@/hooks/useMobile";
@@ -1029,6 +1029,7 @@ export default function JournalPage() {
   const [entry, setEntry] = useState<JournalEntry | null>(null);
   const [saved, setSaved] = useState(false);
   const [showList, setShowList] = useState(true); // mobile toggle
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // desktop sidebar toggle
   const [viewMode, setViewMode] = useState<"list" | "feed">("list");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterMonth, setFilterMonth] = useState<number | null>(null);
@@ -1580,17 +1581,32 @@ export default function JournalPage() {
         {/* Entry list */}
         {(!isMobile || showList) && (
           <nav style={{
-            width: isMobile ? "100%" : 240,
-            borderRight: "1px solid rgba(255,255,255,0.07)",
-            overflowY: "auto",
-            padding: "14px 10px",
+            width: isMobile ? "100%" : (sidebarCollapsed ? 0 : 240),
+            minWidth: isMobile ? undefined : (sidebarCollapsed ? 0 : 240),
+            borderRight: sidebarCollapsed ? "none" : "1px solid rgba(255,255,255,0.07)",
+            overflowY: sidebarCollapsed ? "hidden" : "auto",
+            overflowX: "hidden",
+            padding: sidebarCollapsed ? 0 : "14px 10px",
             flexShrink: 0,
             background: "linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(3,8,26,0.16) 100%)",
             backdropFilter: "blur(16px)",
             WebkitBackdropFilter: "blur(16px)",
             position: "relative",
+            transition: "width 0.22s cubic-bezier(0.23,1,0.32,1), padding 0.22s, min-width 0.22s",
           }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: "linear-gradient(to right, rgba(0,200,240,0.2), rgba(255,255,255,0.06), transparent)" }} />
+
+            {!isMobile && !sidebarCollapsed && (
+              <button
+                onClick={() => setSidebarCollapsed(true)}
+                title="Collapse sidebar"
+                style={{ position: "absolute", top: 10, right: 8, background: "none", border: "none", cursor: "pointer", padding: 4, borderRadius: 4, color: "rgba(0,200,240,0.4)", display: "flex", alignItems: "center", justifyContent: "center", transition: "color 0.15s" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(0,200,240,0.9)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(0,200,240,0.4)"; }}
+              >
+                <ChevronLeft size={15} />
+              </button>
+            )}
 
             <WordOfDayCard sidebarMode />
 
@@ -1661,6 +1677,19 @@ export default function JournalPage() {
               </div>
             )}
           </nav>
+        )}
+
+        {/* Sidebar expand button — shows when sidebar is collapsed on desktop */}
+        {!isMobile && sidebarCollapsed && (
+          <button
+            onClick={() => setSidebarCollapsed(false)}
+            title="Expand sidebar"
+            style={{ position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)", zIndex: 10, background: "rgba(3,8,26,0.7)", backdropFilter: "blur(12px)", border: "1px solid rgba(0,200,240,0.2)", borderLeft: "none", borderRadius: "0 6px 6px 0", cursor: "pointer", padding: "10px 5px", color: "rgba(0,200,240,0.5)", display: "flex", alignItems: "center", transition: "color 0.15s" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(0,200,240,0.95)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(0,200,240,0.5)"; }}
+          >
+            <ChevronRight size={15} />
+          </button>
         )}
 
         {/* Editor */}
@@ -1861,10 +1890,10 @@ export default function JournalPage() {
                   />
                 </div>
 
-                {/* ── Audio section ── */}
-                <MediaSection title="Audio" icon={<Mic size={12} color="#00d8ff" />} accentColor="#00c8f0">
-                  <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-                    {/* Record button */}
+                {/* ── Compact media toolbar ── */}
+                <div style={{ marginTop: 16, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 14 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    {/* Audio record */}
                     <button
                       onClick={handleAudioRecord}
                       disabled={isRecordingVideo}
@@ -1877,127 +1906,64 @@ export default function JournalPage() {
                           borderBottom: "1px solid rgba(0,0,0,0.4)",
                           boxShadow: "inset 0 1px 0 rgba(255,150,150,0.15), 0 0 16px rgba(255,60,60,0.2)",
                         } : ghostBtn),
-                        display: "flex", alignItems: "center", gap: 6,
-                        padding: "7px 14px", borderRadius: 7,
+                        display: "flex", alignItems: "center", gap: 5,
+                        padding: "5px 11px", borderRadius: 6,
                         fontFamily: "Syne, system-ui, sans-serif",
-                        fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+                        fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
                         color: isRecordingAudio ? "#ff6b6b" : "#00d8ff",
                         cursor: isRecordingVideo ? "not-allowed" : "pointer",
                         opacity: isRecordingVideo ? 0.4 : 1,
+                        whiteSpace: "nowrap",
                       }}
                     >
-                      {isRecordingAudio ? (
-                        <><MicOff size={12} /> Stop · {formatDur(audioRec.elapsed)}</>
-                      ) : (
-                        <><Mic size={12} /> Record</>
-                      )}
+                      {isRecordingAudio ? <><MicOff size={11} /> Stop · {formatDur(audioRec.elapsed)}</> : <><Mic size={11} /> Audio</>}
                     </button>
 
-                    {/* Upload button */}
+                    {/* Audio upload */}
                     <button
                       onClick={() => audioUploadRef.current?.click()}
                       disabled={isRecordingAudio}
                       style={{
                         ...ghostBtn,
-                        display: "flex", alignItems: "center", gap: 6,
-                        padding: "7px 14px", borderRadius: 7,
+                        display: "flex", alignItems: "center", gap: 5,
+                        padding: "5px 11px", borderRadius: 6,
                         fontFamily: "Syne, system-ui, sans-serif",
-                        fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-                        color: "rgba(222,211,200,0.7)",
+                        fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+                        color: "rgba(0,200,240,0.5)",
                         opacity: isRecordingAudio ? 0.4 : 1,
                         cursor: isRecordingAudio ? "not-allowed" : "pointer",
+                        whiteSpace: "nowrap",
                       }}
                     >
-                      <Upload size={12} /> Upload
+                      <Upload size={11} /> Upload
                     </button>
                     <input ref={audioUploadRef} type="file" accept="audio/*" style={{ display: "none" }} onChange={(e) => handleUpload(e, "audio")} />
 
-                    {isRecordingAudio && (
-                      <button
-                        onClick={audioRec.cancel}
-                        style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(222,211,200,0.45)", display: "flex", alignItems: "center", gap: 4, fontSize: 10, fontFamily: "Syne, system-ui, sans-serif", padding: "7px 8px" }}
-                      >
-                        <X size={11} /> Cancel
-                      </button>
-                    )}
-                  </div>
+                    {/* Divider */}
+                    <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.1)", flexShrink: 0 }} />
 
-                  {/* Recording pulse */}
-                  {isRecordingAudio && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, padding: "8px 12px", borderRadius: 6, background: "rgba(255,60,60,0.06)", border: "1px solid rgba(255,60,60,0.15)" }}>
-                      <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#ff4444", boxShadow: "0 0 8px rgba(255,60,60,0.7)", animation: "pulse 1s ease-in-out infinite" }} />
-                      <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 10, color: "#ff8888", letterSpacing: "0.1em" }}>RECORDING — {formatDur(audioRec.elapsed)}</span>
-                    </div>
-                  )}
-
-                  {/* Audio clips */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {entry.media.filter((m) => m.type === "audio").map((item) => (
-                      <MediaPlayer key={item.id} item={item} onDelete={() => removeMedia(item.id)} onTranscribe={() => handleTranscribeClip(item)} />
-                    ))}
-                  </div>
-                </MediaSection>
-
-                {/* ── Photos section ── */}
-                <MediaSection title="Photos" icon={<Image size={12} color="#a78bfa" />} accentColor="#a78bfa">
-                  <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+                    {/* Photos */}
                     <button
                       onClick={() => photoUploadRef.current?.click()}
                       style={{
                         ...ghostBtn,
-                        display: "flex", alignItems: "center", gap: 6,
-                        padding: "7px 14px", borderRadius: 7,
+                        display: "flex", alignItems: "center", gap: 5,
+                        padding: "5px 11px", borderRadius: 6,
                         fontFamily: "Syne, system-ui, sans-serif",
-                        fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+                        fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
                         color: "#a78bfa",
                         cursor: "pointer",
+                        whiteSpace: "nowrap",
                       }}
                     >
-                      <Upload size={12} /> Add Photos
+                      <Image size={11} /> Photos
                     </button>
-                    <input
-                      ref={photoUploadRef}
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      style={{ display: "none" }}
-                      onChange={handlePhotoUpload}
-                    />
-                  </div>
-                  {/* Photo grid */}
-                  {entry.media.filter((m) => m.type === "image").length > 0 && (
-                    <div style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))",
-                      gap: 8,
-                    }}>
-                      {entry.media.filter((m) => m.type === "image").map((item) => (
-                        <div key={item.id} style={{ position: "relative", borderRadius: 8, overflow: "hidden", aspectRatio: "1", background: "rgba(0,0,0,0.3)" }}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={item.dataUrl} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                          <button
-                            onClick={() => removeMedia(item.id)}
-                            style={{
-                              position: "absolute", top: 4, right: 4,
-                              width: 20, height: 20, borderRadius: "50%",
-                              background: "rgba(0,0,0,0.65)",
-                              border: "1px solid rgba(255,255,255,0.15)",
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                              cursor: "pointer", padding: 0,
-                            }}
-                          >
-                            <X size={10} color="#ff6b6b" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </MediaSection>
+                    <input ref={photoUploadRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={handlePhotoUpload} />
 
-                {/* ── Video section ── */}
-                <MediaSection title="Video" icon={<Video size={12} color="#C29F60" />} accentColor="#C29F60">
-                  <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-                    {/* Record button */}
+                    {/* Divider */}
+                    <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.1)", flexShrink: 0 }} />
+
+                    {/* Video record */}
                     <button
                       onClick={handleVideoRecord}
                       disabled={isRecordingAudio}
@@ -2010,45 +1976,44 @@ export default function JournalPage() {
                           borderBottom: "1px solid rgba(0,0,0,0.4)",
                           boxShadow: "inset 0 1px 0 rgba(255,150,150,0.15), 0 0 16px rgba(255,60,60,0.2)",
                         } : ghostBtn),
-                        display: "flex", alignItems: "center", gap: 6,
-                        padding: "7px 14px", borderRadius: 7,
+                        display: "flex", alignItems: "center", gap: 5,
+                        padding: "5px 11px", borderRadius: 6,
                         fontFamily: "Syne, system-ui, sans-serif",
-                        fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+                        fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
                         color: isRecordingVideo ? "#ff6b6b" : "#C29F60",
                         cursor: isRecordingAudio ? "not-allowed" : "pointer",
                         opacity: isRecordingAudio ? 0.4 : 1,
+                        whiteSpace: "nowrap",
                       }}
                     >
-                      {isRecordingVideo ? (
-                        <><VideoOff size={12} /> Stop · {formatDur(videoRec.elapsed)}</>
-                      ) : (
-                        <><Video size={12} /> Record</>
-                      )}
+                      {isRecordingVideo ? <><VideoOff size={11} /> Stop · {formatDur(videoRec.elapsed)}</> : <><Video size={11} /> Video</>}
                     </button>
 
-                    {/* Upload button */}
+                    {/* Video upload */}
                     <button
                       onClick={() => videoUploadRef.current?.click()}
                       disabled={isRecordingVideo}
                       style={{
                         ...ghostBtn,
-                        display: "flex", alignItems: "center", gap: 6,
-                        padding: "7px 14px", borderRadius: 7,
+                        display: "flex", alignItems: "center", gap: 5,
+                        padding: "5px 11px", borderRadius: 6,
                         fontFamily: "Syne, system-ui, sans-serif",
-                        fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-                        color: "rgba(222,211,200,0.7)",
+                        fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+                        color: "rgba(194,159,96,0.6)",
                         opacity: isRecordingVideo ? 0.4 : 1,
                         cursor: isRecordingVideo ? "not-allowed" : "pointer",
+                        whiteSpace: "nowrap",
                       }}
                     >
-                      <Upload size={12} /> Upload
+                      <Upload size={11} /> Upload
                     </button>
                     <input ref={videoUploadRef} type="file" accept="video/*" style={{ display: "none" }} onChange={(e) => handleUpload(e, "video")} />
 
-                    {isRecordingVideo && (
+                    {/* Cancel recording */}
+                    {(isRecordingAudio || isRecordingVideo) && (
                       <button
-                        onClick={videoRec.cancel}
-                        style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(222,211,200,0.45)", display: "flex", alignItems: "center", gap: 4, fontSize: 10, fontFamily: "Syne, system-ui, sans-serif", padding: "7px 8px" }}
+                        onClick={isRecordingAudio ? audioRec.cancel : videoRec.cancel}
+                        style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(222,211,200,0.45)", display: "flex", alignItems: "center", gap: 4, fontSize: 9, fontFamily: "Syne, system-ui, sans-serif", padding: "5px 8px" }}
                       >
                         <X size={11} /> Cancel
                       </button>
@@ -2056,20 +2021,49 @@ export default function JournalPage() {
                   </div>
 
                   {/* Recording pulse */}
-                  {isRecordingVideo && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, padding: "8px 12px", borderRadius: 6, background: "rgba(255,60,60,0.06)", border: "1px solid rgba(255,60,60,0.15)" }}>
-                      <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#ff4444", boxShadow: "0 0 8px rgba(255,60,60,0.7)" }} />
-                      <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 10, color: "#ff8888", letterSpacing: "0.1em" }}>RECORDING — {formatDur(videoRec.elapsed)}</span>
+                  {(isRecordingAudio || isRecordingVideo) && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, padding: "8px 12px", borderRadius: 6, background: "rgba(255,60,60,0.06)", border: "1px solid rgba(255,60,60,0.15)" }}>
+                      <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#ff4444", boxShadow: "0 0 8px rgba(255,60,60,0.7)", animation: "pulse 1s ease-in-out infinite" }} />
+                      <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 10, color: "#ff8888", letterSpacing: "0.1em" }}>RECORDING — {formatDur(isRecordingAudio ? audioRec.elapsed : videoRec.elapsed)}</span>
+                    </div>
+                  )}
+
+                  {/* Audio clips */}
+                  {entry.media.filter((m) => m.type === "audio").length > 0 && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
+                      {entry.media.filter((m) => m.type === "audio").map((item) => (
+                        <MediaPlayer key={item.id} item={item} onDelete={() => removeMedia(item.id)} onTranscribe={() => handleTranscribeClip(item)} />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Photo grid */}
+                  {entry.media.filter((m) => m.type === "image").length > 0 && (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))", gap: 8, marginTop: 14 }}>
+                      {entry.media.filter((m) => m.type === "image").map((item) => (
+                        <div key={item.id} style={{ position: "relative", borderRadius: 8, overflow: "hidden", aspectRatio: "1", background: "rgba(0,0,0,0.3)" }}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={item.dataUrl} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                          <button
+                            onClick={() => removeMedia(item.id)}
+                            style={{ position: "absolute", top: 4, right: 4, width: 20, height: 20, borderRadius: "50%", background: "rgba(0,0,0,0.65)", border: "1px solid rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", padding: 0 }}
+                          >
+                            <X size={10} color="#ff6b6b" />
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   )}
 
                   {/* Video clips */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {entry.media.filter((m) => m.type === "video").map((item) => (
-                      <MediaPlayer key={item.id} item={item} onDelete={() => removeMedia(item.id)} />
-                    ))}
-                  </div>
-                </MediaSection>
+                  {entry.media.filter((m) => m.type === "video").length > 0 && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
+                      {entry.media.filter((m) => m.type === "video").map((item) => (
+                        <MediaPlayer key={item.id} item={item} onDelete={() => removeMedia(item.id)} />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </>
             )}
           </main>
@@ -2092,7 +2086,7 @@ export default function JournalPage() {
   );
 }
 
-// ─── Section wrapper ──────────────────────────────────────────────────────────
+// ─── Section wrapper (unused — kept for potential future use) ─────────────────
 function MediaSection({ title, icon, accentColor, children }: { title: string; icon: React.ReactNode; accentColor: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 28 }}>
