@@ -1568,6 +1568,36 @@ export default function VisionPage() {
               </div>
             </div>
           </div>
+
+          {/* Text Transform */}
+          <div>
+            <Label>Transform</Label>
+            <div style={{ display: "flex", gap: 6 }}>
+              {(["none", "uppercase", "lowercase"] as const).map((t) => (
+                <ToggleBtn key={t} active={(el.textTransform ?? "none") === t} onClick={() => updateEl(el.id, { textTransform: t })}>
+                  <span style={{ fontSize: 9, fontWeight: 700 }}>{t === "none" ? "Aa" : t === "uppercase" ? "AA" : "aa"}</span>
+                </ToggleBtn>
+              ))}
+            </div>
+          </div>
+
+          {/* Letter Spacing */}
+          <div>
+            <Label>Letter Spacing: {(el.letterSpacing ?? 0).toFixed(2)}em</Label>
+            <input type="range" min={-5} max={50} step={1}
+              value={Math.round((el.letterSpacing ?? 0) * 100)}
+              onChange={(e) => updateEl(el.id, { letterSpacing: Number(e.target.value) / 100 })}
+              style={{ width: "100%", accentColor: "#C29F60" }} />
+          </div>
+
+          {/* Line Height */}
+          <div>
+            <Label>Line Height: {(el.lineHeight ?? 1.3).toFixed(1)}</Label>
+            <input type="range" min={80} max={250} step={5}
+              value={Math.round((el.lineHeight ?? 1.3) * 100)}
+              onChange={(e) => updateEl(el.id, { lineHeight: Number(e.target.value) / 100 })}
+              style={{ width: "100%", accentColor: "#C29F60" }} />
+          </div>
         </>
       )}
 
