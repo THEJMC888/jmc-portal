@@ -1581,23 +1581,6 @@ export default function VisionPage() {
             </div>
           </div>
 
-          {/* Letter Spacing */}
-          <div>
-            <Label>Letter Spacing: {(el.letterSpacing ?? 0).toFixed(2)}em</Label>
-            <input type="range" min={-5} max={50} step={1}
-              value={Math.round((el.letterSpacing ?? 0) * 100)}
-              onChange={(e) => updateEl(el.id, { letterSpacing: Number(e.target.value) / 100 })}
-              style={{ width: "100%", accentColor: "#C29F60" }} />
-          </div>
-
-          {/* Line Height */}
-          <div>
-            <Label>Line Height: {(el.lineHeight ?? 1.3).toFixed(1)}</Label>
-            <input type="range" min={80} max={250} step={5}
-              value={Math.round((el.lineHeight ?? 1.3) * 100)}
-              onChange={(e) => updateEl(el.id, { lineHeight: Number(e.target.value) / 100 })}
-              style={{ width: "100%", accentColor: "#C29F60" }} />
-          </div>
         </>
       )}
 
@@ -2375,112 +2358,221 @@ export default function VisionPage() {
             </div>
           )}
 
-          {/* Contextual text toolbar — shown above canvas when a text element is selected */}
-          {!isMobile && selElId && (() => {
-            const tel = getEl(selElId);
-            if (!tel || tel.type !== "text") return null;
-            return (
-              <div style={{
-                display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap",
-                padding: "5px 8px", borderRadius: 6, flexShrink: 0,
-                background: "rgba(4,13,28,0.7)",
-                border: "1px solid rgba(194,159,96,0.18)",
-                boxShadow: "0 2px 12px rgba(0,0,0,0.5)",
-              }}>
-                {/* Font dropdown */}
-                <select
-                  value={tel.fontFamily ?? FONTS[0].value}
-                  onChange={(e) => updateEl(tel.id, { fontFamily: e.target.value })}
-                  style={{
-                    height: 26, padding: "0 6px", borderRadius: 4,
-                    border: "1px solid rgba(194,159,96,0.2)", background: "rgba(10,20,50,0.9)",
-                    color: "#DED3C8", fontSize: 12, fontFamily: tel.fontFamily ?? FONTS[0].value,
-                    cursor: "pointer", maxWidth: 140,
-                  }}
-                >
-                  {FONTS.map((f) => (
-                    <option key={f.value} value={f.value}>{f.label}</option>
+          {/* Contextual toolbar — always visible on desktop; content adapts to selection */}
+          {!isMobile && (() => {
+            const selEl = selElId ? getEl(selElId) : null;
+            const tbStyle: React.CSSProperties = {
+              display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap",
+              padding: "5px 8px", borderRadius: 6, flexShrink: 0,
+              background: "rgba(4,13,28,0.7)",
+              border: "1px solid rgba(194,159,96,0.18)",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.5)",
+            };
+            const divider = <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.1)" }} />;
+            const tbBtn = (active: boolean): React.CSSProperties => ({
+              width: 26, height: 26, borderRadius: 4, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              border: active ? "1px solid rgba(194,159,96,0.6)" : "1px solid rgba(255,255,255,0.1)",
+              background: active ? "rgba(194,159,96,0.15)" : "rgba(255,255,255,0.05)",
+              color: active ? "#C29F60" : "#DED3C8",
+            });
+            const layerBtns = [
+              { title: "Bring Forward", onClick: bringForward, icon: <ChevronUp size={12} /> },
+              { title: "Send Back", onClick: sendBack, icon: <ChevronDown size={12} /> },
+              { title: "Bring to Front", onClick: bringToFront, icon: <span style={{ fontSize: 11 }}>↑↑</span> },
+              { title: "Send to Back", onClick: sendToBack, icon: <span style={{ fontSize: 11 }}>↓↓</span> },
+            ];
+
+            /* ── IMAGE ELEMENT TOOLBAR ── */
+            if (selEl?.type === "image") {
+              return (
+                <div style={tbStyle}>
+                  <span style={{ fontSize: 9, fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700, letterSpacing: "0.14em", color: "rgba(194,159,96,0.6)", textTransform: "uppercase" }}>Image</span>
+                  {divider}
+                  {/* Clip shape */}
+                  {([
+                    { shape: "rectangle" as const, label: "▭" },
+                    { shape: "square" as const, label: "■" },
+                    { shape: "circle" as const, label: "○" },
+                  ]).map(({ shape, label }) => (
+                    <button key={shape} title={shape} onClick={() => updateEl(selEl.id, { clipShape: shape })}
+                      style={tbBtn((selEl.clipShape ?? "rectangle") === shape)}>
+                      <span style={{ fontSize: 12 }}>{label}</span>
+                    </button>
                   ))}
-                </select>
-                {/* Font size */}
-                <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-                  <button onClick={() => { const i = FONT_SIZES.indexOf(tel.fontSize ?? 72); if (i > 0) updateEl(tel.id, { fontSize: FONT_SIZES[i-1] }); }}
-                    style={{ width: 22, height: 26, borderRadius: 4, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "#DED3C8", cursor: "pointer", fontSize: 14 }}>−</button>
-                  <input type="number" value={tel.fontSize ?? 72} min={8} max={400}
-                    onChange={(e) => { const v = parseInt(e.target.value, 10); if (!isNaN(v) && v >= 8 && v <= 400) updateEl(tel.id, { fontSize: v }); }}
-                    style={{ width: 46, height: 26, textAlign: "center", fontSize: 12, color: "#DED3C8", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 4, MozAppearance: "textfield" } as React.CSSProperties} />
-                  <button onClick={() => { const i = FONT_SIZES.indexOf(tel.fontSize ?? 72); if (i < FONT_SIZES.length-1) updateEl(tel.id, { fontSize: FONT_SIZES[i+1] }); }}
-                    style={{ width: 22, height: 26, borderRadius: 4, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "#DED3C8", cursor: "pointer", fontSize: 14 }}>+</button>
+                  {divider}
+                  {/* Object fit */}
+                  {(["cover", "contain"] as const).map((f) => (
+                    <button key={f} title={f} onClick={() => updateEl(selEl.id, { objectFit: f })}
+                      style={tbBtn((selEl.objectFit ?? "contain") === f)}>
+                      <span style={{ fontSize: 9, fontWeight: 700 }}>{f === "cover" ? "Fill" : "Fit"}</span>
+                    </button>
+                  ))}
+                  {divider}
+                  {/* Opacity */}
+                  <span style={{ fontSize: 9, color: "rgba(222,211,200,0.45)", fontFamily: "Syne,system-ui,sans-serif" }}>Opacity</span>
+                  <input type="range" min={10} max={100} step={5}
+                    value={Math.round((selEl.opacity ?? 1) * 100)}
+                    onChange={(e) => updateEl(selEl.id, { opacity: Number(e.target.value) / 100 })}
+                    style={{ width: 70, accentColor: "#C29F60" }} />
+                  <span style={{ fontSize: 10, color: "#DED3C8", minWidth: 28 }}>{Math.round((selEl.opacity ?? 1) * 100)}%</span>
+                  {divider}
+                  {/* Layers */}
+                  {layerBtns.map(({ title, onClick, icon }) => (
+                    <button key={title} title={title} onClick={onClick} style={tbBtn(false)}>{icon}</button>
+                  ))}
+                  {divider}
+                  <button title="Duplicate" onClick={duplicateElement} style={{ width: 26, height: 26, borderRadius: 4, border: "1px solid rgba(194,159,96,0.25)", background: "rgba(194,159,96,0.08)", color: "#C29F60", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>⧉</button>
+                  <button title="Delete" onClick={deleteSelEl} style={{ width: 26, height: 26, borderRadius: 4, border: "1px solid rgba(255,107,107,0.25)", background: "rgba(255,107,107,0.07)", color: "#ff6b6b", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={12} /></button>
                 </div>
-                {/* Divider */}
-                <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.1)" }} />
-                {/* Bold / Italic / Shadow */}
-                {[
-                  { title: "Bold", active: tel.fontWeight === "700", onClick: () => updateEl(tel.id, { fontWeight: tel.fontWeight === "700" ? "400" : "700" }), icon: <Bold size={12} /> },
-                  { title: "Italic", active: tel.fontStyle === "italic", onClick: () => updateEl(tel.id, { fontStyle: tel.fontStyle === "italic" ? "normal" : "italic" }), icon: <Italic size={12} /> },
-                  { title: "Shadow", active: !!tel.textShadow, onClick: () => updateEl(tel.id, { textShadow: !tel.textShadow }), icon: <span style={{ fontSize: 11, fontWeight: 700 }}>S</span> },
-                ].map(({ title, active, onClick, icon }) => (
-                  <button key={title} title={title} onClick={onClick} style={{
-                    width: 26, height: 26, borderRadius: 4, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                    border: active ? "1px solid rgba(194,159,96,0.6)" : "1px solid rgba(255,255,255,0.1)",
-                    background: active ? "rgba(194,159,96,0.15)" : "rgba(255,255,255,0.05)",
-                    color: active ? "#C29F60" : "#DED3C8",
-                  }}>{icon}</button>
-                ))}
-                {/* Divider */}
-                <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.1)" }} />
-                {/* Alignment */}
-                {(["left", "center", "right"] as const).map((a) => (
-                  <button key={a} title={a} onClick={() => updateEl(tel.id, { textAlign: a })} style={{
-                    width: 26, height: 26, borderRadius: 4, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                    border: (tel.textAlign ?? "center") === a ? "1px solid rgba(194,159,96,0.6)" : "1px solid rgba(255,255,255,0.1)",
-                    background: (tel.textAlign ?? "center") === a ? "rgba(194,159,96,0.15)" : "rgba(255,255,255,0.05)",
-                    color: (tel.textAlign ?? "center") === a ? "#C29F60" : "#DED3C8",
-                  }}>
-                    {a === "left" ? <AlignLeft size={12} /> : a === "center" ? <AlignCenter size={12} /> : <AlignRight size={12} />}
+              );
+            }
+
+            /* ── TEXT ELEMENT TOOLBAR ── */
+            if (selEl?.type === "text") {
+              const tel = selEl;
+              return (
+                <div style={tbStyle}>
+                  {/* Font dropdown */}
+                  <select
+                    value={tel.fontFamily ?? FONTS[0].value}
+                    onChange={(e) => updateEl(tel.id, { fontFamily: e.target.value })}
+                    style={{
+                      height: 26, padding: "0 6px", borderRadius: 4,
+                      border: "1px solid rgba(194,159,96,0.2)", background: "rgba(10,20,50,0.9)",
+                      color: "#DED3C8", fontSize: 12, fontFamily: tel.fontFamily ?? FONTS[0].value,
+                      cursor: "pointer", maxWidth: 140,
+                    }}
+                  >
+                    {FONTS.map((f) => (
+                      <option key={f.value} value={f.value}>{f.label}</option>
+                    ))}
+                  </select>
+                  {/* Font size */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                    <button onClick={() => { const i = FONT_SIZES.indexOf(tel.fontSize ?? 72); if (i > 0) updateEl(tel.id, { fontSize: FONT_SIZES[i-1] }); }}
+                      style={{ width: 22, height: 26, borderRadius: 4, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "#DED3C8", cursor: "pointer", fontSize: 14 }}>−</button>
+                    <input type="number" value={tel.fontSize ?? 72} min={8} max={400}
+                      onChange={(e) => { const v = parseInt(e.target.value, 10); if (!isNaN(v) && v >= 8 && v <= 400) updateEl(tel.id, { fontSize: v }); }}
+                      style={{ width: 46, height: 26, textAlign: "center", fontSize: 12, color: "#DED3C8", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 4, MozAppearance: "textfield" } as React.CSSProperties} />
+                    <button onClick={() => { const i = FONT_SIZES.indexOf(tel.fontSize ?? 72); if (i < FONT_SIZES.length-1) updateEl(tel.id, { fontSize: FONT_SIZES[i+1] }); }}
+                      style={{ width: 22, height: 26, borderRadius: 4, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "#DED3C8", cursor: "pointer", fontSize: 14 }}>+</button>
+                  </div>
+                  {divider}
+                  {/* Bold / Italic / Shadow */}
+                  {[
+                    { title: "Bold", active: tel.fontWeight === "700", onClick: () => updateEl(tel.id, { fontWeight: tel.fontWeight === "700" ? "400" : "700" }), icon: <Bold size={12} /> },
+                    { title: "Italic", active: tel.fontStyle === "italic", onClick: () => updateEl(tel.id, { fontStyle: tel.fontStyle === "italic" ? "normal" : "italic" }), icon: <Italic size={12} /> },
+                    { title: "Shadow", active: !!tel.textShadow, onClick: () => updateEl(tel.id, { textShadow: !tel.textShadow }), icon: <span style={{ fontSize: 11, fontWeight: 700 }}>S</span> },
+                  ].map(({ title, active, onClick, icon }) => (
+                    <button key={title} title={title} onClick={onClick} style={tbBtn(active)}>{icon}</button>
+                  ))}
+                  {divider}
+                  {/* Alignment */}
+                  {(["left", "center", "right"] as const).map((a) => (
+                    <button key={a} title={a} onClick={() => updateEl(tel.id, { textAlign: a })}
+                      style={tbBtn((tel.textAlign ?? "center") === a)}>
+                      {a === "left" ? <AlignLeft size={12} /> : a === "center" ? <AlignCenter size={12} /> : <AlignRight size={12} />}
+                    </button>
+                  ))}
+                  {divider}
+                  {/* Transform */}
+                  {(["none", "uppercase", "lowercase"] as const).map((t) => (
+                    <button key={t} title={t === "none" ? "Normal case" : t} onClick={() => updateEl(tel.id, { textTransform: t })}
+                      style={tbBtn((tel.textTransform ?? "none") === t)}>
+                      <span style={{ fontSize: 9, fontWeight: 700 }}>{t === "none" ? "Aa" : t === "uppercase" ? "AA" : "aa"}</span>
+                    </button>
+                  ))}
+                  {divider}
+                  {/* Color picker */}
+                  <label title="Color" style={{ cursor: "pointer", position: "relative", display: "flex", alignItems: "center" }}>
+                    <div style={{ width: 26, height: 26, borderRadius: 4, background: tel.color ?? "#fff", border: "2px solid rgba(194,159,96,0.35)" }} />
+                    <input type="color" value={tel.color ?? "#ffffff"} onChange={(e) => updateEl(tel.id, { color: e.target.value })}
+                      style={{ position: "absolute", opacity: 0, width: 0, height: 0 }} />
+                  </label>
+                  {divider}
+                  {/* Layers */}
+                  {layerBtns.map(({ title, onClick, icon }) => (
+                    <button key={title} title={title} onClick={onClick} style={tbBtn(false)}>{icon}</button>
+                  ))}
+                  {divider}
+                  {/* Duplicate + Delete */}
+                  <button title="Duplicate" onClick={duplicateElement} style={{ width: 26, height: 26, borderRadius: 4, border: "1px solid rgba(194,159,96,0.25)", background: "rgba(194,159,96,0.08)", color: "#C29F60", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>⧉</button>
+                  <button title="Delete" onClick={deleteSelEl} style={{ width: 26, height: 26, borderRadius: 4, border: "1px solid rgba(255,107,107,0.25)", background: "rgba(255,107,107,0.07)", color: "#ff6b6b", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={12} /></button>
+                </div>
+              );
+            }
+
+            /* ── SLIDE BACKGROUND TOOLBAR (no element selected) ── */
+            const bg = selSlide?.background;
+            if (!bg) return null;
+            return (
+              <div style={tbStyle}>
+                <span style={{ fontSize: 9, fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700, letterSpacing: "0.14em", color: "rgba(194,159,96,0.6)", textTransform: "uppercase" }}>Background</span>
+                {divider}
+                {/* Type selector */}
+                {(["color", "gradient", "image"] as const).map((t) => (
+                  <button key={t} title={t}
+                    onClick={() => {
+                      const next = bg.type === t ? bg : { ...bg, type: t };
+                      save((v) => ({ ...v, slides: v.slides.map((s) => s.id === selSlideId ? { ...s, background: next } : s) }));
+                    }}
+                    style={tbBtn(bg.type === t)}>
+                    <span style={{ fontSize: 9, fontWeight: 700 }}>{t === "color" ? "◼" : t === "gradient" ? "▨" : "🖼"}</span>
                   </button>
                 ))}
-                {/* Divider */}
-                <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.1)" }} />
-                {/* Transform */}
-                {(["none", "uppercase", "lowercase"] as const).map((t) => (
-                  <button key={t} title={t === "none" ? "Normal case" : t} onClick={() => updateEl(tel.id, { textTransform: t })} style={{
-                    width: 26, height: 26, borderRadius: 4, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                    border: (tel.textTransform ?? "none") === t ? "1px solid rgba(194,159,96,0.6)" : "1px solid rgba(255,255,255,0.1)",
-                    background: (tel.textTransform ?? "none") === t ? "rgba(194,159,96,0.15)" : "rgba(255,255,255,0.05)",
-                    color: (tel.textTransform ?? "none") === t ? "#C29F60" : "#DED3C8",
-                  }}><span style={{ fontSize: 9, fontWeight: 700 }}>{t === "none" ? "Aa" : t === "uppercase" ? "AA" : "aa"}</span></button>
-                ))}
-                {/* Divider */}
-                <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.1)" }} />
-                {/* Color picker */}
-                <label title="Color" style={{ cursor: "pointer", position: "relative", display: "flex", alignItems: "center" }}>
-                  <div style={{
-                    width: 26, height: 26, borderRadius: 4, background: tel.color ?? "#fff",
-                    border: "2px solid rgba(194,159,96,0.35)",
-                  }} />
-                  <input type="color" value={tel.color ?? "#ffffff"} onChange={(e) => updateEl(tel.id, { color: e.target.value })}
-                    style={{ position: "absolute", opacity: 0, width: 0, height: 0 }} />
-                </label>
-                {/* Divider */}
-                <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.1)" }} />
-                {/* Layers */}
-                {[
-                  { title: "Bring Forward", onClick: bringForward, icon: <ChevronUp size={12} /> },
-                  { title: "Send Back", onClick: sendBack, icon: <ChevronDown size={12} /> },
-                  { title: "Bring to Front", onClick: bringToFront, icon: <span style={{ fontSize: 11 }}>↑↑</span> },
-                  { title: "Send to Back", onClick: sendToBack, icon: <span style={{ fontSize: 11 }}>↓↓</span> },
-                ].map(({ title, onClick, icon }) => (
-                  <button key={title} title={title} onClick={onClick} style={{
-                    width: 26, height: 26, borderRadius: 4, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                    border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "#DED3C8",
-                  }}>{icon}</button>
-                ))}
-                {/* Divider */}
-                <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.1)" }} />
-                {/* Duplicate + Delete */}
-                <button title="Duplicate" onClick={duplicateElement} style={{ width: 26, height: 26, borderRadius: 4, border: "1px solid rgba(194,159,96,0.25)", background: "rgba(194,159,96,0.08)", color: "#C29F60", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>⧉</button>
-                <button title="Delete" onClick={deleteSelEl} style={{ width: 26, height: 26, borderRadius: 4, border: "1px solid rgba(255,107,107,0.25)", background: "rgba(255,107,107,0.07)", color: "#ff6b6b", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={12} /></button>
+                {divider}
+                {/* Color controls */}
+                {bg.type === "color" && (
+                  <label title="Background color" style={{ cursor: "pointer", position: "relative", display: "flex", alignItems: "center" }}>
+                    <div style={{ width: 26, height: 26, borderRadius: 4, background: bg.color ?? "#040d1c", border: "2px solid rgba(194,159,96,0.35)" }} />
+                    <input type="color" value={bg.color ?? "#040d1c"}
+                      onChange={(e) => save((v) => ({ ...v, slides: v.slides.map((s) => s.id === selSlideId ? { ...s, background: { ...s.background, color: e.target.value } } : s) }))}
+                      style={{ position: "absolute", opacity: 0, width: 0, height: 0 }} />
+                  </label>
+                )}
+                {/* Gradient controls */}
+                {bg.type === "gradient" && (
+                  <>
+                    <label title="Gradient start" style={{ cursor: "pointer", position: "relative", display: "flex", alignItems: "center" }}>
+                      <div style={{ width: 26, height: 26, borderRadius: 4, background: bg.gradient?.from ?? "#040d1c", border: "2px solid rgba(194,159,96,0.35)" }} />
+                      <input type="color" value={bg.gradient?.from ?? "#040d1c"}
+                        onChange={(e) => save((v) => ({ ...v, slides: v.slides.map((s) => s.id === selSlideId ? { ...s, background: { ...s.background, gradient: { ...(s.background.gradient ?? { from: "#040d1c", to: "#08254D", angle: 135 }), from: e.target.value } } } : s) }))}
+                        style={{ position: "absolute", opacity: 0, width: 0, height: 0 }} />
+                    </label>
+                    <span style={{ fontSize: 9, color: "rgba(222,211,200,0.4)" }}>→</span>
+                    <label title="Gradient end" style={{ cursor: "pointer", position: "relative", display: "flex", alignItems: "center" }}>
+                      <div style={{ width: 26, height: 26, borderRadius: 4, background: bg.gradient?.to ?? "#08254D", border: "2px solid rgba(194,159,96,0.35)" }} />
+                      <input type="color" value={bg.gradient?.to ?? "#08254D"}
+                        onChange={(e) => save((v) => ({ ...v, slides: v.slides.map((s) => s.id === selSlideId ? { ...s, background: { ...s.background, gradient: { ...(s.background.gradient ?? { from: "#040d1c", to: "#08254D", angle: 135 }), to: e.target.value } } } : s) }))}
+                        style={{ position: "absolute", opacity: 0, width: 0, height: 0 }} />
+                    </label>
+                    <span style={{ fontSize: 9, color: "rgba(222,211,200,0.4)" }}>∠</span>
+                    <input type="number" value={bg.gradient?.angle ?? 135} min={0} max={360}
+                      onChange={(e) => save((v) => ({ ...v, slides: v.slides.map((s) => s.id === selSlideId ? { ...s, background: { ...s.background, gradient: { ...(s.background.gradient ?? { from: "#040d1c", to: "#08254D", angle: 135 }), angle: Number(e.target.value) } } } : s) }))}
+                      style={{ width: 46, height: 26, textAlign: "center", fontSize: 12, color: "#DED3C8", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 4, MozAppearance: "textfield" } as React.CSSProperties} />
+                    <span style={{ fontSize: 9, color: "rgba(222,211,200,0.4)" }}>°</span>
+                  </>
+                )}
+                {/* Image controls */}
+                {bg.type === "image" && (
+                  <>
+                    <button onClick={() => bgImgRef.current?.click()}
+                      style={{ height: 26, padding: "0 10px", borderRadius: 4, border: "1px solid rgba(194,159,96,0.3)", background: "rgba(194,159,96,0.08)", color: "#C29F60", cursor: "pointer", fontSize: 11, fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700 }}>
+                      {bg.imageDataUrl ? "Change Image" : "Choose Image"}
+                    </button>
+                    {bg.imageDataUrl && (
+                      <>
+                        {divider}
+                        <span style={{ fontSize: 9, color: "rgba(222,211,200,0.45)", fontFamily: "Syne,system-ui,sans-serif" }}>Overlay</span>
+                        <input type="range" min={0} max={85} step={5}
+                          value={Math.round((bg.overlayOpacity ?? 0.35) * 100)}
+                          onChange={(e) => save((v) => ({ ...v, slides: v.slides.map((s) => s.id === selSlideId ? { ...s, background: { ...s.background, overlayOpacity: Number(e.target.value) / 100 } } : s) }))}
+                          style={{ width: 70, accentColor: "#C29F60" }} />
+                        <span style={{ fontSize: 10, color: "#DED3C8", minWidth: 28 }}>{Math.round((bg.overlayOpacity ?? 0.35) * 100)}%</span>
+                      </>
+                    )}
+                  </>
+                )}
               </div>
             );
           })()}
