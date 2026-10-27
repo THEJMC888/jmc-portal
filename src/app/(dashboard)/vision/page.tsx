@@ -1512,41 +1512,22 @@ export default function VisionPage() {
           {/* Font family */}
           <div>
             <Label>Font</Label>
-            <div style={{
-              maxHeight: 220, overflowY: "auto", borderRadius: 6,
-              border: "1px solid rgba(194,159,96,0.2)", background: "rgba(255,255,255,0.03)",
-            }}>
+            <select
+              value={el.fontFamily ?? FONTS[0].value}
+              onChange={(e) => updateEl(el.id, { fontFamily: e.target.value })}
+              style={{
+                width: "100%", padding: "7px 10px", borderRadius: 6,
+                border: "1px solid rgba(194,159,96,0.2)", background: "rgba(10,20,50,0.9)",
+                color: "#DED3C8", fontSize: 13, fontFamily: el.fontFamily ?? FONTS[0].value,
+                cursor: "pointer", appearance: "auto",
+              }}
+            >
               {FONTS.map((f) => (
-                <div key={f.value}>
-                  {f.group && (
-                    <div style={{
-                      padding: "5px 10px 3px",
-                      fontFamily: "Syne, system-ui, sans-serif",
-                      fontSize: 8, fontWeight: 700,
-                      letterSpacing: "0.18em", textTransform: "uppercase",
-                      color: "rgba(194,159,96,0.45)",
-                      background: "rgba(0,0,0,0.2)",
-                      borderBottom: "1px solid rgba(194,159,96,0.08)",
-                      borderTop: "1px solid rgba(194,159,96,0.08)",
-                    }}>
-                      {f.group}
-                    </div>
-                  )}
-                  <button
-                    onClick={() => updateEl(el.id, { fontFamily: f.value })}
-                    style={{
-                      width: "100%", padding: "8px 10px", textAlign: "left",
-                      background: el.fontFamily === f.value ? "rgba(194,159,96,0.14)" : "transparent",
-                      color: el.fontFamily === f.value ? "#C29F60" : "#DED3C8",
-                      border: "none", borderBottom: "1px solid rgba(255,255,255,0.03)",
-                      fontFamily: f.value, fontSize: 14, cursor: "pointer",
-                    }}
-                  >
-                    {f.label}
-                  </button>
-                </div>
+                <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>
+                  {f.label}
+                </option>
               ))}
-            </div>
+            </select>
           </div>
 
           {/* Font size */}
@@ -1942,16 +1923,16 @@ export default function VisionPage() {
   );
 
   const ColorSwatches = ({ colors, selected, onSelect }: { colors: string[]; selected: string; onSelect: (c: string) => void }) => (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 4, marginBottom: 4 }}>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginBottom: 4 }}>
       {colors.map((c) => (
         <button
           key={c}
           onClick={() => onSelect(c)}
           title={c}
           style={{
-            aspectRatio: "1", borderRadius: 4, background: c, cursor: "pointer",
-            border: selected === c ? "2px solid #C29F60" : "2px solid transparent",
-            boxSizing: "border-box",
+            width: 18, height: 18, borderRadius: 3, background: c, cursor: "pointer",
+            border: selected === c ? "2px solid #C29F60" : "1.5px solid rgba(255,255,255,0.12)",
+            boxSizing: "border-box", flexShrink: 0,
           }}
         />
       ))}
@@ -2453,6 +2434,91 @@ export default function VisionPage() {
               </span>
             </div>
           )}
+
+          {/* Contextual text toolbar — shown above canvas when a text element is selected */}
+          {!isMobile && selElId && (() => {
+            const tel = getEl(selElId);
+            if (!tel || tel.type !== "text") return null;
+            return (
+              <div style={{
+                display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap",
+                padding: "5px 8px", borderRadius: 6, flexShrink: 0,
+                background: "rgba(4,13,28,0.7)",
+                border: "1px solid rgba(194,159,96,0.18)",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.5)",
+              }}>
+                {/* Font dropdown */}
+                <select
+                  value={tel.fontFamily ?? FONTS[0].value}
+                  onChange={(e) => updateEl(tel.id, { fontFamily: e.target.value })}
+                  style={{
+                    height: 26, padding: "0 6px", borderRadius: 4,
+                    border: "1px solid rgba(194,159,96,0.2)", background: "rgba(10,20,50,0.9)",
+                    color: "#DED3C8", fontSize: 12, fontFamily: tel.fontFamily ?? FONTS[0].value,
+                    cursor: "pointer", maxWidth: 140,
+                  }}
+                >
+                  {FONTS.map((f) => (
+                    <option key={f.value} value={f.value}>{f.label}</option>
+                  ))}
+                </select>
+                {/* Font size */}
+                <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                  <button onClick={() => { const i = FONT_SIZES.indexOf(tel.fontSize ?? 72); if (i > 0) updateEl(tel.id, { fontSize: FONT_SIZES[i-1] }); }}
+                    style={{ width: 22, height: 26, borderRadius: 4, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "#DED3C8", cursor: "pointer", fontSize: 14 }}>−</button>
+                  <input type="number" value={tel.fontSize ?? 72} min={8} max={400}
+                    onChange={(e) => { const v = parseInt(e.target.value, 10); if (!isNaN(v) && v >= 8 && v <= 400) updateEl(tel.id, { fontSize: v }); }}
+                    style={{ width: 46, height: 26, textAlign: "center", fontSize: 12, color: "#DED3C8", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 4, MozAppearance: "textfield" } as React.CSSProperties} />
+                  <button onClick={() => { const i = FONT_SIZES.indexOf(tel.fontSize ?? 72); if (i < FONT_SIZES.length-1) updateEl(tel.id, { fontSize: FONT_SIZES[i+1] }); }}
+                    style={{ width: 22, height: 26, borderRadius: 4, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "#DED3C8", cursor: "pointer", fontSize: 14 }}>+</button>
+                </div>
+                {/* Divider */}
+                <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.1)" }} />
+                {/* Bold / Italic / Shadow */}
+                {[
+                  { title: "Bold", active: tel.fontWeight === "700", onClick: () => updateEl(tel.id, { fontWeight: tel.fontWeight === "700" ? "400" : "700" }), icon: <Bold size={12} /> },
+                  { title: "Italic", active: tel.fontStyle === "italic", onClick: () => updateEl(tel.id, { fontStyle: tel.fontStyle === "italic" ? "normal" : "italic" }), icon: <Italic size={12} /> },
+                  { title: "Shadow", active: !!tel.textShadow, onClick: () => updateEl(tel.id, { textShadow: !tel.textShadow }), icon: <span style={{ fontSize: 11, fontWeight: 700 }}>S</span> },
+                ].map(({ title, active, onClick, icon }) => (
+                  <button key={title} title={title} onClick={onClick} style={{
+                    width: 26, height: 26, borderRadius: 4, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                    border: active ? "1px solid rgba(194,159,96,0.6)" : "1px solid rgba(255,255,255,0.1)",
+                    background: active ? "rgba(194,159,96,0.15)" : "rgba(255,255,255,0.05)",
+                    color: active ? "#C29F60" : "#DED3C8",
+                  }}>{icon}</button>
+                ))}
+                {/* Divider */}
+                <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.1)" }} />
+                {/* Alignment */}
+                {(["left", "center", "right"] as const).map((a) => (
+                  <button key={a} title={a} onClick={() => updateEl(tel.id, { textAlign: a })} style={{
+                    width: 26, height: 26, borderRadius: 4, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                    border: (tel.textAlign ?? "center") === a ? "1px solid rgba(194,159,96,0.6)" : "1px solid rgba(255,255,255,0.1)",
+                    background: (tel.textAlign ?? "center") === a ? "rgba(194,159,96,0.15)" : "rgba(255,255,255,0.05)",
+                    color: (tel.textAlign ?? "center") === a ? "#C29F60" : "#DED3C8",
+                  }}>
+                    {a === "left" ? <AlignLeft size={12} /> : a === "center" ? <AlignCenter size={12} /> : <AlignRight size={12} />}
+                  </button>
+                ))}
+                {/* Divider */}
+                <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.1)" }} />
+                {/* Color picker */}
+                <label title="Color" style={{ cursor: "pointer", position: "relative", display: "flex", alignItems: "center" }}>
+                  <div style={{
+                    width: 26, height: 26, borderRadius: 4, background: tel.color ?? "#fff",
+                    border: "2px solid rgba(194,159,96,0.35)",
+                  }} />
+                  <input type="color" value={tel.color ?? "#ffffff"} onChange={(e) => updateEl(tel.id, { color: e.target.value })}
+                    style={{ position: "absolute", opacity: 0, width: 0, height: 0 }} />
+                </label>
+                {/* Divider */}
+                <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.1)" }} />
+                {/* Duplicate + Delete */}
+                <button title="Duplicate" onClick={duplicateElement} style={{ width: 26, height: 26, borderRadius: 4, border: "1px solid rgba(194,159,96,0.25)", background: "rgba(194,159,96,0.08)", color: "#C29F60", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>⧉</button>
+                <button title="Delete" onClick={deleteSelEl} style={{ width: 26, height: 26, borderRadius: 4, border: "1px solid rgba(255,107,107,0.25)", background: "rgba(255,107,107,0.07)", color: "#ff6b6b", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={12} /></button>
+              </div>
+            );
+          })()}
 
           {/* Canvas — sized purely by aspect ratio, no flex growth */}
           <div
