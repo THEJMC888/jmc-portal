@@ -62,6 +62,9 @@ export interface SlideElement {
   color?: string;
   textAlign?: "left" | "center" | "right";
   textShadow?: boolean;
+  letterSpacing?: number;
+  lineHeight?: number;
+  textTransform?: "none" | "uppercase" | "lowercase";
   imageDataUrl?: string;
   objectFit?: "cover" | "contain";
   clipShape?: "rectangle" | "square" | "circle";
