@@ -1097,6 +1097,31 @@ export default function VisionPage() {
     updateEl(selElId, { zIndex: Math.max(1, el.zIndex - 1) });
   };
 
+  const bringToFront = () => {
+    if (!selElId || !selSlide) return;
+    const maxZ = Math.max(...selSlide.elements.map((e) => e.zIndex), 0);
+    updateEl(selElId, { zIndex: maxZ + 1 });
+  };
+
+  const sendToBack = () => {
+    if (!selElId || !selSlide) return;
+    updateEl(selElId, { zIndex: 1 });
+  };
+
+  const duplicateElement = () => {
+    if (!selElId || !selSlide) return;
+    const el = getEl(selElId);
+    if (!el) return;
+    const copy = { ...JSON.parse(JSON.stringify(el)), id: uid(), x: el.x + 20, y: el.y + 20 };
+    save((v) => ({
+      ...v,
+      slides: v.slides.map((s) =>
+        s.id === selSlide.id ? { ...s, elements: [...s.elements, copy] } : s
+      ),
+    }));
+    setSelElId(copy.id);
+  };
+
   // ─── Slide CRUD ───────────────────────────────────────────────────────────
   const addSlideFromTemplate = (tmpl: SlideTemplateDef) => {
     const s = tmpl.build();
@@ -1294,8 +1319,11 @@ export default function VisionPage() {
         }
         const elX = el.x * sx, elY = el.y * sy + fadeY;
         const elW = el.width * sx, elH = el.height * sy;
-        const words = (el.text ?? "").split(/\s+/);
-        const lh = fs * 1.3;
+        const rawText = el.textTransform === "uppercase" ? (el.text ?? "").toUpperCase()
+          : el.textTransform === "lowercase" ? (el.text ?? "").toLowerCase()
+          : (el.text ?? "");
+        const words = rawText.split(/\s+/);
+        const lh = fs * (el.lineHeight ?? 1.3);
         const lines: string[] = [];
         let cur = "";
         for (const w of words) {
@@ -1529,9 +1557,21 @@ export default function VisionPage() {
                 const i = FONT_SIZES.indexOf(el.fontSize ?? 72);
                 if (i > 0) updateEl(el.id, { fontSize: FONT_SIZES[i - 1] });
               }} style={iconBtnStyle}>−</button>
-              <span style={{ flex: 1, textAlign: "center", fontSize: 13, color: "#DED3C8", fontFamily: "Syne,system-ui,sans-serif" }}>
-                {el.fontSize ?? 72}
-              </span>
+              <input
+                type="number"
+                value={el.fontSize ?? 72}
+                min={8} max={400}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value, 10);
+                  if (!isNaN(v) && v >= 8 && v <= 400) updateEl(el.id, { fontSize: v });
+                }}
+                style={{
+                  flex: 1, textAlign: "center", fontSize: 13, color: "#DED3C8",
+                  fontFamily: "Syne,system-ui,sans-serif", background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.12)", borderRadius: 4, padding: "4px 2px",
+                  MozAppearance: "textfield",
+                } as React.CSSProperties}
+              />
               <button onClick={() => {
                 const i = FONT_SIZES.indexOf(el.fontSize ?? 72);
                 if (i < FONT_SIZES.length - 1) updateEl(el.id, { fontSize: FONT_SIZES[i + 1] });
@@ -1580,6 +1620,36 @@ export default function VisionPage() {
                 </ToggleBtn>
               ))}
             </div>
+          </div>
+
+          {/* Text Transform */}
+          <div>
+            <Label>Transform</Label>
+            <div style={{ display: "flex", gap: 6 }}>
+              {(["none", "uppercase", "lowercase"] as const).map((t) => (
+                <ToggleBtn key={t} active={(el.textTransform ?? "none") === t} onClick={() => updateEl(el.id, { textTransform: t })}>
+                  <span style={{ fontSize: 9, fontWeight: 700 }}>{t === "none" ? "Aa" : t === "uppercase" ? "AA" : "aa"}</span>
+                </ToggleBtn>
+              ))}
+            </div>
+          </div>
+
+          {/* Letter Spacing */}
+          <div>
+            <Label>Letter Spacing: {(el.letterSpacing ?? 0).toFixed(2)}em</Label>
+            <input type="range" min={-5} max={50} step={1}
+              value={Math.round((el.letterSpacing ?? 0) * 100)}
+              onChange={(e) => updateEl(el.id, { letterSpacing: Number(e.target.value) / 100 })}
+              style={{ width: "100%", accentColor: "#C29F60" }} />
+          </div>
+
+          {/* Line Height */}
+          <div>
+            <Label>Line Height: {(el.lineHeight ?? 1.3).toFixed(1)}</Label>
+            <input type="range" min={80} max={250} step={5}
+              value={Math.round((el.lineHeight ?? 1.3) * 100)}
+              onChange={(e) => updateEl(el.id, { lineHeight: Number(e.target.value) / 100 })}
+              style={{ width: "100%", accentColor: "#C29F60" }} />
           </div>
         </>
       )}
@@ -1634,7 +1704,7 @@ export default function VisionPage() {
       {/* Layers */}
       <div>
         <Label>Layer</Label>
-        <div style={{ display: "flex", gap: 6 }}>
+        <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
           <button onClick={bringForward} style={{ ...secondaryBtnStyle, flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
             <ChevronUp size={12} /> Forward
           </button>
@@ -1642,7 +1712,21 @@ export default function VisionPage() {
             <ChevronDown size={12} /> Back
           </button>
         </div>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button onClick={bringToFront} style={{ ...secondaryBtnStyle, flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, fontSize: 10 }}>
+            ↑↑ Front
+          </button>
+          <button onClick={sendToBack} style={{ ...secondaryBtnStyle, flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, fontSize: 10 }}>
+            ↓↓ Back
+          </button>
+        </div>
       </div>
+
+      {/* Duplicate */}
+      <button onClick={duplicateElement} style={{ ...secondaryBtnStyle, color: "#C29F60", borderColor: "rgba(194,159,96,0.3)" }}>
+        <span style={{ display: "inline", marginRight: 4 }}>⧉</span>
+        Duplicate Element
+      </button>
 
       {/* Delete */}
       <button onClick={deleteSelEl} style={{ ...secondaryBtnStyle, color: "#ff6b6b", borderColor: "rgba(255,107,107,0.3)" }}>
@@ -2153,6 +2237,9 @@ export default function VisionPage() {
                             fontWeight: el.fontWeight, fontStyle: el.fontStyle,
                             color: el.color, textAlign: el.textAlign,
                             textShadow: el.textShadow ? "0 2px 8px rgba(0,0,0,0.9)" : "none",
+                            letterSpacing: el.letterSpacing ? `${el.letterSpacing}em` : undefined,
+                            lineHeight: el.lineHeight ?? 1.3,
+                            textTransform: el.textTransform ?? "none",
                             whiteSpace: "pre-wrap", overflow: "hidden",
                             display: "block", width: "100%",
                           }}>{el.text}</span>
@@ -2445,6 +2532,9 @@ export default function VisionPage() {
                               fontFamily: el.fontFamily, fontSize: el.fontSize,
                               fontWeight: el.fontWeight, fontStyle: el.fontStyle,
                               color: el.color, textAlign: el.textAlign,
+                              letterSpacing: el.letterSpacing ? `${el.letterSpacing}em` : undefined,
+                              lineHeight: el.lineHeight ?? 1.3,
+                              textTransform: el.textTransform ?? "none",
                             }}
                           />
                         ) : (
@@ -2459,6 +2549,9 @@ export default function VisionPage() {
                               fontWeight: el.fontWeight, fontStyle: el.fontStyle,
                               color: el.color ?? "#fff", textAlign: el.textAlign,
                               textShadow: el.textShadow ? "0 4px 24px rgba(0,0,0,0.95)" : "none",
+                              letterSpacing: el.letterSpacing ? `${el.letterSpacing}em` : undefined,
+                              lineHeight: el.lineHeight ?? 1.3,
+                              textTransform: el.textTransform ?? "none",
                               whiteSpace: "pre-wrap", wordBreak: "break-word",
                               overflow: "hidden", display: "block", width: "100%",
                             }}>{el.text}</span>
