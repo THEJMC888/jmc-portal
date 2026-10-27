@@ -92,11 +92,11 @@ function openMusicDB(): Promise<IDBDatabase> {
   });
 }
 function loadMusicLib(): Promise<MusicTrack[]> {
-  return openMusicDB().then((db) => new Promise((res) => {
+  return openMusicDB().then((db) => new Promise<MusicTrack[]>((res) => {
     const req = db.transaction(MUSIC_STORE, "readonly").objectStore(MUSIC_STORE).getAll();
     req.onsuccess = () => res((req.result as MusicTrack[]).sort((a, b) => a.addedAt < b.addedAt ? 1 : -1));
     req.onerror = () => res([]);
-  })).catch(() => []);
+  })).catch(() => [] as MusicTrack[]);
 }
 function saveMusicTrack(t: MusicTrack): Promise<void> {
   return openMusicDB().then((db) => new Promise((res, rej) => {
