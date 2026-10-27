@@ -1530,55 +1530,13 @@ export default function VisionPage() {
             </select>
           </div>
 
-          {/* Font size */}
-          <div>
-            <Label>Size</Label>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <button onClick={() => {
-                const i = FONT_SIZES.indexOf(el.fontSize ?? 72);
-                if (i > 0) updateEl(el.id, { fontSize: FONT_SIZES[i - 1] });
-              }} style={iconBtnStyle}>−</button>
-              <input
-                type="number"
-                value={el.fontSize ?? 72}
-                min={8} max={400}
-                onChange={(e) => {
-                  const v = parseInt(e.target.value, 10);
-                  if (!isNaN(v) && v >= 8 && v <= 400) updateEl(el.id, { fontSize: v });
-                }}
-                style={{
-                  flex: 1, textAlign: "center", fontSize: 13, color: "#DED3C8",
-                  fontFamily: "Syne,system-ui,sans-serif", background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.12)", borderRadius: 4, padding: "4px 2px",
-                  MozAppearance: "textfield",
-                } as React.CSSProperties}
-              />
-              <button onClick={() => {
-                const i = FONT_SIZES.indexOf(el.fontSize ?? 72);
-                if (i < FONT_SIZES.length - 1) updateEl(el.id, { fontSize: FONT_SIZES[i + 1] });
-              }} style={iconBtnStyle}>+</button>
-            </div>
-          </div>
-
-          {/* Style */}
-          <div>
-            <Label>Style</Label>
-            <div style={{ display: "flex", gap: 6 }}>
-              <ToggleBtn active={el.fontWeight === "700"} onClick={() => updateEl(el.id, { fontWeight: el.fontWeight === "700" ? "400" : "700" })}><Bold size={13} /></ToggleBtn>
-              <ToggleBtn active={el.fontStyle === "italic"} onClick={() => updateEl(el.id, { fontStyle: el.fontStyle === "italic" ? "normal" : "italic" })}><Italic size={13} /></ToggleBtn>
-              <ToggleBtn active={el.textShadow === true} onClick={() => updateEl(el.id, { textShadow: !el.textShadow })}>
-                <span style={{ fontSize: 10, fontWeight: 700 }}>S</span>
-              </ToggleBtn>
-            </div>
-          </div>
-
           {/* Color */}
           <div>
             <Label>Color</Label>
             <ColorSwatches colors={EL_COLORS} selected={el.color ?? "#ffffff"} onSelect={(c) => updateEl(el.id, { color: c })} />
             <label style={{ display: "block", marginTop: 6, cursor: "pointer", position: "relative" }}>
               <div style={{
-                width: "100%", height: 44, borderRadius: 6, background: el.color ?? "#ffffff",
+                width: "100%", height: 36, borderRadius: 6, background: el.color ?? "#ffffff",
                 border: "2px solid rgba(194,159,96,0.35)",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
@@ -1591,15 +1549,23 @@ export default function VisionPage() {
             </label>
           </div>
 
-          {/* Alignment */}
+          {/* Letter Spacing + Line Height — one row */}
           <div>
-            <Label>Alignment</Label>
-            <div style={{ display: "flex", gap: 6 }}>
-              {(["left", "center", "right"] as const).map((a) => (
-                <ToggleBtn key={a} active={el.textAlign === a} onClick={() => updateEl(el.id, { textAlign: a })}>
-                  {a === "left" ? <AlignLeft size={13} /> : a === "center" ? <AlignCenter size={13} /> : <AlignRight size={13} />}
-                </ToggleBtn>
-              ))}
+            <div style={{ display: "flex", gap: 12 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <Label>Spacing: {(el.letterSpacing ?? 0).toFixed(2)}em</Label>
+                <input type="range" min={-5} max={50} step={1}
+                  value={Math.round((el.letterSpacing ?? 0) * 100)}
+                  onChange={(e) => updateEl(el.id, { letterSpacing: Number(e.target.value) / 100 })}
+                  style={{ width: "100%", accentColor: "#C29F60" }} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <Label>Line H: {(el.lineHeight ?? 1.3).toFixed(1)}</Label>
+                <input type="range" min={80} max={250} step={5}
+                  value={Math.round((el.lineHeight ?? 1.3) * 100)}
+                  onChange={(e) => updateEl(el.id, { lineHeight: Number(e.target.value) / 100 })}
+                  style={{ width: "100%", accentColor: "#C29F60" }} />
+              </div>
             </div>
           </div>
 
@@ -1682,38 +1648,12 @@ export default function VisionPage() {
         </>
       )}
 
-      {/* Layers */}
-      <div>
-        <Label>Layer</Label>
-        <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-          <button onClick={bringForward} style={{ ...secondaryBtnStyle, flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-            <ChevronUp size={12} /> Forward
-          </button>
-          <button onClick={sendBack} style={{ ...secondaryBtnStyle, flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-            <ChevronDown size={12} /> Back
-          </button>
+      {/* Hint for non-text / image elements on mobile */}
+      {!selElId && (
+        <div style={{ fontSize: 10, color: "rgba(222,211,200,0.3)", fontFamily: "Syne,system-ui,sans-serif", fontStyle: "italic" }}>
+          Select an element to edit it.
         </div>
-        <div style={{ display: "flex", gap: 6 }}>
-          <button onClick={bringToFront} style={{ ...secondaryBtnStyle, flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, fontSize: 10 }}>
-            ↑↑ Front
-          </button>
-          <button onClick={sendToBack} style={{ ...secondaryBtnStyle, flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, fontSize: 10 }}>
-            ↓↓ Back
-          </button>
-        </div>
-      </div>
-
-      {/* Duplicate */}
-      <button onClick={duplicateElement} style={{ ...secondaryBtnStyle, color: "#C29F60", borderColor: "rgba(194,159,96,0.3)" }}>
-        <span style={{ display: "inline", marginRight: 4 }}>⧉</span>
-        Duplicate Element
-      </button>
-
-      {/* Delete */}
-      <button onClick={deleteSelEl} style={{ ...secondaryBtnStyle, color: "#ff6b6b", borderColor: "rgba(255,107,107,0.3)" }}>
-        <Trash2 size={12} style={{ display: "inline", marginRight: 4 }} />
-        Delete Element
-      </button>
+      )}
     </div>
   );
 
@@ -2502,6 +2442,17 @@ export default function VisionPage() {
                 ))}
                 {/* Divider */}
                 <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.1)" }} />
+                {/* Transform */}
+                {(["none", "uppercase", "lowercase"] as const).map((t) => (
+                  <button key={t} title={t === "none" ? "Normal case" : t} onClick={() => updateEl(tel.id, { textTransform: t })} style={{
+                    width: 26, height: 26, borderRadius: 4, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                    border: (tel.textTransform ?? "none") === t ? "1px solid rgba(194,159,96,0.6)" : "1px solid rgba(255,255,255,0.1)",
+                    background: (tel.textTransform ?? "none") === t ? "rgba(194,159,96,0.15)" : "rgba(255,255,255,0.05)",
+                    color: (tel.textTransform ?? "none") === t ? "#C29F60" : "#DED3C8",
+                  }}><span style={{ fontSize: 9, fontWeight: 700 }}>{t === "none" ? "Aa" : t === "uppercase" ? "AA" : "aa"}</span></button>
+                ))}
+                {/* Divider */}
+                <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.1)" }} />
                 {/* Color picker */}
                 <label title="Color" style={{ cursor: "pointer", position: "relative", display: "flex", alignItems: "center" }}>
                   <div style={{
@@ -2511,6 +2462,20 @@ export default function VisionPage() {
                   <input type="color" value={tel.color ?? "#ffffff"} onChange={(e) => updateEl(tel.id, { color: e.target.value })}
                     style={{ position: "absolute", opacity: 0, width: 0, height: 0 }} />
                 </label>
+                {/* Divider */}
+                <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.1)" }} />
+                {/* Layers */}
+                {[
+                  { title: "Bring Forward", onClick: bringForward, icon: <ChevronUp size={12} /> },
+                  { title: "Send Back", onClick: sendBack, icon: <ChevronDown size={12} /> },
+                  { title: "Bring to Front", onClick: bringToFront, icon: <span style={{ fontSize: 11 }}>↑↑</span> },
+                  { title: "Send to Back", onClick: sendToBack, icon: <span style={{ fontSize: 11 }}>↓↓</span> },
+                ].map(({ title, onClick, icon }) => (
+                  <button key={title} title={title} onClick={onClick} style={{
+                    width: 26, height: 26, borderRadius: 4, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                    border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "#DED3C8",
+                  }}>{icon}</button>
+                ))}
                 {/* Divider */}
                 <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.1)" }} />
                 {/* Duplicate + Delete */}
