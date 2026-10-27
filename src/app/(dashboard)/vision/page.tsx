@@ -74,6 +74,51 @@ const PHOTO_LIB_KEY = "jmc_photo_library";
 
 interface LibPhoto { id: string; dataUrl: string; name: string; addedAt: number; }
 
+// ─── Music library (IndexedDB) ───────────────────────────────────────────────
+interface MusicTrack { id: string; name: string; dataUrl: string; size: number; addedAt: string; }
+
+const MUSIC_DB = "jmc_music_db";
+const MUSIC_STORE = "tracks";
+
+function openMusicDB(): Promise<IDBDatabase> {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(MUSIC_DB, 1);
+    req.onupgradeneeded = (e) => {
+      const db = (e.target as IDBOpenDBRequest).result;
+      if (!db.objectStoreNames.contains(MUSIC_STORE)) db.createObjectStore(MUSIC_STORE, { keyPath: "id" });
+    };
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+function loadMusicLib(): Promise<MusicTrack[]> {
+  return openMusicDB().then((db) => new Promise((res) => {
+    const req = db.transaction(MUSIC_STORE, "readonly").objectStore(MUSIC_STORE).getAll();
+    req.onsuccess = () => res((req.result as MusicTrack[]).sort((a, b) => a.addedAt < b.addedAt ? 1 : -1));
+    req.onerror = () => res([]);
+  })).catch(() => []);
+}
+function saveMusicTrack(t: MusicTrack): Promise<void> {
+  return openMusicDB().then((db) => new Promise((res, rej) => {
+    const tx = db.transaction(MUSIC_STORE, "readwrite");
+    tx.objectStore(MUSIC_STORE).put(t);
+    tx.oncomplete = () => res();
+    tx.onerror = () => rej(tx.error);
+  }));
+}
+function removeMusicTrack(id: string): Promise<void> {
+  return openMusicDB().then((db) => new Promise((res) => {
+    const tx = db.transaction(MUSIC_STORE, "readwrite");
+    tx.objectStore(MUSIC_STORE).delete(id);
+    tx.oncomplete = () => res();
+    tx.onerror = () => res();
+  }));
+}
+function fmtFileSize(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
 // Build typed photo objects from the shared portal photo library
 const JMC_PHOTOS = (Object.keys(PORTAL_PHOTO_BUCKETS) as PortalPhotoBucket[]).flatMap((bucket) =>
   PORTAL_PHOTO_BUCKETS[bucket].map((url, i) => ({
@@ -621,6 +666,8 @@ export default function VisionPage() {
   const [dragOverSlideId, setDragOverSlideId] = useState<string | null>(null);
   const [photoLibrary, setPhotoLibrary] = useState<LibPhoto[]>([]);
   const [photoLibTab, setPhotoLibTab] = useState<"jmc" | "personal">("jmc");
+  const [musicLib, setMusicLib] = useState<MusicTrack[]>([]);
+  const [previewingId, setPreviewingId] = useState<string | null>(null);
   const [jmcBucket, setJmcBucket] = useState<PortalPhotoBucket | "all">("all");
   const [jmcLoadingId, setJmcLoadingId] = useState<string | null>(null);
   const [controlTab, setControlTab] = useState<"bg" | "style" | "music" | "photos">("bg");
@@ -634,6 +681,7 @@ export default function VisionPage() {
   const bgImgRef = useRef<HTMLInputElement>(null);
   const elImgRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLInputElement>(null);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
   const imgCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
   const historyRef = useRef<VisionVideo[]>([initStorage().vision]);
   const historyIdxRef = useRef<number>(0);
@@ -686,6 +734,8 @@ export default function VisionPage() {
       if (raw) setPhotoLibrary(JSON.parse(raw));
     } catch {}
   }, []);
+
+  useEffect(() => { loadMusicLib().then(setMusicLib); }, []);
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
@@ -1247,7 +1297,10 @@ export default function VisionPage() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      save((v) => ({ ...v, musicDataUrl: ev.target!.result as string, musicName: file.name }));
+      const dataUrl = ev.target!.result as string;
+      const track: MusicTrack = { id: uid(), name: file.name, dataUrl, size: file.size, addedAt: new Date().toISOString() };
+      saveMusicTrack(track).then(() => setMusicLib((prev) => [track, ...prev]));
+      save((v) => ({ ...v, musicDataUrl: dataUrl, musicName: file.name }));
     };
     reader.readAsDataURL(file);
     e.target.value = "";
@@ -1782,8 +1835,36 @@ export default function VisionPage() {
     </div>
   );
 
+  const stopPreview = () => {
+    if (previewAudioRef.current) { previewAudioRef.current.pause(); previewAudioRef.current = null; }
+    setPreviewingId(null);
+  };
+
+  const togglePreview = (track: MusicTrack) => {
+    if (previewingId === track.id) { stopPreview(); return; }
+    stopPreview();
+    const aud = new Audio(track.dataUrl);
+    aud.volume = 0.6;
+    aud.onended = () => setPreviewingId(null);
+    aud.play().catch(() => {});
+    previewAudioRef.current = aud;
+    setPreviewingId(track.id);
+  };
+
+  const selectTrack = (track: MusicTrack) => {
+    stopPreview();
+    save((v) => ({ ...v, musicDataUrl: track.dataUrl, musicName: track.name }));
+  };
+
+  const removeTrackFromLib = (track: MusicTrack) => {
+    if (previewingId === track.id) stopPreview();
+    removeMusicTrack(track.id).then(() => setMusicLib((prev) => prev.filter((t) => t.id !== track.id)));
+    if (vision.musicDataUrl === track.dataUrl) save((v) => ({ ...v, musicDataUrl: undefined, musicName: undefined }));
+  };
+
   const renderMusicPanel = () => (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* Slide duration */}
       <div>
         <Label>Slide Duration</Label>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -1799,29 +1880,90 @@ export default function VisionPage() {
           <span style={{ fontSize: 11, color: "rgba(222,211,200,0.5)", fontFamily: "Syne,system-ui,sans-serif" }}>seconds per slide</span>
         </div>
       </div>
+
+      {/* Music library */}
       <div>
-        <Label>Background Music</Label>
-        {vision.musicDataUrl ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{
-              flex: 1, display: "flex", alignItems: "center", gap: 6, padding: "10px 14px",
-              borderRadius: 6, background: "rgba(194,159,96,0.08)", border: "1px solid rgba(194,159,96,0.22)",
-            }}>
-              <Music size={14} style={{ color: "#C29F60", flexShrink: 0 }} />
-              <span style={{ fontSize: 12, color: "#C29F60", fontFamily: "Syne,system-ui,sans-serif", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {vision.musicName}
-              </span>
-            </div>
-            <button onClick={() => save((v) => ({ ...v, musicDataUrl: undefined, musicName: undefined }))}
-              style={{ padding: "10px", borderRadius: 6, border: "1px solid rgba(255,107,107,0.3)", background: "transparent", color: "rgba(255,107,107,0.7)", cursor: "pointer" }}>
-              <X size={14} />
-            </button>
-          </div>
-        ) : (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+          <Label>Music Library {musicLib.length > 0 && `· ${musicLib.length} track${musicLib.length > 1 ? "s" : ""}`}</Label>
+          <button
+            onClick={() => audioRef.current?.click()}
+            style={{
+              display: "flex", alignItems: "center", gap: 5, padding: "4px 10px",
+              borderRadius: 4, border: "1px solid rgba(194,159,96,0.35)",
+              background: "rgba(194,159,96,0.08)", color: "#C29F60", cursor: "pointer",
+              fontSize: 10, fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+            }}
+          >
+            <Plus size={11} /> Add Track
+          </button>
+        </div>
+
+        {musicLib.length === 0 ? (
           <button onClick={() => audioRef.current?.click()} style={{ ...secondaryBtnStyle, padding: "28px 0", flexDirection: "column", gap: 10 }}>
             <Music size={20} />
-            <span style={{ fontSize: 12 }}>Add Background Music</span>
+            <span style={{ fontSize: 12 }}>Upload your first track</span>
+            <span style={{ fontSize: 10, color: "rgba(222,211,200,0.35)" }}>MP3, M4A, WAV, AAC · up to 50 MB each</span>
           </button>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {musicLib.map((track) => {
+              const isActive = vision.musicDataUrl === track.dataUrl;
+              const isPreviewing = previewingId === track.id;
+              return (
+                <div key={track.id} style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "9px 10px", borderRadius: 6,
+                  background: isActive ? "rgba(194,159,96,0.1)" : "rgba(255,255,255,0.03)",
+                  border: isActive ? "1px solid rgba(194,159,96,0.4)" : "1px solid rgba(255,255,255,0.07)",
+                  transition: "all 0.15s",
+                }}>
+                  {/* Preview play/pause */}
+                  <button onClick={() => togglePreview(track)} title={isPreviewing ? "Pause preview" : "Preview"} style={{
+                    width: 26, height: 26, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                    border: "1px solid rgba(255,255,255,0.12)", background: isPreviewing ? "rgba(194,159,96,0.2)" : "rgba(255,255,255,0.05)",
+                    color: isPreviewing ? "#C29F60" : "rgba(222,211,200,0.6)", flexShrink: 0,
+                  }}>
+                    {isPreviewing ? <span style={{ fontSize: 10 }}>■</span> : <Play size={10} style={{ marginLeft: 1 }} />}
+                  </button>
+
+                  {/* Track info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, color: isActive ? "#C29F60" : "#DED3C8", fontFamily: "Syne,system-ui,sans-serif", fontWeight: isActive ? 700 : 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {track.name}
+                    </div>
+                    <div style={{ fontSize: 9, color: "rgba(222,211,200,0.35)", fontFamily: "Syne,system-ui,sans-serif", marginTop: 1 }}>
+                      {fmtFileSize(track.size)}
+                    </div>
+                  </div>
+
+                  {/* Select / active indicator */}
+                  {isActive ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                      <span style={{ fontSize: 9, fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700, letterSpacing: "0.1em", color: "#C29F60", textTransform: "uppercase" }}>Active</span>
+                      <button onClick={() => save((v) => ({ ...v, musicDataUrl: undefined, musicName: undefined }))}
+                        title="Remove from this vision" style={{ width: 20, height: 20, borderRadius: 4, border: "none", background: "transparent", color: "rgba(194,159,96,0.5)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <X size={11} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button onClick={() => selectTrack(track)} title="Use this track" style={{
+                      padding: "3px 8px", borderRadius: 4, border: "1px solid rgba(194,159,96,0.25)",
+                      background: "transparent", color: "rgba(194,159,96,0.7)", cursor: "pointer",
+                      fontSize: 9, fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", flexShrink: 0,
+                    }}>Use</button>
+                  )}
+
+                  {/* Delete from library */}
+                  <button onClick={() => removeTrackFromLib(track)} title="Delete from library" style={{
+                    width: 22, height: 22, borderRadius: 4, border: "none", background: "transparent",
+                    color: "rgba(255,107,107,0.4)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                  }}>
+                    <Trash2 size={11} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>
