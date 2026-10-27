@@ -7,6 +7,14 @@ import type { AttunementCard } from "@/types";
 const CARDS_KEY  = "jmc_attunement_cards";
 const ACTIVE_KEY = "jmc_attunement_active_id";
 
+const shimmerStyle = `
+  @keyframes att-shimmer {
+    0%   { transform: translateX(-100%); }
+    60%  { transform: translateX(100%); }
+    100% { transform: translateX(100%); }
+  }
+`;
+
 export default function AttunementDashboardCard() {
   const [card, setCard] = useState<AttunementCard | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -26,11 +34,12 @@ export default function AttunementDashboardCard() {
 
   return (
     <Link href="/vision/attunement" style={{ textDecoration: "none", display: "block", height: "100%" }}>
+      <style>{shimmerStyle}</style>
       <div
         className="card-luxury"
         style={{
           position: "relative",
-          padding: "16px 14px",
+          padding: "16px 14px 16px 20px",
           cursor: "pointer",
           height: "100%",
           boxSizing: "border-box" as const,
@@ -83,6 +92,26 @@ export default function AttunementDashboardCard() {
           borderRadius: "0 0 4px 4px",
         }} />
 
+        {/* Gold left accent bar */}
+        <div style={{
+          position: "absolute", top: "15%", bottom: "15%", left: 0, width: 3,
+          background: "linear-gradient(180deg, transparent, rgba(194,159,96,0.85) 30%, rgba(194,159,96,0.95) 50%, rgba(194,159,96,0.85) 70%, transparent)",
+          borderRadius: "16px 0 0 16px",
+        }} />
+
+        {/* Shimmer sweep — empty state only */}
+        {!card && (
+          <div style={{
+            position: "absolute", inset: 0, overflow: "hidden", borderRadius: 16, pointerEvents: "none",
+          }}>
+            <div style={{
+              position: "absolute", top: 0, bottom: 0, width: "55%",
+              background: "linear-gradient(105deg, transparent 20%, rgba(194,159,96,0.07) 50%, transparent 80%)",
+              animation: "att-shimmer 3.2s ease-in-out infinite",
+            }} />
+          </div>
+        )}
+
         {/* Content */}
         <div style={{ position: "relative", zIndex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
@@ -98,8 +127,8 @@ export default function AttunementDashboardCard() {
             <span style={{
               fontFamily: "Syne, system-ui, sans-serif",
               fontWeight: 700, textTransform: "uppercase" as const,
-              letterSpacing: "0.1em", fontSize: "0.55rem",
-              color: "rgba(222,211,200,0.55)",
+              letterSpacing: "0.12em", fontSize: "0.55rem",
+              color: "#C29F60",
             }}>
               Primary Attunement
             </span>

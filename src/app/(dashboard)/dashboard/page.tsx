@@ -35,8 +35,8 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {/* Primary Attunement — fills the remaining width */}
-        <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Primary Attunement — fills the remaining width, lowered to clear nav bar */}
+        <div style={{ flex: 1, minWidth: 0, paddingTop: 10 }}>
           <AttunementDashboardCard />
         </div>
       </div>
