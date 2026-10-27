@@ -20,23 +20,29 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8 md:space-y-10">
-      {/* Header */}
-      <div className="animate-fade-in-up">
-        <p style={{ ...syne, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.22em", fontSize: "0.62rem", color: "#C29F60", marginBottom: "0.5rem", opacity: 0.85 }}>
-          Member Portal
-        </p>
-        <h1 style={{ ...lora, fontWeight: 600, fontSize: "clamp(1.75rem, 4vw, 2.5rem)", color: "#DED3C8", lineHeight: 1.1, marginBottom: "0.4rem" }}>
-          Welcome Back
-        </h1>
-        <p style={{ ...avenir, color: "rgba(222,211,200,0.62)", fontSize: "0.9rem" }}>
-          Continue your journey where you left off.
-        </p>
+      {/* Hero row: Welcome copy (left) ‖ Primary Attunement (right) */}
+      <div className="animate-fade-in-up flex flex-col md:flex-row gap-4 md:gap-5" style={{ alignItems: "stretch" }}>
+        {/* Welcome text — natural width, vertically centred */}
+        <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <p style={{ ...syne, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.22em", fontSize: "0.62rem", color: "#C29F60", marginBottom: "0.5rem", opacity: 0.85 }}>
+            Member Portal
+          </p>
+          <h1 style={{ ...lora, fontWeight: 600, fontSize: "clamp(1.75rem, 4vw, 2.5rem)", color: "#DED3C8", lineHeight: 1.1, marginBottom: "0.4rem" }}>
+            Welcome Back
+          </h1>
+          <p style={{ ...avenir, color: "rgba(222,211,200,0.62)", fontSize: "0.9rem" }}>
+            Continue your journey where you left off.
+          </p>
+        </div>
+
+        {/* Primary Attunement — fills the remaining width */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <AttunementDashboardCard />
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 animate-fade-in-up animate-fade-in-up-delay-1" style={{ alignItems: "stretch" }}>
-        {/* Primary Attunement — first and featured */}
-        <AttunementDashboardCard />
+      {/* Stats row */}
+      <div className="grid grid-cols-3 gap-3 md:gap-4 animate-fade-in-up animate-fade-in-up-delay-1" style={{ alignItems: "stretch" }}>
         {[
           { icon: PlayCircle, label: "In Progress", value: inProgressVideos.length, color: "#C29F60", bg: "rgba(194,159,96,0.1)", glow: "rgba(194,159,96,0.12)" },
           { icon: CheckCircle, label: "Completed", value: completedCount, color: "#1D7458", bg: "rgba(29,116,88,0.1)", glow: "rgba(29,116,88,0.08)" },
