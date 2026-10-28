@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Route, Plus, Check, Users, User, ChevronDown, ChevronUp, FileText, X, Loader2 } from "lucide-react";
+import { Route, Plus, Check, Users, User, ChevronDown, ChevronUp, FileText, X, Loader2, Search } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 
@@ -426,6 +426,7 @@ export default function MyJourneyPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const loadSessions = useCallback(async () => {
     if (!session) return;
@@ -504,8 +505,17 @@ export default function MyJourneyPage() {
 
   const isReady = !authLoading && !loading;
 
+  const filteredSessions = searchQuery.trim()
+    ? sessions.filter(s =>
+        s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.date.includes(searchQuery) ||
+        s.summary?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (s.memberEmail && s.memberEmail.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    : sessions;
+
   return (
-    <div style={{ display: "flex", height: "calc(100vh - 64px)", overflow: "hidden", gap: 0, margin: "-32px" }}>
+    <div style={{ display: "flex", height: "100vh", overflow: "hidden", gap: 0, margin: "-32px" }}>
       {showAdd && isAdmin && (
         <AddSessionModal
           isAdmin={isAdmin}
@@ -548,6 +558,32 @@ export default function MyJourneyPage() {
           </p>
         </div>
 
+        {/* Search */}
+        <div style={{ padding: "10px 10px 8px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+          <div style={{ position: "relative" }}>
+            <Search style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)", width: 12, height: 12, color: "rgba(194,159,96,0.5)", pointerEvents: "none" }} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search sessions…"
+              style={{
+                width: "100%", boxSizing: "border-box",
+                padding: "7px 10px 7px 28px",
+                background: "rgba(2,8,24,0.45)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderTop: "1px solid rgba(255,255,255,0.14)",
+                borderRadius: 7,
+                color: "rgba(222,211,200,0.85)",
+                fontFamily: "Syne, system-ui, sans-serif",
+                fontSize: 11,
+                outline: "none",
+                boxShadow: "inset 0 2px 4px rgba(0,0,0,0.3)",
+              }}
+            />
+          </div>
+        </div>
+
         {/* Session list */}
         <div style={{ flex: 1, overflowY: "auto", padding: "8px 10px" }}>
           {!isReady ? (
@@ -558,8 +594,12 @@ export default function MyJourneyPage() {
             <div style={{ padding: "24px 12px", textAlign: "center", fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 12, color: "rgba(222,211,200,0.35)" }}>
               No sessions yet
             </div>
+          ) : filteredSessions.length === 0 ? (
+            <div style={{ padding: "24px 12px", textAlign: "center", fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 12, color: "rgba(222,211,200,0.35)" }}>
+              No sessions match &ldquo;{searchQuery}&rdquo;
+            </div>
           ) : (
-            sessions.map(s => {
+            filteredSessions.map(s => {
               const isActive = s.id === selectedId;
               const completedCount = s.actionItems.filter(a => a.completed).length;
               return (
