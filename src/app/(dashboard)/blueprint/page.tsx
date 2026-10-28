@@ -286,15 +286,33 @@ function BirthDataPanel({ data, editing, onChange }: { data: BirthData; editing:
   const hasBirthData = data.date || data.time || data.city;
 
   const panelBase: React.CSSProperties = {
-    borderRadius: 10,
-    padding: "16px 20px",
+    borderRadius: 14,
+    padding: "18px 22px",
     marginBottom: 28,
-    background: "linear-gradient(160deg, rgba(194,159,96,0.07) 0%, rgba(2,12,30,0.45) 100%)",
-    borderTop: "1px solid rgba(194,159,96,0.25)",
-    borderLeft: "2px solid rgba(194,159,96,0.35)",
-    borderRight: "1px solid rgba(0,0,0,0.15)",
-    borderBottom: "1px solid rgba(0,0,0,0.25)",
-    boxShadow: "inset 0 2px 8px rgba(0,0,0,0.2)",
+    background: "linear-gradient(175deg, rgba(255,255,255,0.08) 0%, rgba(194,159,96,0.06) 10%, rgba(15,42,80,0.30) 30%, rgba(4,12,32,0.55) 65%, rgba(2,6,20,0.72) 100%)",
+    backdropFilter: "blur(28px) saturate(200%)",
+    WebkitBackdropFilter: "blur(28px) saturate(200%)",
+    borderTop: "2px solid rgba(255,255,255,0.32)",
+    borderLeft: "2px solid rgba(194,159,96,0.40)",
+    borderRight: "1.5px solid rgba(194,159,96,0.12)",
+    borderBottom: "1.5px solid rgba(120,120,130,0.52)",
+    boxShadow: [
+      "inset 0 3px 0 rgba(255,255,255,0.18)",
+      "inset 0 1px 0 rgba(255,255,255,0.30)",
+      "inset 2px 0 0 rgba(194,159,96,0.08)",
+      "inset 0 -3px 8px rgba(0,0,0,0.50)",
+      "inset -2px 0 5px rgba(0,0,0,0.22)",
+      "0 2px 0 rgba(0,0,0,0.88)",
+      "0 4px 0 rgba(0,0,0,0.68)",
+      "0 6px 0 rgba(0,0,0,0.48)",
+      "0 8px 0 rgba(0,0,0,0.30)",
+      "0 10px 0 rgba(0,0,0,0.18)",
+      "0 12px 0 rgba(0,0,0,0.10)",
+      "0 18px 24px rgba(0,0,0,0.65)",
+      "0 32px 55px rgba(0,0,0,0.45)",
+      "5px 0 14px rgba(0,0,0,0.38)",
+      "0 0 0 1px rgba(0,0,0,0.55)",
+    ].join(", "),
   };
 
   if (!editing) {
@@ -445,7 +463,7 @@ function GeneKeysTab({ data, editing, onChange }: { data: GeneKeysProfile; editi
                   const val = data[key as keyof GeneKeysProfile];
                   if (!val) return null;
                   return (
-                    <div key={key} style={{ background: "rgba(2,12,30,0.4)", borderRadius: 8, padding: "14px 16px", borderTop: `1px solid ${color.replace("0.7", "0.15")}`, borderLeft: `2px solid ${color.replace("0.7", "0.3")}`, borderRight: "1px solid rgba(0,0,0,0.15)", borderBottom: "1px solid rgba(0,0,0,0.25)", boxShadow: "inset 0 2px 6px rgba(0,0,0,0.25)" }}>
+                    <div key={key} className="card-section" style={{ padding: "14px 16px", borderLeft: `2px solid ${color.replace("0.7", "0.45")}`, borderTop: `1.5px solid ${color.replace("0.7", "0.18")}` }}>
                       <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 7.5, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color, marginBottom: 4 }}>{pos.label}</div>
                       <div style={{ fontFamily: "Lora, Georgia, serif", fontSize: 22, fontWeight: 600, color: "#DED3C8", marginBottom: 6 }}>Gene Key {val}</div>
                       <p style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 11, color: "rgba(222,211,200,0.5)", lineHeight: 1.6, margin: 0 }}>{pos.description}</p>
@@ -457,7 +475,7 @@ function GeneKeysTab({ data, editing, onChange }: { data: GeneKeysProfile; editi
           );
         })}
         {data.notes && (
-          <div style={{ background: "rgba(194,159,96,0.05)", borderRadius: 8, padding: "14px 16px", borderLeft: "2px solid rgba(194,159,96,0.25)", borderTop: "1px solid rgba(194,159,96,0.12)" }}>
+          <div className="card-section" style={{ padding: "14px 16px", borderLeft: "2px solid rgba(194,159,96,0.42)", borderTop: "1.5px solid rgba(194,159,96,0.16)" }}>
             <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 7.5, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(194,159,96,0.55)", marginBottom: 6 }}>Notes & Contemplations</div>
             <p style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 12.5, color: "rgba(222,211,200,0.7)", lineHeight: 1.75, margin: 0 }}>{data.notes}</p>
           </div>
@@ -525,7 +543,7 @@ function HumanDesignTab({ data, editing, onChange }: { data: HumanDesignProfile;
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {/* Type card */}
-        <div style={{ background: "rgba(0,180,220,0.08)", borderRadius: 10, borderTop: "1px solid rgba(0,200,240,0.2)", borderLeft: "2px solid rgba(0,200,240,0.35)", borderRight: "1px solid rgba(0,0,0,0.15)", borderBottom: "1px solid rgba(0,0,0,0.25)", padding: "20px 22px", boxShadow: "inset 0 2px 8px rgba(0,0,0,0.25)" }}>
+        <div className="card-section" style={{ padding: "20px 22px", borderLeft: "2px solid rgba(0,200,240,0.5)", borderTop: "1.5px solid rgba(0,200,240,0.22)" }}>
           <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 7.5, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(0,200,240,0.6)", marginBottom: 6 }}>Type · Strategy · Authority</div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 16, flexWrap: "wrap", marginBottom: typeInfo ? 12 : 0 }}>
             <span style={{ fontFamily: "Lora, Georgia, serif", fontSize: 26, fontWeight: 600, color: "#DED3C8" }}>{data.type}</span>
@@ -554,14 +572,14 @@ function HumanDesignTab({ data, editing, onChange }: { data: HumanDesignProfile;
 
         {/* Centers / Channels / Gates */}
         {[{ label: "Defined Centers", val: data.definedCenters }, { label: "Channels", val: data.channels }, { label: "Gates", val: data.gates }].filter(r => r.val).map(row => (
-          <div key={row.label} style={{ background: "rgba(2,12,30,0.4)", borderRadius: 8, padding: "14px 16px", borderTop: "1px solid rgba(0,200,240,0.1)", borderLeft: "2px solid rgba(0,200,240,0.2)", boxShadow: "inset 0 2px 6px rgba(0,0,0,0.25)" }}>
+          <div key={row.label} className="card-section" style={{ padding: "14px 16px", borderLeft: "2px solid rgba(0,200,240,0.38)", borderTop: "1.5px solid rgba(0,200,240,0.14)" }}>
             <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 7.5, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(0,200,240,0.55)", marginBottom: 6 }}>{row.label}</div>
             <p style={{ fontFamily: "Lora, Georgia, serif", fontSize: 13, color: "rgba(222,211,200,0.8)", lineHeight: 1.7, margin: 0 }}>{row.val}</p>
           </div>
         ))}
 
         {data.notes && (
-          <div style={{ background: "rgba(0,180,220,0.05)", borderRadius: 8, padding: "14px 16px", borderLeft: "2px solid rgba(0,200,240,0.2)", borderTop: "1px solid rgba(0,200,240,0.1)" }}>
+          <div className="card-section" style={{ padding: "14px 16px", borderLeft: "2px solid rgba(0,200,240,0.38)", borderTop: "1.5px solid rgba(0,200,240,0.14)" }}>
             <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 7.5, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(0,200,240,0.5)", marginBottom: 6 }}>Notes</div>
             <p style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 12.5, color: "rgba(222,211,200,0.7)", lineHeight: 1.75, margin: 0 }}>{data.notes}</p>
           </div>
@@ -645,7 +663,7 @@ function AstrologyTab({ data, editing, onChange }: { data: AstrologyProfile; edi
         {/* Big 3 */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
           {big3.map(({ key, label }) => data[key] ? (
-            <div key={key} style={{ background: "rgba(130,80,200,0.1)", borderRadius: 8, padding: "16px 14px", textAlign: "center", borderTop: `1px solid ${color.replace("0.7", "0.2")}`, borderLeft: `1px solid ${color.replace("0.7", "0.12")}`, boxShadow: "inset 0 2px 6px rgba(0,0,0,0.25)" }}>
+            <div key={key} className="card-section" style={{ padding: "16px 14px", textAlign: "center", borderTop: `1.5px solid ${color.replace("0.7", "0.22")}`, borderLeft: `2px solid ${color.replace("0.7", "0.35")}` }}>
               <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 7.5, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color, marginBottom: 6 }}>{label}</div>
               <div style={{ fontFamily: "Lora, Georgia, serif", fontSize: 18, fontWeight: 600, color: "#DED3C8" }}>{data[key]}</div>
             </div>
@@ -655,7 +673,7 @@ function AstrologyTab({ data, editing, onChange }: { data: AstrologyProfile; edi
         {/* Remaining planets */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
           {rest.map(p => data[p.key] ? (
-            <div key={p.key} style={{ background: "rgba(2,12,30,0.4)", borderRadius: 7, padding: "11px 14px", borderLeft: `2px solid ${color.replace("0.7", "0.25")}`, borderTop: `1px solid ${color.replace("0.7", "0.12")}`, boxShadow: "inset 0 2px 5px rgba(0,0,0,0.22)" }}>
+            <div key={p.key} className="card-section" style={{ padding: "11px 14px", borderLeft: `2px solid ${color.replace("0.7", "0.40")}`, borderTop: `1.5px solid ${color.replace("0.7", "0.16")}` }}>
               <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 7.5, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color, marginBottom: 3 }}>{p.label}</div>
               <div style={{ fontFamily: "Lora, Georgia, serif", fontSize: 14, color: "rgba(222,211,200,0.85)" }}>{data[p.key]}</div>
             </div>
@@ -663,7 +681,7 @@ function AstrologyTab({ data, editing, onChange }: { data: AstrologyProfile; edi
         </div>
 
         {data.notes && (
-          <div style={{ background: "rgba(130,80,200,0.06)", borderRadius: 8, padding: "14px 16px", borderLeft: "2px solid rgba(180,140,255,0.25)", borderTop: "1px solid rgba(180,140,255,0.12)" }}>
+          <div className="card-section" style={{ padding: "14px 16px", borderLeft: "2px solid rgba(180,140,255,0.48)", borderTop: "1.5px solid rgba(180,140,255,0.18)" }}>
             <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 7.5, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color, marginBottom: 6 }}>Notes & Patterns</div>
             <p style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 12.5, color: "rgba(222,211,200,0.7)", lineHeight: 1.75, margin: 0 }}>{data.notes}</p>
           </div>
