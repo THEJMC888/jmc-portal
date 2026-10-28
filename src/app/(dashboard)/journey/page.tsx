@@ -277,11 +277,8 @@ function SessionDetail({
       </h1>
 
       {/* Summary */}
-      <div style={{
-        background: "rgba(2,12,30,0.45)", borderRadius: 10,
-        borderTop: "1px solid rgba(255,255,255,0.1)", borderLeft: "2px solid rgba(0,180,200,0.3)",
-        borderRight: "1px solid rgba(0,0,0,0.2)", borderBottom: "1px solid rgba(0,0,0,0.3)",
-        boxShadow: "inset 0 2px 8px rgba(0,0,0,0.3)",
+      <div className="card-section" style={{
+        borderLeft: "2px solid rgba(0,200,240,0.45)",
         padding: "18px 20px", marginBottom: 24,
       }}>
         <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(0,200,220,0.6)", marginBottom: 8 }}>
@@ -330,11 +327,23 @@ function SessionDetail({
             {session.actionItems.map((item) => (
               <button key={item.id} onClick={() => onToggleAction(session.id, item.id)} style={{
                 display: "flex", gap: 12, alignItems: "flex-start",
-                background: item.completed ? "rgba(29,116,88,0.1)" : "rgba(2,12,30,0.3)",
-                border: `1px solid ${item.completed ? "rgba(29,116,88,0.25)" : "rgba(255,255,255,0.08)"}`,
+                background: item.completed
+                  ? "linear-gradient(160deg, rgba(29,116,88,0.12) 0%, rgba(10,50,35,0.22) 100%)"
+                  : "linear-gradient(160deg, rgba(255,255,255,0.04) 0%, rgba(2,8,28,0.38) 100%)",
+                borderTop: `1.5px solid ${item.completed ? "rgba(110,231,183,0.2)" : "rgba(255,255,255,0.16)"}`,
+                borderLeft: `1px solid ${item.completed ? "rgba(110,231,183,0.1)" : "rgba(255,255,255,0.09)"}`,
+                borderRight: `1px solid ${item.completed ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.18)"}`,
+                borderBottom: `1.5px solid ${item.completed ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.42)"}`,
                 borderRadius: 8, padding: "11px 14px", cursor: "pointer",
                 textAlign: "left", transition: "all 0.15s",
-                boxShadow: "inset 0 1px 4px rgba(0,0,0,0.2)",
+                boxShadow: [
+                  `inset 0 2px 0 ${item.completed ? "rgba(110,231,183,0.12)" : "rgba(255,255,255,0.10)"}`,
+                  "inset 0 -2px 6px rgba(0,0,0,0.35)",
+                  "0 2px 0 rgba(0,0,0,0.72)",
+                  "0 4px 0 rgba(0,0,0,0.45)",
+                  "0 6px 8px rgba(0,0,0,0.32)",
+                  "0 0 0 1px rgba(0,0,0,0.38)",
+                ].join(", "),
               }}>
                 <div style={{
                   width: 18, height: 18, borderRadius: 5, flexShrink: 0, marginTop: 1,
@@ -361,11 +370,8 @@ function SessionDetail({
 
       {/* Coach's Notes — admin only */}
       {isAdmin && session.coachNotes && (
-        <div style={{
-          background: "rgba(130,80,200,0.07)", borderRadius: 10,
-          borderTop: "1px solid rgba(180,140,255,0.18)", borderLeft: "2px solid rgba(180,140,255,0.3)",
-          borderRight: "1px solid rgba(0,0,0,0.2)", borderBottom: "1px solid rgba(0,0,0,0.3)",
-          boxShadow: "inset 0 2px 8px rgba(0,0,0,0.25)",
+        <div className="card-section" style={{
+          borderLeft: "2px solid rgba(180,140,255,0.55)",
           padding: "18px 20px", marginBottom: 24,
         }}>
           <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(180,140,255,0.7)", marginBottom: 8 }}>
@@ -509,10 +515,9 @@ export default function MyJourneyPage() {
       )}
 
       {/* Left sidebar list */}
-      <div style={{
+      <div className="card-panel" style={{
         width: 280, flexShrink: 0, display: "flex", flexDirection: "column",
-        borderRight: "1px solid rgba(255,255,255,0.07)",
-        background: "rgba(2,8,24,0.35)",
+        borderRadius: 0,
       }}>
         {/* Header */}
         <div style={{ padding: "28px 20px 16px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
@@ -619,7 +624,7 @@ export default function MyJourneyPage() {
       </div>
 
       {/* Right detail */}
-      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", background: "linear-gradient(180deg, rgba(2,8,28,0.22) 0%, rgba(1,5,18,0.35) 100%)", borderLeft: "1px solid rgba(255,255,255,0.05)" }}>
         {!isReady ? (
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <Loader2 style={{ width: 28, height: 28, color: "rgba(194,159,96,0.3)", animation: "spin 1s linear infinite" }} />
