@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, RefreshCw, Send, X } from "lucide-react";
+import { UserPlus, RefreshCw, Send, X, KeyRound } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
 const ADMIN_EMAIL = "rng@thejourneymencollective.com";
@@ -61,17 +61,17 @@ export default function AdminMembersPage() {
     load();
   }, [session, router, load]);
 
-  const invite = async (address: string, rowId?: string) => {
+  const invite = async (address: string, rowId?: string, kind: "invite" | "password" = "invite") => {
     setError(""); setNotice("");
     if (rowId) setBusyId(rowId); else setSending(true);
     const res = await fetch("/api/admin/invites", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ email: address }),
+      body: JSON.stringify({ email: address, kind }),
     });
     const data = await res.json();
     if (res.ok) {
-      setNotice(`Invite sent to ${address}.`);
+      setNotice(kind === "password" ? `Password link sent to ${address}.` : `Invite sent to ${address}.`);
       if (!rowId) setEmail("");
       await load();
     } else {
@@ -227,6 +227,16 @@ export default function AdminMembersPage() {
                         <X className="w-3 h-3" /> Withdraw
                       </button>
                     </>
+                  )}
+                  {m.status === "active" && m.email !== ADMIN_EMAIL && (
+                    <button
+                      onClick={() => invite(m.email, m.id, "password")}
+                      disabled={busyId === m.id}
+                      title="Email them a link to set a new password"
+                      style={{ ...smallButton, color: GOLD, opacity: busyId === m.id ? 0.5 : 1 }}
+                    >
+                      <KeyRound className="w-3 h-3" /> Password Link
+                    </button>
                   )}
                 </div>
               </div>

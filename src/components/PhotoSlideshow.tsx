@@ -35,11 +35,18 @@ function shuffled<T>(arr: T[]): T[] {
 }
 
 export default function PhotoSlideshow({ interval = 60000, transitionMs = 2500 }: Props) {
-  const [photos] = useState<string[]>(() => shuffled(BUCKETS[getTimeBucket()]));
+  // Picked after mount: the server renders in UTC (wrong time-of-day bucket) and a
+  // server-side shuffle never matches the client's, so the first photo would be stale.
+  const [photos, setPhotos] = useState<string[]>([]);
   const [idx, setIdx] = useState(0);
   const [fading, setFading] = useState(false);
 
   useEffect(() => {
+    setPhotos(shuffled(BUCKETS[getTimeBucket()]));
+  }, []);
+
+  useEffect(() => {
+    if (!photos.length) return;
     const t = setInterval(() => {
       setFading(true);
       const swap = window.setTimeout(() => {
@@ -50,6 +57,8 @@ export default function PhotoSlideshow({ interval = 60000, transitionMs = 2500 }
     }, interval);
     return () => clearInterval(t);
   }, [interval, transitionMs, photos]);
+
+  if (!photos.length) return <div style={{ position: "absolute", inset: 0 }} />;
 
   const nextIdx = (idx + 1) % photos.length;
 

@@ -43,18 +43,21 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(members);
 }
 
-// POST /api/admin/invites — admin: send (or resend) an invite email
+// POST /api/admin/invites — admin: send (or resend) an invite email, or with
+// { kind: "password" } send an existing member a link to set a new password
 export async function POST(request: NextRequest) {
   if (!await getAdminUser(request)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const { email } = await request.json();
+  const { email, kind } = await request.json();
   const address = String(email ?? "").trim().toLowerCase();
   if (!EMAIL_RE.test(address)) return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
 
-  // Invite links land on the choose-a-password screen, which handles type=invite
-  const { error } = await serviceClient().auth.admin.inviteUserByEmail(address, {
-    redirectTo: `${request.nextUrl.origin}/auth/reset-password`,
-  });
+  // Both links land on the choose-a-password screen, which handles type=invite and type=recovery
+  const redirectTo = `${request.nextUrl.origin}/auth/reset-password`;
+  const db = serviceClient();
+  const { error } = kind === "password"
+    ? await db.auth.resetPasswordForEmail(address, { redirectTo })
+    : await db.auth.admin.inviteUserByEmail(address, { redirectTo });
   if (error) {
     const msg = /already been registered/i.test(error.message)
       ? "This person already has an active account."

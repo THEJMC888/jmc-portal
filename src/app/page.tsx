@@ -23,9 +23,15 @@ export default function LoginPage() {
 
   // Redirect if already signed in
   useEffect(() => {
-    // Invite links land on the Site URL — send them on to choose a password
-    if (window.location.hash.includes("type=invite") || window.location.hash.includes("error_description")) {
-      router.replace(`/auth/reset-password${window.location.hash}`);
+    // Invite / password links can land on the Site URL — send them on to choose a password
+    const hash = window.location.hash;
+    if (hash.includes("type=invite") || hash.includes("type=recovery") || hash.includes("error_description")) {
+      router.replace(`/auth/reset-password${hash}`);
+      return;
+    }
+    // "Send me a new link" from the password page opens the reset form directly
+    if (new URLSearchParams(window.location.search).get("forgot") === "1") {
+      setMode("forgot");
       return;
     }
     supabase.auth.getSession().then(({ data: { session } }) => {
