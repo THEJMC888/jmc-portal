@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
+import PhotoSlideshow from "@/components/PhotoSlideshow";
 import { supabase } from "@/lib/supabase";
 
 const INPUT_STYLE: React.CSSProperties = {
@@ -47,31 +48,42 @@ export default function ResetPasswordPage() {
   const [isInvite, setIsInvite] = useState(false);
 
   useEffect(() => {
+    let settled = false;
+    const fail = (msg: string) => { settled = true; setError(msg); };
+    const succeed = () => { settled = true; setReady(true); };
+
     // Supabase fires an AUTH_STATE_CHANGE with event=PASSWORD_RECOVERY
     // which sets the session from the URL hash automatically
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") setReady(true);
+      if (event === "PASSWORD_RECOVERY") succeed();
     });
 
-    // Invite links from the Supabase dashboard arrive as implicit-flow tokens in
-    // the hash (#access_token=…&type=invite), which the PKCE browser client
+    // Links sent server-side (admin invites and admin password links, or from the
+    // Supabase dashboard) arrive as implicit-flow tokens in the hash
+    // (#access_token=…&type=invite|recovery), which the PKCE browser client
     // rejects — so set the session from them by hand.
     const hash = new URLSearchParams(window.location.hash.slice(1));
+    const type = hash.get("type");
     if (hash.get("error_description")) {
-      setError(`${hash.get("error_description")} — please request a new link.`);
-    } else if (hash.get("type") === "invite") {
-      setIsInvite(true);
+      fail(`${hash.get("error_description")}.`);
+    } else if (type === "invite" || type === "recovery") {
+      setIsInvite(type === "invite");
       const access_token = hash.get("access_token");
       const refresh_token = hash.get("refresh_token");
       if (access_token && refresh_token) {
         supabase.auth.setSession({ access_token, refresh_token }).then(({ error }) => {
-          if (error) setError(`${error.message} — please request a new invite link.`);
-          else setReady(true);
+          if (error) fail(`${error.message}.`);
+          else succeed();
           window.history.replaceState(null, "", window.location.pathname);
         });
       }
     }
-    return () => subscription.unsubscribe();
+
+    // No usable link (reloaded, or opened a second time) — don't spin forever
+    const giveUp = window.setTimeout(() => {
+      if (!settled) fail("This link has already been used or has expired.");
+    }, 6000);
+    return () => { subscription.unsubscribe(); clearTimeout(giveUp); };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -94,23 +106,35 @@ export default function ResetPasswordPage() {
       className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
       style={{ background: "transparent" }}
     >
+      {/* Same photo slideshow + cinematic overlay as the login page */}
+      <PhotoSlideshow interval={60000} transitionMs={2500} />
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background:
-            "radial-gradient(ellipse 70% 60% at 50% 45%, rgba(29,116,88,0.12), transparent 70%), radial-gradient(ellipse 50% 40% at 50% 50%, rgba(194,159,96,0.06), transparent)",
+          background: "linear-gradient(180deg, rgba(2,5,18,0.42) 0%, rgba(2,5,18,0.28) 45%, rgba(2,5,18,0.48) 100%)",
+          zIndex: 1,
         }}
       />
-      <div
-        className="absolute top-0 left-0 right-0 h-px"
-        style={{ background: "linear-gradient(to right, transparent, rgba(194,159,96,0.4), transparent)" }}
-      />
-      <div
-        className="absolute bottom-0 left-0 right-0 h-px"
-        style={{ background: "linear-gradient(to right, transparent, rgba(194,159,96,0.4), transparent)" }}
-      />
 
-      <div className="relative w-full max-w-md">
+      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 2 }}>
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 70% 60% at 50% 45%, rgba(29,116,88,0.12), transparent 70%), radial-gradient(ellipse 50% 40% at 50% 50%, rgba(194,159,96,0.06), transparent)",
+          }}
+        />
+        <div
+          className="absolute top-0 left-0 right-0 h-px"
+          style={{ background: "linear-gradient(to right, transparent, rgba(194,159,96,0.4), transparent)" }}
+        />
+        <div
+          className="absolute bottom-0 left-0 right-0 h-px"
+          style={{ background: "linear-gradient(to right, transparent, rgba(194,159,96,0.4), transparent)" }}
+        />
+      </div>
+
+      <div className="relative w-full max-w-md" style={{ zIndex: 2 }}>
         <div className="text-center mb-10">
           <div className="flex justify-center mb-5">
             <BrandLogo size="lg" showText={false} />
@@ -180,6 +204,27 @@ export default function ResetPasswordPage() {
           {!ready ? (
             <div style={{ textAlign: "center", color: error ? "#f87171" : "rgba(222,211,200,0.4)", fontFamily: "Syne, system-ui, sans-serif", fontSize: "0.8rem", padding: "2rem 0" }}>
               {error || "Loading…"}
+              {error && (
+                <div style={{ marginTop: "1.5rem" }}>
+                  <a
+                    href="/?forgot=1"
+                    style={{
+                      display: "inline-block",
+                      background: "linear-gradient(180deg, #DEC272 0%, #C8A04C 20%, #A07A28 50%, #D4B462 82%, #E0C878 100%)",
+                      color: "#140C00",
+                      borderRadius: 8,
+                      padding: "0.75rem 1.4rem",
+                      fontWeight: 700,
+                      fontSize: "0.7rem",
+                      letterSpacing: "0.1em",
+                      textTransform: "uppercase",
+                      textDecoration: "none",
+                    }}
+                  >
+                    Send me a new link
+                  </a>
+                </div>
+              )}
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
