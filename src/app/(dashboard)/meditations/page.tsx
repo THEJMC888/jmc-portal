@@ -180,7 +180,8 @@ function StickyPlayer({ meditation, onPrev, onNext, hasPrev, hasNext, onClose }:
   const progress = duration ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="left-0 md:left-[var(--sidebar-w)]" style={{
+    // Phones: two rows (track + controls, then a full-width scrubber); desktop: one row
+    <div className="left-0 md:left-[var(--sidebar-w)] flex flex-wrap md:flex-nowrap items-center gap-x-3 gap-y-2 md:gap-x-5 px-4 md:px-7" style={{
       position: "fixed",
       bottom: 0, right: 0,
       zIndex: 200,
@@ -188,10 +189,8 @@ function StickyPlayer({ meditation, onPrev, onNext, hasPrev, hasNext, onClose }:
       borderTop: "1px solid rgba(194,159,96,0.22)",
       boxShadow: "0 -8px 40px rgba(0,0,0,0.75), 0 -2px 0 rgba(194,159,96,0.08)",
       backdropFilter: "blur(24px)",
-      padding: "12px 28px 14px",
-      display: "flex",
-      alignItems: "center",
-      gap: 20,
+      paddingTop: 12,
+      paddingBottom: "calc(14px + env(safe-area-inset-bottom))",
     }}>
       <audio
         ref={audioRef}
@@ -224,7 +223,7 @@ function StickyPlayer({ meditation, onPrev, onNext, hasPrev, hasNext, onClose }:
       </div>
 
       {/* Track info */}
-      <div style={{ flexShrink: 0, width: 172 }}>
+      <div className="flex-1 min-w-0 md:flex-none md:w-[172px]">
         <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 7, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(194,159,96,0.6)", marginBottom: 2 }}>
           {meditation.category}
         </div>
@@ -264,7 +263,7 @@ function StickyPlayer({ meditation, onPrev, onNext, hasPrev, hasNext, onClose }:
       </div>
 
       {/* Scrubber + time */}
-      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+      <div className="order-last basis-full md:order-none md:basis-0 md:flex-1" style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
         <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 9, color: "rgba(222,211,200,0.4)", flexShrink: 0, letterSpacing: "0.04em" }}>
           {formatTime(currentTime)}
         </span>
@@ -285,8 +284,8 @@ function StickyPlayer({ meditation, onPrev, onNext, hasPrev, hasNext, onClose }:
         </span>
       </div>
 
-      {/* Volume */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+      {/* Volume — hidden on phones (iOS ignores it; hardware buttons handle volume) */}
+      <div className="hidden md:flex" style={{ alignItems: "center", gap: 8, flexShrink: 0 }}>
         <Volume2 size={12} color="rgba(222,211,200,0.35)" />
         <input
           type="range" min={0} max={1} step={0.01} value={volume}
@@ -1113,7 +1112,7 @@ export default function MeditationsPage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredMeditations.map(m => {
               const realIdx = meditations.findIndex(med => med.id === m.id);
               return (

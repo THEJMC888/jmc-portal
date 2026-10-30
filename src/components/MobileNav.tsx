@@ -4,21 +4,36 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard, GraduationCap, NotebookPen, Sparkles,
-  Wind, Users, X, Menu, LogOut, BookOpen,
+  LayoutDashboard, GraduationCap, NotebookPen, Sparkles, Sun,
+  Wind, Users, X, Menu, LogOut, BookOpen, Route, Fingerprint, Eye, UserPlus,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth";
 
+const ADMIN_EMAIL = "rng@thejourneymencollective.com";
+
+type NavItem = { label: string; href: string; icon: React.ElementType; comingSoon?: boolean; soonBadge?: boolean };
+
+// Same destinations as the desktop Sidebar (Vision's sub-pages listed flat).
 // soonBadge: shows the "Soon" tag but stays clickable (the page itself explains)
-const NAV_ITEMS: { label: string; href: string; icon: React.ElementType; comingSoon?: boolean; soonBadge?: boolean }[] = [
-  { label: "Dashboard",      href: "/dashboard",   icon: LayoutDashboard },
-  { label: "Course Library", href: "/library",     icon: GraduationCap, soonBadge: true },
-  { label: "Vision Video",  href: "/vision",      icon: Sparkles },
-  { label: "My Statements", href: "/statements",  icon: BookOpen },
-  { label: "Journal",       href: "/journal",     icon: NotebookPen },
-  { label: "Meditations",   href: "/meditations", icon: Wind },
-  { label: "Community",     href: "/community",   icon: Users, comingSoon: true },
+const NAV_ITEMS: NavItem[] = [
+  { label: "Dashboard",       href: "/dashboard",         icon: LayoutDashboard },
+  { label: "Course Library",  href: "/library",           icon: GraduationCap, soonBadge: true },
+  { label: "Vision Video",    href: "/vision",            icon: Sparkles },
+  { label: "My Statements",   href: "/statements",        icon: BookOpen },
+  { label: "My Attunements",  href: "/vision/attunement", icon: Sun },
+  { label: "Journal",         href: "/journal",           icon: NotebookPen },
+  { label: "My Journey",      href: "/journey",           icon: Route },
+  { label: "My Blueprint",    href: "/blueprint",         icon: Fingerprint },
+  { label: "Meditations",     href: "/meditations",       icon: Wind },
+  { label: "Community",       href: "/community",         icon: Users, comingSoon: true },
+];
+
+const ADMIN_ITEMS: NavItem[] = [
+  { label: "Vision Review",  href: "/admin/vision-review", icon: Eye },
+  { label: "Course Access",  href: "/admin/courses",       icon: GraduationCap },
+  { label: "Invite Members", href: "/admin/members",       icon: UserPlus },
 ];
 
 export function MobileMenuButton({ onClick }: { onClick: () => void }) {
@@ -43,6 +58,13 @@ export default function MobileNav() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const { user } = useAuth();
+  const isAdmin = user?.email === ADMIN_EMAIL;
+  const items = isAdmin ? [...NAV_ITEMS, ...ADMIN_ITEMS] : NAV_ITEMS;
+  // Longest matching href wins, so /vision/attunement doesn't also light up Vision Video
+  const activeHref = items
+    .filter((i) => pathname === i.href || pathname.startsWith(i.href + "/"))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 
   // Close drawer on route change
   useEffect(() => { setOpen(false); }, [pathname]);
@@ -134,11 +156,21 @@ export default function MobileNav() {
         {/* Nav items */}
         <div style={{ flex: 1, overflowY: "auto", padding: "12px 10px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {NAV_ITEMS.map(({ label, href, icon: Icon, comingSoon, soonBadge }) => {
-              const isActive = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
+            {items.map(({ label, href, icon: Icon, comingSoon, soonBadge }) => {
+              const isActive = href === activeHref;
               return (
+                <div key={href}>
+                {href === ADMIN_ITEMS[0].href && (
+                  <p style={{
+                    fontFamily: "Syne, system-ui, sans-serif", fontWeight: 700,
+                    textTransform: "uppercase", letterSpacing: "0.14em",
+                    fontSize: "0.55rem", color: "rgba(194,159,96,0.45)",
+                    padding: "14px 14px 4px",
+                  }}>
+                    Admin
+                  </p>
+                )}
                 <Link
-                  key={href}
                   href={comingSoon ? "#" : href}
                   className={clsx(comingSoon && "pointer-events-none")}
                   style={{
@@ -173,6 +205,7 @@ export default function MobileNav() {
                     </span>
                   )}
                 </Link>
+                </div>
               );
             })}
           </div>
