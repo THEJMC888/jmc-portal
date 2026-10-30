@@ -535,3 +535,15 @@ textarea:focus::placeholder {
     min-height: unset;
   }
 }
+
+/* ─── Stop iOS Safari zooming in on focus ───
+   Safari auto-zooms (and stays zoomed) when a field's text is under 16px,
+   forcing members to pan around the page. !important beats inline styles. */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select,
+  [contenteditable="true"] {
+    font-size: 16px !important;
+  }
+}

@@ -736,7 +736,7 @@ export default function AttunementPage() {
         borderBottom: "1px solid rgba(194,159,96,0.1)",
         background: "rgba(4,13,28,0.95)",
         padding: "16px 24px",
-        display: "flex", alignItems: "center", gap: 16,
+        display: "flex", flexWrap: "wrap", alignItems: "center", gap: 16, rowGap: 10,
         position: "sticky", top: 0, zIndex: 10,
       }}>
         <button

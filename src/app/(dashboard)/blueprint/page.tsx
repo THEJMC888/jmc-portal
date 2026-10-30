@@ -908,7 +908,7 @@ export default function BlueprintPage() {
         onChange={d => setDraft(prev => ({ ...prev, birthData: d }))}
       />
       {/* Tab bar */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 28, borderBottom: "1px solid rgba(255,255,255,0.07)", paddingBottom: 0 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 28, borderBottom: "1px solid rgba(255,255,255,0.07)", paddingBottom: 0 }}>
         {TABS.map(tab => {
           const isActive = activeTab === tab.id;
           return (

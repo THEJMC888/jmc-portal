@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Route, Plus, Check, Users, User, ChevronDown, ChevronUp, FileText, X, Loader2, Search } from "lucide-react";
+import { Route, Plus, Check, Users, User, ChevronDown, ChevronUp, ChevronLeft, FileText, X, Loader2, Search } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 
@@ -424,6 +424,8 @@ export default function MyJourneyPage() {
 
   const [sessions, setSessions] = useState<CoachingSession[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Phones only: whether the opened session (instead of the list) is showing
+  const [mobileDetail, setMobileDetail] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -515,7 +517,10 @@ export default function MyJourneyPage() {
     : sessions;
 
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", gap: 0, margin: "-32px" }}>
+    // Cancels the layout's content padding (px-4 py-6 on phones, p-8 on desktop).
+    // Phones show the list or one session full-width; desktop shows both side by side.
+    <div className="flex -mx-4 -my-6 md:-m-8 md:h-screen md:overflow-hidden">
+
       {showAdd && isAdmin && (
         <AddSessionModal
           isAdmin={isAdmin}
@@ -525,9 +530,8 @@ export default function MyJourneyPage() {
       )}
 
       {/* Left sidebar list */}
-      <div className="card-panel" style={{
-        width: 280, flexShrink: 0, display: "flex", flexDirection: "column",
-        borderRadius: 0,
+      <div className={`card-panel w-full md:w-[280px] flex-col ${mobileDetail ? "hidden md:flex" : "flex"}`} style={{
+        flexShrink: 0, borderRadius: 0, minHeight: "calc(100vh - 56px)",
       }}>
         {/* Header */}
         <div style={{ padding: "28px 20px 16px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
@@ -603,7 +607,7 @@ export default function MyJourneyPage() {
               const isActive = s.id === selectedId;
               const completedCount = s.actionItems.filter(a => a.completed).length;
               return (
-                <button key={s.id} onClick={() => setSelectedId(s.id)} style={{
+                <button key={s.id} onClick={() => { setSelectedId(s.id); setMobileDetail(true); window.scrollTo(0, 0); }} style={{
                   width: "100%", textAlign: "left", padding: "12px 12px",
                   borderRadius: 8, marginBottom: 3, cursor: "pointer",
                   background: isActive ? "rgba(2,12,30,0.55)" : "transparent",
@@ -664,7 +668,19 @@ export default function MyJourneyPage() {
       </div>
 
       {/* Right detail */}
-      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", background: "linear-gradient(180deg, rgba(2,8,28,0.22) 0%, rgba(1,5,18,0.35) 100%)", borderLeft: "1px solid rgba(255,255,255,0.05)" }}>
+      <div className={`flex-1 min-w-0 flex-col ${mobileDetail ? "flex" : "hidden md:flex"}`} style={{ overflowY: "auto", background: "linear-gradient(180deg, rgba(2,8,28,0.22) 0%, rgba(1,5,18,0.35) 100%)", borderLeft: "1px solid rgba(255,255,255,0.05)" }}>
+        <button
+          onClick={() => setMobileDetail(false)}
+          className="md:hidden flex items-center gap-1"
+          style={{
+            padding: "14px 16px", background: "none", border: "none", cursor: "pointer",
+            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            fontFamily: "Syne, system-ui, sans-serif", fontSize: 11, fontWeight: 700,
+            letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(194,159,96,0.75)",
+          }}
+        >
+          <ChevronLeft style={{ width: 14, height: 14 }} /> All sessions
+        </button>
         {!isReady ? (
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <Loader2 style={{ width: 28, height: 28, color: "rgba(194,159,96,0.3)", animation: "spin 1s linear infinite" }} />

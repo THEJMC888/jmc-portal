@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import type { VisionVideo, VisionSlide, SlideElement, SlideBackground } from "@/types";
 import { parsePptxFile } from "@/lib/parsePptx";
+import { useMobile } from "@/hooks/useMobile";
 import MobileVisionEditor from "@/components/MobileVisionEditor";
 import { PORTAL_PHOTO_BUCKETS, BUCKET_LABELS, type PortalPhotoBucket } from "@/lib/portalPhotos";
 import { useAuth } from "@/lib/auth";
@@ -654,7 +655,7 @@ export default function VisionPage() {
   const [showSlideTemplates, setShowSlideTemplates] = useState(false);
   const [showVisionTemplates, setShowVisionTemplates] = useState(false);
   const [showVisionList, setShowVisionList] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useMobile();
   const [showMobileProps, setShowMobileProps] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
@@ -718,14 +719,6 @@ export default function VisionPage() {
   useEffect(() => {
     if (selSlide?.background?.type) setBgTab(selSlide.background.type);
   }, [selSlideId]); // eslint-disable-line
-
-  // ─── Mobile breakpoint ─────────────────────────────────────────────────────
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
 
   // ─── Load photo library ────────────────────────────────────────────────────
   useEffect(() => {
