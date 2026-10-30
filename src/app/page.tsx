@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
+  const [mode, setMode] = useState<"signin" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -23,6 +23,11 @@ export default function LoginPage() {
 
   // Redirect if already signed in
   useEffect(() => {
+    // Invite links land on the Site URL — send them on to choose a password
+    if (window.location.hash.includes("type=invite") || window.location.hash.includes("error_description")) {
+      router.replace(`/auth/reset-password${window.location.hash}`);
+      return;
+    }
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) router.replace("/dashboard");
     });
@@ -45,7 +50,7 @@ export default function LoginPage() {
         setMode("signin");
       }
       setLoading(false);
-    } else if (mode === "signin") {
+    } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         setError(error.message);
@@ -68,16 +73,6 @@ export default function LoginPage() {
           });
         }
         router.push("/dashboard");
-      }
-    } else {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) {
-        setError(error.message);
-        setLoading(false);
-      } else {
-        setNotice("Check your email to confirm your account, then sign in.");
-        setMode("signin");
-        setLoading(false);
       }
     }
   };
@@ -214,20 +209,8 @@ export default function LoginPage() {
               marginBottom: "0.25rem",
             }}
           >
-            {mfaStep ? "Two-factor auth" : mode === "signin" ? "Welcome back" : mode === "signup" ? "Create your account" : "Reset your password"}
+            {mfaStep ? "Two-factor auth" : mode === "signin" ? "Welcome back" : "Reset your password"}
           </h2>
-          {!mfaStep && mode === "signup" && (
-            <p
-              style={{
-                fontFamily: "Avenir, Nunito, system-ui, sans-serif",
-                color: "rgba(222,211,200,0.55)",
-                fontSize: "0.875rem",
-                marginBottom: "1.75rem",
-              }}
-            >
-              Your private space awaits.
-            </p>
-          )}
           {!mfaStep && mode === "forgot" && (
             <p
               style={{
@@ -433,7 +416,6 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  minLength={mode === "signup" ? 8 : undefined}
                   className="w-full rounded-lg px-4 py-3 pr-12 text-sm transition-all focus:outline-none"
                   style={{
                     background: "rgba(1,4,14,0.9)",
@@ -477,11 +459,6 @@ export default function LoginPage() {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              {mode === "signup" && (
-                <p style={{ fontFamily: "Avenir, Nunito, system-ui, sans-serif", fontSize: "0.72rem", color: "rgba(222,211,200,0.35)", marginTop: "0.4rem" }}>
-                  Minimum 8 characters
-                </p>
-              )}
             </div>}
 
             {mode === "signin" && (
@@ -589,8 +566,8 @@ export default function LoginPage() {
               }}
             >
               {loading
-                ? (mode === "forgot" ? "Sending..." : mode === "signin" ? "Signing in..." : "Creating account...")
-                : (mode === "forgot" ? "Send Reset Link >" : mode === "signin" ? "Enter The Portal To Clarity" : "Create Account >")}
+                ? (mode === "forgot" ? "Sending..." : "Signing in...")
+                : (mode === "forgot" ? "Send Reset Link >" : "Enter The Portal To Clarity")}
             </button>
           </form>}
 
@@ -598,9 +575,22 @@ export default function LoginPage() {
             className="mt-6 pt-6 text-center space-y-3"
             style={{ borderTop: "1px solid rgba(194,159,96,0.1)" }}
           >
-            {!mfaStep ? (
+            {!mfaStep && mode === "signin" ? (
+              <p
+                style={{
+                  fontFamily: "Syne, system-ui, sans-serif",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                  fontSize: "0.65rem",
+                  color: "rgba(222,211,200,0.4)",
+                }}
+              >
+                Membership is by invitation
+              </p>
+            ) : !mfaStep ? (
               <button
-                onClick={() => { setMode(mode === "signup" ? "signin" : mode === "forgot" ? "signin" : "signup"); setError(""); setNotice(""); }}
+                onClick={() => { setMode("signin"); setError(""); setNotice(""); }}
                 style={{
                   fontFamily: "Syne, system-ui, sans-serif",
                   fontWeight: 700,
@@ -616,7 +606,7 @@ export default function LoginPage() {
                 onMouseEnter={(e) => ((e.target as HTMLElement).style.color = "#C29F60")}
                 onMouseLeave={(e) => ((e.target as HTMLElement).style.color = "rgba(194,159,96,0.6)")}
               >
-                {mode === "signin" ? "New member? Create account >" : mode === "forgot" ? "< Back to sign in" : "Already have an account? Sign in >"}
+                {"< Back to sign in"}
               </button>
             ) : (
               <button

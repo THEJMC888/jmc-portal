@@ -18,12 +18,14 @@ interface NavItem {
   href: string;
   icon: React.ElementType;
   comingSoon?: boolean;
+  /** Shows the "Soon" tag but stays clickable (the page itself explains) */
+  soonBadge?: boolean;
   children?: NavChild[];
 }
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Course Library", href: "/library", icon: GraduationCap },
+  { label: "Course Library", href: "/library", icon: GraduationCap, soonBadge: true },
   {
     label: "Vision Video", href: "/vision", icon: Sparkles,
     children: [
@@ -197,12 +199,12 @@ export default function Sidebar() {
                   style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.95)) drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }}
                 />
                 <span className="flex-1">{item.label}</span>
-                {item.comingSoon && (
+                {(item.comingSoon || item.soonBadge) && (
                   <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", fontSize: "0.55rem", color: "rgba(194,159,96,0.4)" }}>
                     Soon
                   </span>
                 )}
-                {isGroupActive && !item.comingSoon && (
+                {isGroupActive && !item.comingSoon && !item.soonBadge && (
                   <ChevronRight
                     className="w-3 h-3"
                     style={{ transform: item.children ? "rotate(90deg)" : "none", transition: "transform 0.2s" }}

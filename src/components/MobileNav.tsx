@@ -4,15 +4,16 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard, PlaySquare, NotebookPen, Sparkles,
+  LayoutDashboard, GraduationCap, NotebookPen, Sparkles,
   Wind, Users, X, Menu, LogOut, BookOpen,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { supabase } from "@/lib/supabase";
 
-const NAV_ITEMS = [
-  { label: "Dashboard",     href: "/dashboard",   icon: LayoutDashboard },
-  { label: "Video Library", href: "/library",     icon: PlaySquare },
+// soonBadge: shows the "Soon" tag but stays clickable (the page itself explains)
+const NAV_ITEMS: { label: string; href: string; icon: React.ElementType; comingSoon?: boolean; soonBadge?: boolean }[] = [
+  { label: "Dashboard",      href: "/dashboard",   icon: LayoutDashboard },
+  { label: "Course Library", href: "/library",     icon: GraduationCap, soonBadge: true },
   { label: "Vision Video",  href: "/vision",      icon: Sparkles },
   { label: "My Statements", href: "/statements",  icon: BookOpen },
   { label: "Journal",       href: "/journal",     icon: NotebookPen },
@@ -133,7 +134,7 @@ export default function MobileNav() {
         {/* Nav items */}
         <div style={{ flex: 1, overflowY: "auto", padding: "12px 10px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {NAV_ITEMS.map(({ label, href, icon: Icon, comingSoon }) => {
+            {NAV_ITEMS.map(({ label, href, icon: Icon, comingSoon, soonBadge }) => {
               const isActive = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
               return (
                 <Link
@@ -162,7 +163,7 @@ export default function MobileNav() {
                 >
                   <Icon size={18} style={{ flexShrink: 0 }} />
                   <span style={{ flex: 1 }}>{label}</span>
-                  {comingSoon && (
+                  {(comingSoon || soonBadge) && (
                     <span style={{
                       fontFamily: "Syne, system-ui, sans-serif", fontWeight: 700,
                       textTransform: "uppercase", letterSpacing: "0.1em",
