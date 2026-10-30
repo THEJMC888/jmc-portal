@@ -44,6 +44,7 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [ready, setReady] = useState(false);
+  const [isInvite, setIsInvite] = useState(false);
 
   useEffect(() => {
     // Supabase fires an AUTH_STATE_CHANGE with event=PASSWORD_RECOVERY
@@ -51,6 +52,25 @@ export default function ResetPasswordPage() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") setReady(true);
     });
+
+    // Invite links from the Supabase dashboard arrive as implicit-flow tokens in
+    // the hash (#access_token=…&type=invite), which the PKCE browser client
+    // rejects — so set the session from them by hand.
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+    if (hash.get("error_description")) {
+      setError(`${hash.get("error_description")} — please request a new link.`);
+    } else if (hash.get("type") === "invite") {
+      setIsInvite(true);
+      const access_token = hash.get("access_token");
+      const refresh_token = hash.get("refresh_token");
+      if (access_token && refresh_token) {
+        supabase.auth.setSession({ access_token, refresh_token }).then(({ error }) => {
+          if (error) setError(`${error.message} — please request a new invite link.`);
+          else setReady(true);
+          window.history.replaceState(null, "", window.location.pathname);
+        });
+      }
+    }
     return () => subscription.unsubscribe();
   }, []);
 
@@ -140,7 +160,7 @@ export default function ResetPasswordPage() {
               marginBottom: "0.25rem",
             }}
           >
-            Set new password
+            {isInvite ? "Welcome to the Collective" : "Set new password"}
           </h2>
           <p
             style={{
@@ -150,12 +170,16 @@ export default function ResetPasswordPage() {
               marginBottom: "1.75rem",
             }}
           >
-            {ready ? "Choose a new password for your account." : "Verifying your reset link…"}
+            {!ready && error
+              ? "This link can't be used."
+              : isInvite
+                ? (ready ? "Choose a password to finish setting up your account." : "Verifying your invite link…")
+                : (ready ? "Choose a new password for your account." : "Verifying your reset link…")}
           </p>
 
           {!ready ? (
-            <div style={{ textAlign: "center", color: "rgba(222,211,200,0.4)", fontFamily: "Syne, system-ui, sans-serif", fontSize: "0.8rem", padding: "2rem 0" }}>
-              Loading…
+            <div style={{ textAlign: "center", color: error ? "#f87171" : "rgba(222,211,200,0.4)", fontFamily: "Syne, system-ui, sans-serif", fontSize: "0.8rem", padding: "2rem 0" }}>
+              {error || "Loading…"}
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
