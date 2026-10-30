@@ -44,7 +44,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
         {/* Mobile top bar */}
         <div
-          className="md:hidden flex items-center justify-between px-4 py-3 sticky top-0 z-30"
+          className="md:hidden flex items-center justify-between px-4 h-14 sticky top-0 z-30"
           style={{
             background: "rgba(2,4,12,0.55)",
             backdropFilter: "blur(24px) saturate(180%)",

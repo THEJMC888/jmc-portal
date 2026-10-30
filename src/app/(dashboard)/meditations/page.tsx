@@ -486,8 +486,9 @@ function MeditationGridCard({ meditation, isActive, onClick, onDelete, onUpdate,
           )}
         </div>
 
-        {/* Info section — fixed height 170px, matches VideoCard */}
-        <div style={{ padding: "1rem", display: "flex", flexDirection: "column", height: 170, flexShrink: 0 }}>
+        {/* Info section — fixed 170px in the multi-column grid so cards line up;
+            sized to its content on phones (one card per row) */}
+        <div className="sm:h-[170px]" style={{ padding: "1rem", display: "flex", flexDirection: "column", flexShrink: 0 }}>
           <p style={{
             fontFamily: "Syne, system-ui, sans-serif",
             fontWeight: 700,
