@@ -282,6 +282,19 @@ export default function MobileVisionEditor() {
     });
   }, [visionId]);
 
+  // Slide preview fills its container (phone width, or the content column on a
+  // tablet beside the sidebar), capped so it stays a comfortable size
+  const previewWrapRef = useRef<HTMLDivElement>(null);
+  const [previewW, setPreviewW] = useState(347);
+  const ready = mounted && !!vision;
+  useEffect(() => {
+    const el = previewWrapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => setPreviewW(Math.min(Math.floor(entry.contentRect.width), 640)));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ready]);
+
   if (!mounted || !vision) {
     return (
       <div style={{ minHeight: "100vh", background: "#040d1c", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -506,8 +519,7 @@ export default function MobileVisionEditor() {
     setSheet(null);
   };
 
-  // clientWidth, not innerWidth: innerWidth grows if the phone browser has zoomed out
-  const PREVIEW_W = typeof window !== "undefined" ? Math.min(document.documentElement.clientWidth - 28, 480) : 347;
+  const PREVIEW_W = previewW;
   const PREVIEW_H = Math.round(PREVIEW_W * (VH / VW));
   const SCALE = PREVIEW_W / VW;
 
@@ -610,10 +622,11 @@ export default function MobileVisionEditor() {
       </div>
 
       {/* ── Slide preview ───────────────────────────────────────────────────── */}
-      <div style={{
+      <div ref={previewWrapRef} style={{
         flexShrink: 0,
         padding: "6px 14px 8px",
         background: "rgba(2,7,15,0.6)",
+        display: "flex", justifyContent: "center",
       }}>
         <div
           onTouchStart={onTouchStart}

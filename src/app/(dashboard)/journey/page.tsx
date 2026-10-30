@@ -144,7 +144,7 @@ function AddSessionModal({
             <input style={inputStyle} value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Clarity & Direction" />
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 12 }}>
             <div>
               <label style={labelStyle}>Date</label>
               <input type="date" style={inputStyle} value={date} onChange={e => setDate(e.target.value)} />

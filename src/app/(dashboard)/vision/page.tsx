@@ -655,7 +655,9 @@ export default function VisionPage() {
   const [showSlideTemplates, setShowSlideTemplates] = useState(false);
   const [showVisionTemplates, setShowVisionTemplates] = useState(false);
   const [showVisionList, setShowVisionList] = useState(false);
-  const isMobile = useMobile();
+  // Below 1024px (phones and portrait tablets beside the sidebar) the desktop
+  // editor doesn't fit, so use the touch editor
+  const isMobile = useMobile(1024);
   const [showMobileProps, setShowMobileProps] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);

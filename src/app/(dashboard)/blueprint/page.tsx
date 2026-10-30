@@ -367,7 +367,7 @@ function BirthDataPanel({ data, editing, onChange }: { data: BirthData; editing:
           used by all three calculators below
         </span>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: 10 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_2fr]" style={{ gap: 10 }}>
         <div>
           <FieldLabel>Date of Birth</FieldLabel>
           <input
@@ -488,7 +488,7 @@ function GeneKeysTab({ data, editing, onChange }: { data: GeneKeysProfile; editi
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <CalculatorGuide system="genekeys" hasData={Object.values(data).some(v => v.trim())} />
       <SectionHeader label="Activation Sequence — Self & Purpose" color="rgba(194,159,96,0.7)" />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 12 }}>
         {(["lifeWork", "evolution", "radiance", "purpose"] as const).map(key => (
           <div key={key}>
             <FieldLabel hint={GK_POSITIONS[key].description.slice(0, 50) + "…"}>{GK_POSITIONS[key].label} — Key #</FieldLabel>
@@ -498,7 +498,7 @@ function GeneKeysTab({ data, editing, onChange }: { data: GeneKeysProfile; editi
       </div>
 
       <SectionHeader label="Venus Sequence — Partnership & Relationships" color="rgba(255,140,180,0.7)" />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 12 }}>
         {(["attraction", "iq", "eq", "sq"] as const).map(key => (
           <div key={key}>
             <FieldLabel>{GK_POSITIONS[key].label} — Key #</FieldLabel>
@@ -508,7 +508,7 @@ function GeneKeysTab({ data, editing, onChange }: { data: GeneKeysProfile; editi
       </div>
 
       <SectionHeader label="Pearl Sequence — Business & Abundance" color="rgba(100,200,140,0.7)" />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 12 }}>
         {(["vocation", "culture", "brand"] as const).map(key => (
           <div key={key}>
             <FieldLabel>{GK_POSITIONS[key].label} — Key #</FieldLabel>
@@ -593,7 +593,7 @@ function HumanDesignTab({ data, editing, onChange }: { data: HumanDesignProfile;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <CalculatorGuide system="humandesign" hasData={Object.values(data).some(v => v.trim())} />
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 12 }}>
         <div>
           <FieldLabel>Type</FieldLabel>
           <select style={selectStyle} value={data.type} onChange={set("type")}>
@@ -693,7 +693,7 @@ function AstrologyTab({ data, editing, onChange }: { data: AstrologyProfile; edi
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <CalculatorGuide system="astrology" hasData={PLANETS.some(p => data[p.key].trim())} />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 12 }}>
         {PLANETS.map(p => (
           <div key={p.key}>
             <FieldLabel>{p.label}</FieldLabel>

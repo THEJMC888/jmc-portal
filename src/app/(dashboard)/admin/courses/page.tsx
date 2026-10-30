@@ -298,11 +298,12 @@ function CourseSection({
       <button
         onClick={() => setExpanded(v => !v)}
         style={{
-          width: "100%", display: "flex", alignItems: "center", gap: 14,
+          width: "100%", display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14, rowGap: 10,
           padding: "18px 20px", background: "none", border: "none", cursor: "pointer",
         }}
       >
-        <div style={{ flex: 1, textAlign: "left" as const }}>
+        {/* minWidth lets the action buttons wrap below the title on phones */}
+        <div style={{ flex: 1, minWidth: 180, textAlign: "left" as const }}>
           <p style={{ ...lora, fontWeight: 700, fontSize: "0.95rem", color: "#DED3C8" }}>
             {course.title}
           </p>
