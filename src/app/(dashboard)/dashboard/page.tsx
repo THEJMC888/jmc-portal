@@ -67,14 +67,15 @@ export default function DashboardPage() {
                 <h3 style={{ ...lora, fontWeight: 600, fontSize: "0.95rem", color: "#DED3C8", flex: 1 }}>
                   {label}
                 </h3>
-                {comingSoon ? (
-                  <span style={{ ...syne, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.1em", fontSize: "0.55rem", color: "rgba(194,159,96,0.7)" }}>
-                    Coming Soon
-                  </span>
-                ) : (
+                {!comingSoon && (
                   <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" style={{ color: "#C29F60" }} />
                 )}
               </div>
+              {comingSoon && (
+                <p style={{ ...syne, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.1em", fontSize: "0.55rem", color: "rgba(194,159,96,0.75)", marginBottom: "0.2rem" }}>
+                  Coming Soon
+                </p>
+              )}
               <p style={{ ...avenir, fontSize: "0.78rem", color: "rgba(222,211,200,0.5)" }}>
                 {description}
               </p>
