@@ -9,6 +9,9 @@
 @import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Lora:ital,wght@0,400;0,600;0,700;1,400;1,600&family=EB+Garamond:ital,wght@0,400;0,700;1,400;1,700&family=Spectral:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Yeseva+One&family=Italiana&family=Abril+Fatface&family=Alfa+Slab+One&family=Great+Vibes&family=Sacramento&family=Satisfy&family=Pacifico&family=Poppins:wght@400;600;700;800&family=Inter:wght@400;600;700&family=Josefin+Sans:ital,wght@0,400;0,600;0,700;1,400&family=Tenor+Sans&display=swap");
 
 :root {
+  /* Desktop sidebar width — Sidebar switches this to 72px when collapsed */
+  --sidebar-w: 16rem;
+
   /* Exact Journeymen Collective brand palette */
   --background: #020408;
   --surface: #08254d;
