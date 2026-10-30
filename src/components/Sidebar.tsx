@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-import { LayoutDashboard, PlaySquare, Users, Sparkles, BookOpen, LogOut, ChevronRight, NotebookPen, Wind, Lock, Route, Fingerprint, Eye, GraduationCap, UserPlus } from "lucide-react";
+import { useState, useEffect, useLayoutEffect } from "react";
+import { LayoutDashboard, PlaySquare, Users, Sparkles, BookOpen, LogOut, ChevronRight, ChevronLeft, NotebookPen, Wind, Lock, Route, Fingerprint, Eye, GraduationCap, UserPlus } from "lucide-react";
 import { clsx } from "clsx";
 import BrandLogo from "./BrandLogo";
 import { supabase } from "@/lib/supabase";
@@ -41,6 +41,16 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Community", href: "/community", icon: Users, comingSoon: true },
 ];
 
+const ADMIN_LINKS = [
+  { label: "Vision Review", href: "/admin/vision-review", icon: Eye },
+  { label: "Course Access", href: "/admin/courses", icon: GraduationCap },
+  { label: "Invite Members", href: "/admin/members", icon: UserPlus },
+];
+
+const COLLAPSED_KEY = "jmc_sidebar_collapsed";
+const EXPANDED_W = 256;
+const COLLAPSED_W = 72;
+
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -48,6 +58,17 @@ export default function Sidebar() {
   const isAdmin = user?.email === ADMIN_EMAIL;
   const [statementsReady, setStatementsReady] = useState(false);
   const [showEditorPrompt, setShowEditorPrompt] = useState(false);
+  // The dashboard layout only mounts the sidebar after auth resolves on the
+  // client, so reading localStorage in the initializer can't cause a hydration mismatch.
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem(COLLAPSED_KEY) === "1"; } catch { return false; }
+  });
+
+  // Main content and fixed bars offset themselves by --sidebar-w; set it before paint
+  useLayoutEffect(() => {
+    document.documentElement.style.setProperty("--sidebar-w", `${collapsed ? COLLAPSED_W : EXPANDED_W}px`);
+    try { localStorage.setItem(COLLAPSED_KEY, collapsed ? "1" : "0"); } catch { /* ignore */ }
+  }, [collapsed]);
 
   useEffect(() => {
     try {
@@ -65,9 +86,12 @@ export default function Sidebar() {
   };
 
   return (
+    <>
     <aside
-      className="fixed top-0 left-0 h-full w-64 hidden md:flex flex-col z-40 overflow-hidden"
+      className="fixed top-0 left-0 h-full hidden md:flex flex-col z-40 overflow-hidden"
       style={{
+        width: collapsed ? COLLAPSED_W : EXPANDED_W,
+        transition: "width 0.25s ease",
         background: "#0d1f3c",
         borderTop: "none",
         borderRight: "1px solid rgba(255,255,255,0.1)",
@@ -84,18 +108,20 @@ export default function Sidebar() {
 
       {/* Logo */}
       <div
-        className="px-4 py-4"
+        className={clsx("py-4", collapsed ? "px-0 flex justify-center" : "px-4")}
         style={{ borderBottom: "1px solid rgba(194,159,96,0.1)" }}
       >
         <Link href="/dashboard" className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-mark.png" alt="logo" style={{ width: 36, height: 36, borderRadius: "50%" }} />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo-text-white.png"
-            alt="The Journeymen Collective"
-            style={{ width: 140, height: "auto", objectFit: "contain" }}
-          />
+          <img src="/logo-mark.png" alt="logo" style={{ width: 36, height: 36, borderRadius: "50%", flexShrink: 0 }} />
+          {!collapsed && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src="/logo-text-white.png"
+              alt="The Journeymen Collective"
+              style={{ width: 140, height: "auto", objectFit: "contain" }}
+            />
+          )}
         </Link>
       </div>
 
@@ -108,7 +134,7 @@ export default function Sidebar() {
       }}>
 
       {/* Portal label */}
-      <div className="px-5 py-3">
+      <div className="px-5 py-3" style={{ visibility: collapsed ? "hidden" : "visible" }}>
         <div className="flex items-center gap-2">
           <div
             className="flex-1 h-px"
@@ -147,8 +173,10 @@ export default function Sidebar() {
               {/* Parent item */}
               <Link
                 href={item.comingSoon ? "#" : item.href}
+                title={collapsed ? item.label : undefined}
                 className={clsx(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                  "flex items-center gap-3 py-2.5 rounded-lg transition-all",
+                  collapsed ? "justify-center px-0" : "px-3",
                   item.comingSoon && "opacity-40 cursor-not-allowed"
                 )}
                 style={
@@ -198,13 +226,13 @@ export default function Sidebar() {
                   className="w-4 h-4 flex-shrink-0"
                   style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.95)) drop-shadow(0 2px 6px rgba(0,0,0,0.8))" }}
                 />
-                <span className="flex-1">{item.label}</span>
-                {(item.comingSoon || item.soonBadge) && (
+                {!collapsed && <span className="flex-1">{item.label}</span>}
+                {!collapsed && (item.comingSoon || item.soonBadge) && (
                   <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", fontSize: "0.55rem", color: "rgba(194,159,96,0.4)" }}>
                     Soon
                   </span>
                 )}
-                {isGroupActive && !item.comingSoon && !item.soonBadge && (
+                {!collapsed && isGroupActive && !item.comingSoon && !item.soonBadge && (
                   <ChevronRight
                     className="w-3 h-3"
                     style={{ transform: item.children ? "rotate(90deg)" : "none", transition: "transform 0.2s" }}
@@ -213,7 +241,7 @@ export default function Sidebar() {
               </Link>
 
               {/* Sub-items — shown when parent group is active */}
-              {item.children && isGroupActive && (
+              {item.children && isGroupActive && !collapsed && (
                 <div style={{ marginTop: 14, marginBottom: 6, paddingLeft: 16 }}>
                   <div style={{
                     borderLeft: "1px solid rgba(194,159,96,0.18)",
@@ -333,9 +361,10 @@ export default function Sidebar() {
 
       {/* User & Logout */}
       <div className="p-3">
-        <div className="flex items-center gap-3 px-3 py-2 mb-1">
+        <div className={clsx("flex items-center gap-3 py-2 mb-1", collapsed ? "justify-center px-0" : "px-3")}>
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+            title={collapsed ? "Member · Active" : undefined}
             style={{
               background: "linear-gradient(135deg, rgba(194,159,96,0.2), rgba(194,159,96,0.08))",
               border: "1px solid rgba(194,159,96,0.3)",
@@ -345,7 +374,7 @@ export default function Sidebar() {
           >
             M
           </div>
-          <div className="flex-1 min-w-0">
+          {!collapsed && <div className="flex-1 min-w-0">
             <p
               className="truncate"
               style={{
@@ -370,63 +399,44 @@ export default function Sidebar() {
             >
               Active
             </p>
-          </div>
+          </div>}
         </div>
 
         {isAdmin && (
           <div style={{ marginBottom: 4 }}>
-            <p style={{
-              fontSize: "0.5rem", letterSpacing: "0.12em", textTransform: "uppercase",
-              color: "rgba(194,159,96,0.4)", fontFamily: "Syne,system-ui,sans-serif",
-              fontWeight: 700, padding: "0 12px 4px",
-            }}>
-              Admin
-            </p>
-            <Link
-              href="/admin/vision-review"
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
-              style={{
-                color: pathname.startsWith("/admin/vision-review") ? "#C29F60" : "rgba(222,211,200,0.5)",
-                background: pathname.startsWith("/admin/vision-review") ? "rgba(194,159,96,0.08)" : "transparent",
-                fontFamily: "Syne, system-ui, sans-serif",
-                textDecoration: "none",
-              }}
-            >
-              <Eye className="w-4 h-4" />
-              Vision Review
-            </Link>
-            <Link
-              href="/admin/courses"
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
-              style={{
-                color: pathname.startsWith("/admin/courses") ? "#C29F60" : "rgba(222,211,200,0.5)",
-                background: pathname.startsWith("/admin/courses") ? "rgba(194,159,96,0.08)" : "transparent",
-                fontFamily: "Syne, system-ui, sans-serif",
-                textDecoration: "none",
-              }}
-            >
-              <GraduationCap className="w-4 h-4" />
-              Course Access
-            </Link>
-            <Link
-              href="/admin/members"
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
-              style={{
-                color: pathname.startsWith("/admin/members") ? "#C29F60" : "rgba(222,211,200,0.5)",
-                background: pathname.startsWith("/admin/members") ? "rgba(194,159,96,0.08)" : "transparent",
-                fontFamily: "Syne, system-ui, sans-serif",
-                textDecoration: "none",
-              }}
-            >
-              <UserPlus className="w-4 h-4" />
-              Invite Members
-            </Link>
+            {!collapsed && (
+              <p style={{
+                fontSize: "0.5rem", letterSpacing: "0.12em", textTransform: "uppercase",
+                color: "rgba(194,159,96,0.4)", fontFamily: "Syne,system-ui,sans-serif",
+                fontWeight: 700, padding: "0 12px 4px",
+              }}>
+                Admin
+              </p>
+            )}
+            {ADMIN_LINKS.map(({ label, href, icon: AdminIcon }) => (
+              <Link
+                key={href}
+                href={href}
+                title={collapsed ? label : undefined}
+                className={clsx("flex items-center gap-3 py-2 rounded-lg text-sm transition-all", collapsed ? "justify-center px-0" : "px-3")}
+                style={{
+                  color: pathname.startsWith(href) ? "#C29F60" : "rgba(222,211,200,0.5)",
+                  background: pathname.startsWith(href) ? "rgba(194,159,96,0.08)" : "transparent",
+                  fontFamily: "Syne, system-ui, sans-serif",
+                  textDecoration: "none",
+                }}
+              >
+                <AdminIcon className="w-4 h-4 flex-shrink-0" />
+                {!collapsed && label}
+              </Link>
+            ))}
           </div>
         )}
 
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all w-full"
+          title={collapsed ? "Sign out" : undefined}
+          className={clsx("flex items-center gap-3 py-2 rounded-lg text-sm transition-all w-full", collapsed ? "justify-center px-0" : "px-3")}
           style={{
             color: "rgba(222,211,200,0.4)",
             fontFamily: "Syne, system-ui, sans-serif",
@@ -438,8 +448,8 @@ export default function Sidebar() {
           onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#DED3C8")}
           onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "rgba(222,211,200,0.4)")}
         >
-          <LogOut className="w-4 h-4" />
-          Sign out
+          <LogOut className="w-4 h-4 flex-shrink-0" />
+          {!collapsed && "Sign out"}
         </button>
       </div>
 
@@ -536,5 +546,30 @@ export default function Sidebar() {
         </div>
       )}
     </aside>
+
+    {/* Collapse toggle — sits on the sidebar's right edge, outside its overflow clip */}
+    <button
+      onClick={() => setCollapsed((c) => !c)}
+      aria-label={collapsed ? "Expand menu" : "Collapse menu"}
+      title={collapsed ? "Expand menu" : "Collapse menu"}
+      className="hidden md:flex items-center justify-center"
+      style={{
+        position: "fixed", top: 26, left: "calc(var(--sidebar-w) - 12px)", zIndex: 45,
+        width: 24, height: 24, borderRadius: "50%", cursor: "pointer",
+        background: "#0d1f3c",
+        border: "1px solid rgba(194,159,96,0.45)",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.6)",
+        color: "#C29F60",
+        transition: "left 0.25s ease, border-color 0.15s",
+      }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#C29F60"; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(194,159,96,0.45)"; }}
+    >
+      <ChevronLeft
+        className="w-3.5 h-3.5"
+        style={{ transform: collapsed ? "rotate(180deg)" : "none", transition: "transform 0.25s ease" }}
+      />
+    </button>
+    </>
   );
 }

@@ -180,7 +180,7 @@ function StickyPlayer({ meditation, onPrev, onNext, hasPrev, hasNext, onClose }:
   const progress = duration ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="left-0 md:left-64" style={{
+    <div className="left-0 md:left-[var(--sidebar-w)]" style={{
       position: "fixed",
       bottom: 0, right: 0,
       zIndex: 200,
