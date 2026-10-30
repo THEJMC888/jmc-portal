@@ -533,10 +533,12 @@ export default function MobileVisionEditor() {
   });
 
   return (
-    <div style={{
+    // Fills the screen below the phone top bar (h-14) / beside the tablet sidebar,
+    // so the portal menu stays reachable while editing
+    <div className="inset-x-0 bottom-0 top-14 md:top-0 md:left-[var(--sidebar-w)]" style={{
       display: "flex", flexDirection: "column", overflow: "hidden",
       background: "#02070f",
-      position: "fixed", inset: 0, zIndex: 60,
+      position: "fixed", zIndex: 60,
     }}>
 
       {/* ── Top bar ────────────────────────────────────────────────────────── */}
