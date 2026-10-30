@@ -4,7 +4,8 @@ import { createClient } from "@supabase/supabase-js";
 
 export const maxDuration = 30;
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPICA_API_KEY });
+// Vercel currently stores the key as ANTHROPICIA_API_KEY; prefer the standard name if it's ever renamed
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? process.env.ANTHROPICIA_API_KEY });
 
 async function getAuthUser(request: NextRequest) {
   const token = request.headers.get("Authorization")?.replace("Bearer ", "");
