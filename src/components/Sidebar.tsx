@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { LayoutDashboard, PlaySquare, Users, Sparkles, BookOpen, LogOut, ChevronRight, NotebookPen, Wind, Lock, Route, Fingerprint, Eye, GraduationCap } from "lucide-react";
+import { LayoutDashboard, PlaySquare, Users, Sparkles, BookOpen, LogOut, ChevronRight, NotebookPen, Wind, Lock, Route, Fingerprint, Eye, GraduationCap, UserPlus } from "lucide-react";
 import { clsx } from "clsx";
 import BrandLogo from "./BrandLogo";
 import { supabase } from "@/lib/supabase";
@@ -407,6 +407,19 @@ export default function Sidebar() {
             >
               <GraduationCap className="w-4 h-4" />
               Course Access
+            </Link>
+            <Link
+              href="/admin/members"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
+              style={{
+                color: pathname.startsWith("/admin/members") ? "#C29F60" : "rgba(222,211,200,0.5)",
+                background: pathname.startsWith("/admin/members") ? "rgba(194,159,96,0.08)" : "transparent",
+                fontFamily: "Syne, system-ui, sans-serif",
+                textDecoration: "none",
+              }}
+            >
+              <UserPlus className="w-4 h-4" />
+              Invite Members
             </Link>
           </div>
         )}
