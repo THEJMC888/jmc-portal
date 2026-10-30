@@ -34,7 +34,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-screen" style={{ background: "transparent" }}>
       <Sidebar />
       <MobileNav />
-      <main className="flex-1 md:ml-[var(--sidebar-w)] min-h-screen relative" style={{ transition: "margin-left 0.25s ease" }}>
+      <main className="flex-1 min-w-0 md:ml-[var(--sidebar-w)] min-h-screen relative" style={{ transition: "margin-left 0.25s ease" }}>
         {/* Flower of Life watermark */}
         <div className="fixed top-0 right-0 w-[500px] h-[500px] pointer-events-none overflow-hidden">
           <FlowerOfLife

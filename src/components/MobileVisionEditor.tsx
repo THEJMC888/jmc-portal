@@ -506,7 +506,8 @@ export default function MobileVisionEditor() {
     setSheet(null);
   };
 
-  const PREVIEW_W = typeof window !== "undefined" ? Math.min(window.innerWidth - 28, 480) : 347;
+  // clientWidth, not innerWidth: innerWidth grows if the phone browser has zoomed out
+  const PREVIEW_W = typeof window !== "undefined" ? Math.min(document.documentElement.clientWidth - 28, 480) : 347;
   const PREVIEW_H = Math.round(PREVIEW_W * (VH / VW));
   const SCALE = PREVIEW_W / VW;
 
