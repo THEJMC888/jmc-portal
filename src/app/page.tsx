@@ -45,9 +45,9 @@ export default function LoginPage() {
       setMode("forgot");
       return;
     }
-    if (new URLSearchParams(window.location.search).get("unlock") === "1") {
-      setNotice("Sign in once more to open your private content on this device.");
-    }
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("unlock") === "1") setNotice("Sign in once more to open your private content on this device.");
+    if (params.get("timeout") === "1") setNotice("You were signed out after a period of inactivity.");
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) router.replace("/dashboard");
       // Signed out: no key should stay behind on this device

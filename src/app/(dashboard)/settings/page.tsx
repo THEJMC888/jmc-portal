@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Shield, ShieldCheck, ShieldX, Loader2, QrCode, KeyRound } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { Factor } from "@supabase/supabase-js";
+import PrivacySettings from "@/components/PrivacySettings";
 
 type EnrollStep = "idle" | "qr" | "verify" | "done";
 
@@ -333,6 +334,8 @@ export default function SettingsPage() {
           </>
         )}
       </div>
+
+      <PrivacySettings />
     </div>
   );
 }

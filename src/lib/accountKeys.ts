@@ -242,6 +242,16 @@ async function rotateRecoveryPhrase(userId: string, master: Uint8Array): Promise
   return error ? undefined : phrase;
 }
 
+/**
+ * Issue a new recovery phrase from the key this device holds; the old
+ * phrase stops working. Returns null when this device has no key.
+ */
+export async function issueNewRecoveryPhrase(userId: string): Promise<string | null> {
+  const held = await cachedMaster(userId);
+  if (!held) return null;
+  return (await rotateRecoveryPhrase(userId, held.master)) ?? null;
+}
+
 /** The member ticked "I have saved it". */
 export async function confirmRecoveryPhrase(userId: string): Promise<void> {
   await supabase.from("user_keys").update({ recovery_confirmed_at: new Date().toISOString() }).eq("user_id", userId);
