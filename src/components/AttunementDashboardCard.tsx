@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useVaultRefresh } from "@/lib/accountKeyContext";
 import Link from "next/link";
 import type { AttunementCard } from "@/types";
 
@@ -19,16 +20,17 @@ export default function AttunementDashboardCard() {
   const [card, setCard] = useState<AttunementCard | null>(null);
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
+  const load = useCallback(() => {
     try {
       const activeId = localStorage.getItem(ACTIVE_KEY);
-      if (!activeId) return;
+      if (!activeId) { setCard(null); return; }
       const cards: AttunementCard[] = JSON.parse(localStorage.getItem(CARDS_KEY) ?? "[]");
       const active = cards.find(c => c.id === activeId);
       setCard(active ?? null);
     } catch { /* ignore */ }
   }, []);
+  useEffect(() => { setMounted(true); load(); }, [load]);
+  useVaultRefresh(["attunement"], load);
 
   if (!mounted) return null;
 

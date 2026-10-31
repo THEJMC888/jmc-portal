@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import type { VisionVideo, VisionSlide, SlideElement, SlideBackground } from "@/types";
 import { PORTAL_PHOTO_BUCKETS, BUCKET_LABELS, type PortalPhotoBucket } from "@/lib/portalPhotos";
+import { useVaultRefresh } from "@/lib/accountKeyContext";
 
 // ── Storage keys (match desktop editor) ──────────────────────────────────────
 const VISIONS_LIST_KEY  = "jmc_visions_list";
@@ -263,6 +264,23 @@ export default function MobileVisionEditor() {
       if (stmS) setStatements(JSON.parse(stmS));
     } catch {}
   }, []);
+
+  // Changes synced from another device: edits here reach localStorage at
+  // once, so a newer stored copy of the open vision came from elsewhere
+  useVaultRefresh(["vision", "statement"], useCallback(() => {
+    try {
+      const listS = localStorage.getItem(VISIONS_LIST_KEY);
+      if (listS) setAllVisions(JSON.parse(listS));
+      const stmS = localStorage.getItem(STATEMENTS_KEY);
+      if (stmS) setStatements(JSON.parse(stmS));
+      const s = visionId ? localStorage.getItem(visionKey(visionId)) : null;
+      const stored = s ? (JSON.parse(s) as VisionVideo) : null;
+      if (stored?.slides?.[0]?.background) {
+        setVision((prev) => (prev && stored.updatedAt > prev.updatedAt ? stored : prev));
+        setSlideIdx((i) => Math.min(i, stored.slides.length - 1));
+      }
+    } catch {}
+  }, [visionId]));
 
   const save = useCallback((updater: (v: VisionVideo) => VisionVideo) => {
     setVision((prev) => {

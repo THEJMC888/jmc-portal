@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "./auth";
 import { checkDeviceKey, forgetDeviceKeys, signInWithDerivedPassword, signOutAndForgetKeys, unlockWithPassword } from "./accountKeys";
 import { supabase } from "./supabase";
+import { VAULT_EVENT, syncVault } from "./vaultSync";
 
 interface AccountKeyState {
   /** null until the key is ready on this device. */
@@ -21,6 +22,20 @@ const AccountKeyContext = createContext<AccountKeyState>({ contentKey: null, use
 
 export function useAccountKey() {
   return useContext(AccountKeyContext);
+}
+
+/** Call reload whenever a sync brings in changes of these kinds from another device. */
+export function useVaultRefresh(kinds: string[], reload: () => void) {
+  const key = kinds.join(",");
+  useEffect(() => {
+    const wanted = key.split(",");
+    const onSync = (e: Event) => {
+      const changed = (e as CustomEvent<{ kinds: string[] }>).detail?.kinds ?? [];
+      if (changed.some((k) => wanted.includes(k))) reload();
+    };
+    window.addEventListener(VAULT_EVENT, onSync);
+    return () => window.removeEventListener(VAULT_EVENT, onSync);
+  }, [key, reload]);
 }
 
 export function AccountKeyProvider({ children }: { children: ReactNode }) {
@@ -47,14 +62,80 @@ export function AccountKeyProvider({ children }: { children: ReactNode }) {
     return () => { document.removeEventListener("visibilitychange", onFocus); window.removeEventListener("focus", onFocus); };
   }, [check]);
 
+  const firstSyncDone = useVaultSync(state.status === "ready" ? userId : null, state.contentKey);
+
   return (
     <AccountKeyContext.Provider value={state}>
-      {children}
+      {firstSyncDone ? children : <SyncingNotice />}
       {state.status === "locked" && <LockedOverlay waitingForOtherDevice={needsRewrap} />}
       {state.status === "ready" && needsRewrap && user?.email && userId && (
         <RewrapPrompt email={user.email} userId={userId} onDone={check} />
       )}
     </AccountKeyContext.Provider>
+  );
+}
+
+// ─── Vault sync ───────────────────────────────────────────────────────────────
+const SYNCED_FLAG = (userId: string) => `jmc_vault_synced_${userId}`;
+
+/**
+ * Keeps Statements, Vision Videos, Attunements and Blueprint in step with
+ * every other device: on load, when the tab regains focus, every 20 seconds
+ * while visible, when it is hidden (to push edits), and on Realtime changes.
+ * A device that has never synced waits for its first pull (at most 4 seconds)
+ * so pages open with the member's content rather than an empty state.
+ */
+function useVaultSync(userId: string | null, contentKey: CryptoKey | null): boolean {
+  const [firstDone, setFirstDone] = useState(() => {
+    if (!userId) return true;
+    try { return localStorage.getItem(SYNCED_FLAG(userId)) === "1"; } catch { return true; }
+  });
+
+  useEffect(() => {
+    if (!userId || !contentKey) return;
+    let cancelled = false;
+    const run = () => syncVault(userId, contentKey)
+      .then(() => { try { localStorage.setItem(SYNCED_FLAG(userId), "1"); } catch { /* ignore */ } })
+      .catch(() => {});
+    const first = run();
+    const timeout = window.setTimeout(() => { if (!cancelled) setFirstDone(true); }, 4000);
+    first.finally(() => { if (!cancelled) setFirstDone(true); });
+
+    const onVisibility = () => run();
+    document.addEventListener("visibilitychange", onVisibility);
+    const interval = window.setInterval(() => { if (document.visibilityState === "visible") run(); }, 20_000);
+
+    let debounce: number | undefined;
+    const channel = supabase
+      .channel(`vault-${userId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_vault", filter: `user_id=eq.${userId}` }, () => {
+        window.clearTimeout(debounce);
+        debounce = window.setTimeout(run, 800);
+      })
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+      window.clearTimeout(debounce);
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibility);
+      supabase.removeChannel(channel);
+    };
+  }, [userId, contentKey]);
+
+  // Before the key is ready there is nothing to wait for
+  return firstDone || !contentKey;
+}
+
+function SyncingNotice() {
+  return (
+    <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
+      <div className="w-10 h-10 rounded-full border-2 animate-spin" style={{ borderColor: "rgba(194,159,96,0.3)", borderTopColor: "#C29F60" }} />
+      <p style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 13, color: "rgba(222,211,200,0.6)" }}>
+        Bringing your work to this device
+      </p>
+    </div>
   );
 }
 
