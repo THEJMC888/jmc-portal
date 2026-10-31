@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Fingerprint, Save, ChevronDown, ChevronUp, Edit2, ExternalLink, Calendar, Clock, MapPin, FileText, Upload, Trash2, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { useVaultRefresh } from "@/lib/accountKeyContext";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface BirthData {
@@ -842,16 +843,22 @@ export default function BlueprintPage() {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Blueprint>(EMPTY_BLUEPRINT);
 
-  useEffect(() => {
+  const editingRef = useRef(false);
+  editingRef.current = editing;
+  const loadSaved = useCallback(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as Blueprint;
         setBlueprint(parsed);
-        setDraft(parsed);
+        // Never replace a draft the member is typing
+        if (!editingRef.current) setDraft(parsed);
       }
     } catch { /* ignore */ }
   }, []);
+  useEffect(loadSaved, [loadSaved]);
+  // Changes saved on another device
+  useVaultRefresh(["blueprint"], loadSaved);
 
   const startEdit = () => { setDraft(blueprint); setEditing(true); };
   const cancelEdit = () => { setDraft(blueprint); setEditing(false); };
