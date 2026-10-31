@@ -484,3 +484,22 @@ async function syncItem(userId: string, key: CryptoKey, source: Source, id: stri
   await statePut("base", baseKey, { raw: merged, remoteUpdatedAt: at });
   return wroteLocal;
 }
+
+/** Every vault item this member owns, opened on this device (for "Download my data"). */
+export async function readVaultItems(userId: string, contentKey: CryptoKey): Promise<{ kind: string; itemId: string; value: unknown }[]> {
+  const { data, error } = await supabase.from("user_vault").select("kind,item_id,data,deleted,updated_at");
+  if (error) throw new Error(error.message);
+  const out: { kind: string; itemId: string; value: unknown }[] = [];
+  for (const row of data as Row[]) {
+    const raw = await openRow(userId, contentKey, row);
+    if (raw === null || raw === undefined) continue;
+    out.push({ kind: row.kind, itemId: row.item_id, value: tryParse(raw) ?? raw });
+  }
+  return out;
+}
+
+/** Remove this device's sync state and the music library copy. Used after deleting the account. */
+export async function forgetLocalVaultCopies(): Promise<void> {
+  await forgetVaultState();
+  try { indexedDB.deleteDatabase(MUSIC_DB); } catch { /* none */ }
+}

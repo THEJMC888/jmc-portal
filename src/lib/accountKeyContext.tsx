@@ -7,7 +7,9 @@
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./auth";
-import { checkDeviceKey, forgetDeviceKeys, signInWithDerivedPassword, signOutAndForgetKeys, unlockWithPassword } from "./accountKeys";
+import {
+  type PasswordSecrets, checkDeviceKey, forgetDeviceKeys, signInWithDerivedPassword, signOutAndForgetKeys, unlockWithPassword,
+} from "./accountKeys";
 import { supabase } from "./supabase";
 import { VAULT_EVENT, syncVault } from "./vaultSync";
 
@@ -63,6 +65,7 @@ export function AccountKeyProvider({ children }: { children: ReactNode }) {
   }, [check]);
 
   const firstSyncDone = useVaultSync(state.status === "ready" ? userId : null, state.contentKey);
+  useIdleTimeout(!!userId);
 
   return (
     <AccountKeyContext.Provider value={state}>
@@ -73,6 +76,44 @@ export function AccountKeyProvider({ children }: { children: ReactNode }) {
       )}
     </AccountKeyContext.Provider>
   );
+}
+
+// ─── Session timeout ──────────────────────────────────────────────────────────
+// A per device choice in Settings. Activity in any tab of the portal counts.
+export const IDLE_TIMEOUT_KEY = "jmc_idle_timeout_min";
+const LAST_ACTIVE_KEY = "jmc_last_active";
+
+function useIdleTimeout(active: boolean) {
+  const router = useRouter();
+  useEffect(() => {
+    if (!active) return;
+    let lastWrite = 0;
+    const mark = () => {
+      const now = Date.now();
+      if (now - lastWrite < 15_000) return;
+      lastWrite = now;
+      try { localStorage.setItem(LAST_ACTIVE_KEY, String(now)); } catch { /* ignore */ }
+    };
+    mark();
+    const events = ["pointerdown", "keydown", "scroll", "touchstart"] as const;
+    events.forEach((e) => window.addEventListener(e, mark, { passive: true }));
+    const check = window.setInterval(async () => {
+      let minutes = 0, last = Date.now();
+      try {
+        minutes = Number(localStorage.getItem(IDLE_TIMEOUT_KEY) ?? 0);
+        last = Number(localStorage.getItem(LAST_ACTIVE_KEY) ?? Date.now());
+      } catch { return; }
+      if (minutes > 0 && Date.now() - last > minutes * 60_000) {
+        window.clearInterval(check);
+        await signOutAndForgetKeys();
+        router.replace("/?timeout=1");
+      }
+    }, 30_000);
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, mark));
+      window.clearInterval(check);
+    };
+  }, [active, router]);
 }
 
 // ─── Vault sync ───────────────────────────────────────────────────────────────
@@ -183,22 +224,45 @@ function LockedOverlay({ waitingForOtherDevice }: { waitingForOtherDevice: boole
 
 function RewrapPrompt({ email, userId, onDone }: { email: string; userId: string; onDone: () => void }) {
   const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [secrets, setSecrets] = useState<PasswordSecrets | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  const rewrap = async (s: PasswordSecrets) => {
+    const u = await unlockWithPassword(userId, s);
+    setBusy(false);
+    if (u.status === "ready") onDone();
+    else setError("This device could not update your key. Please try again.");
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     setError("");
+    if (mfaFactorId && secrets) {
+      // Signing in again started a fresh session: restore its second factor
+      const { error: err } = await supabase.auth.mfa.challengeAndVerify({ factorId: mfaFactorId, code: code.replace(/\s/g, "") });
+      if (err) { setError(err.message); setBusy(false); return; }
+      return rewrap(secrets);
+    }
     // Signing in proves the new password before it wraps the key
     const r = await signInWithDerivedPassword(email, password);
     if (r.error || !r.secrets) { setError("That password was not accepted."); setBusy(false); return; }
     const { data } = await supabase.auth.getUser();
     if (data.user?.id !== userId) { await forgetDeviceKeys(); window.location.replace("/"); return; }
-    const u = await unlockWithPassword(userId, r.secrets);
-    setBusy(false);
-    if (u.status === "ready") onDone();
-    else setError("This device could not update your key. Please try again.");
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal?.nextLevel === "aal2" && aal.nextLevel !== aal.currentLevel) {
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      if (factors?.totp[0]) {
+        setSecrets(r.secrets);
+        setMfaFactorId(factors.totp[0].id);
+        setBusy(false);
+        return;
+      }
+    }
+    return rewrap(r.secrets);
   };
 
   return (
@@ -209,15 +273,28 @@ function RewrapPrompt({ email, userId, onDone }: { email: string; userId: string
           <p style={BODY}>
             Enter your new password here once. This device still holds your key, so your journal and private work will open on your other device too.
           </p>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            placeholder="New password"
-            required
-            style={{ width: "100%", borderRadius: 8, padding: "11px 14px", marginBottom: 12, outline: "none", background: "rgba(1,4,14,0.9)", border: "1.5px solid rgba(194,159,96,0.38)", color: "#DED3C8", fontSize: 14 }}
-          />
+          {mfaFactorId ? (
+            <input
+              type="text"
+              inputMode="numeric"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              autoComplete="one-time-code"
+              placeholder="Code from your authenticator app"
+              required
+              style={{ width: "100%", borderRadius: 8, padding: "11px 14px", marginBottom: 12, outline: "none", background: "rgba(1,4,14,0.9)", border: "1.5px solid rgba(194,159,96,0.38)", color: "#DED3C8", fontSize: 14 }}
+            />
+          ) : (
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              placeholder="New password"
+              required
+              style={{ width: "100%", borderRadius: 8, padding: "11px 14px", marginBottom: 12, outline: "none", background: "rgba(1,4,14,0.9)", border: "1.5px solid rgba(194,159,96,0.38)", color: "#DED3C8", fontSize: 14 }}
+            />
+          )}
           {error && <p style={{ ...BODY, color: "#f87171", margin: "0 0 12px" }}>{error}</p>}
           <button type="submit" disabled={busy} style={BUTTON}>{busy ? "Updating" : "Update this device >"}</button>
         </form>
