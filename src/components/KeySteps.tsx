@@ -39,11 +39,29 @@ const ERROR: React.CSSProperties = {
 export function RecoveryPhraseStep({ userId, phrase, onDone }: { userId: string; phrase: string; onDone: () => void }) {
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
+  const [copiedOnce, setCopiedOnce] = useState(false);
   const [busy, setBusy] = useState(false);
   const words = phrase.split(" ");
 
+  // Some embedded browsers block the clipboard. Never let a failed copy look
+  // like it worked, or a member may "save" whatever was on the clipboard before.
   const copy = async () => {
-    try { await navigator.clipboard.writeText(phrase); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* select by hand */ }
+    let ok = false;
+    try { await navigator.clipboard.writeText(phrase); ok = true; } catch { /* try the older way */ }
+    if (!ok) {
+      const ta = document.createElement("textarea");
+      ta.value = phrase;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try { ok = document.execCommand("copy"); } catch { ok = false; }
+      ta.remove();
+    }
+    setCopyFailed(!ok);
+    if (ok) { setCopied(true); setCopiedOnce(true); setTimeout(() => setCopied(false), 2000); }
   };
   const done = async () => {
     setBusy(true);
@@ -73,6 +91,12 @@ export function RecoveryPhraseStep({ userId, phrase, onDone }: { userId: string;
       <button type="button" onClick={copy} style={{ ...QUIET_BUTTON, textAlign: "center", fontSize: "0.75rem" }}>
         {copied ? "Copied" : "Copy the 24 words"}
       </button>
+      {copyFailed && (
+        <p style={ERROR}>This browser does not allow copying. Please write the 24 words down by hand, or open the portal in Safari or Chrome to copy them.</p>
+      )}
+      {copiedOnce && !copyFailed && (
+        <p style={{ ...BODY, fontSize: "0.8rem" }}>Paste them somewhere safe now and check that all 24 words are there.</p>
+      )}
       <label style={{ ...BODY, display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer" }}>
         <input type="checkbox" checked={saved} onChange={(e) => setSaved(e.target.checked)} style={{ marginTop: 4, accentColor: "#C29F60" }} />
         <span>I have saved my recovery phrase somewhere safe.</span>
