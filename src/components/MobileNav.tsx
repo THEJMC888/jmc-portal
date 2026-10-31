@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, GraduationCap, NotebookPen, Sparkles, Sun,
-  Wind, Users, X, Menu, LogOut, BookOpen, Route, Fingerprint, Eye, UserPlus,
+  Wind, Users, X, Menu, LogOut, BookOpen, Route, Fingerprint, Eye, UserPlus, Feather,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { supabase } from "@/lib/supabase";
@@ -24,6 +24,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "My Statements",   href: "/statements",        icon: BookOpen },
   { label: "My Attunements",  href: "/vision/attunement", icon: Sun },
   { label: "Journal",         href: "/journal",           icon: NotebookPen },
+  { label: "Medicine Animals", href: "/totems",          icon: Feather },
   { label: "My Journey",      href: "/journey",           icon: Route },
   { label: "My Blueprint",    href: "/blueprint",         icon: Fingerprint },
   { label: "Meditations",     href: "/meditations",       icon: Wind },

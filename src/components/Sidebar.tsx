@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useLayoutEffect } from "react";
-import { LayoutDashboard, PlaySquare, Users, Sparkles, BookOpen, LogOut, ChevronRight, ChevronLeft, NotebookPen, Wind, Lock, Route, Fingerprint, Eye, GraduationCap, UserPlus } from "lucide-react";
+import { LayoutDashboard, PlaySquare, Users, Sparkles, BookOpen, LogOut, ChevronRight, ChevronLeft, NotebookPen, Wind, Lock, Route, Fingerprint, Eye, GraduationCap, UserPlus, Feather } from "lucide-react";
 import { clsx } from "clsx";
 import BrandLogo from "./BrandLogo";
 import { supabase } from "@/lib/supabase";
@@ -35,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   { label: "Journal", href: "/journal", icon: NotebookPen },
+  { label: "Medicine Animals", href: "/totems", icon: Feather },
   { label: "My Journey", href: "/journey", icon: Route },
   { label: "My Blueprint", href: "/blueprint", icon: Fingerprint },
   { label: "Meditations", href: "/meditations", icon: Wind },
