@@ -1,7 +1,8 @@
-// Client-side AES-256-GCM encryption for journal entries.
-// The key lives only in the browser's IndexedDB — never transmitted to any server.
-// Encrypted text is prefixed with "enc:" so plain-text entries (pre-E2EE) are
-// still readable after a key is generated for the first time.
+// Legacy per device journal key (before the account master key in accountKeys.ts).
+// Each device once generated its own AES-256-GCM key here, so an entry written
+// on one device could not be read on another. The journal now only uses this
+// key to open old "enc:" entries and re-encrypt them under the account key,
+// then deletes it. New keys are never created here.
 
 const DB_NAME = "jmc-journal-e2ee";
 const STORE_NAME = "keys";
@@ -35,38 +36,38 @@ async function dbPut(db: IDBDatabase, key: string, value: CryptoKey): Promise<vo
   });
 }
 
+async function dbDelete(db: IDBDatabase, key: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const req = tx.objectStore(STORE_NAME).delete(key);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
 // ─── Key lifecycle ────────────────────────────────────────────────────────────
 
 /**
- * Returns the AES-256-GCM key for this user, creating and persisting one in
- * IndexedDB if it doesn't exist yet. Returns null when IndexedDB is unavailable
- * (e.g. strict private-browsing mode) — callers should degrade gracefully.
+ * The old per device key for this user, if this device ever made one.
+ * Returns null when there is none or IndexedDB is unavailable.
  */
-export async function getOrCreateKey(userId: string): Promise<CryptoKey | null> {
+export async function getLegacyKey(userId: string): Promise<CryptoKey | null> {
   try {
     const db = await openDB();
-    const existing = await dbGet(db, userId);
-    if (existing) return existing;
-
-    const key = await crypto.subtle.generateKey(
-      { name: "AES-GCM", length: 256 },
-      true,       // extractable — needed for the backup/export feature
-      ["encrypt", "decrypt"]
-    );
-
-    await dbPut(db, userId, key);
-    return key;
+    return (await dbGet(db, userId)) ?? null;
   } catch {
     return null;
   }
 }
 
-/**
- * Export the raw key as a base64 string for user backup.
- */
-export async function exportKeyAsBase64(key: CryptoKey): Promise<string> {
-  const raw = await crypto.subtle.exportKey("raw", key);
-  return btoa(String.fromCharCode(...new Uint8Array(raw)));
+/** Remove the old per device key once every entry it opens is re-encrypted. */
+export async function deleteLegacyKey(userId: string): Promise<void> {
+  try {
+    const db = await openDB();
+    await dbDelete(db, userId);
+  } catch {
+    // nothing to delete
+  }
 }
 
 /**
@@ -98,21 +99,6 @@ export async function importKeyFromBase64(
 }
 
 // ─── Encrypt / Decrypt ────────────────────────────────────────────────────────
-
-/**
- * Encrypt a plaintext string. Returns "enc:<base64(iv+ciphertext)>".
- */
-export async function encryptText(key: CryptoKey, plaintext: string): Promise<string> {
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const encoded = new TextEncoder().encode(plaintext);
-  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
-
-  const combined = new Uint8Array(iv.byteLength + ciphertext.byteLength);
-  combined.set(iv, 0);
-  combined.set(new Uint8Array(ciphertext), iv.byteLength);
-
-  return ENC_PREFIX + btoa(String.fromCharCode(...combined));
-}
 
 /**
  * Decrypt a value previously returned by encryptText.

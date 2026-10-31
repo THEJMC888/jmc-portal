@@ -8,7 +8,7 @@ import {
   Wind, Users, X, Menu, LogOut, BookOpen, Route, Fingerprint, Eye, UserPlus, Feather,
 } from "lucide-react";
 import { clsx } from "clsx";
-import { supabase } from "@/lib/supabase";
+import { signOutAndForgetKeys } from "@/lib/accountKeys";
 import { useAuth } from "@/lib/auth";
 
 const ADMIN_EMAIL = "rng@thejourneymencollective.com";
@@ -72,7 +72,7 @@ export default function MobileNav() {
 
   const handleSignOut = async () => {
     setOpen(false);
-    await supabase.auth.signOut();
+    await signOutAndForgetKeys();
     router.push("/");
   };
 

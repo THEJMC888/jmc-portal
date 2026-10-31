@@ -6,7 +6,7 @@ import { useState, useEffect, useLayoutEffect } from "react";
 import { LayoutDashboard, PlaySquare, Users, Sparkles, BookOpen, LogOut, ChevronRight, ChevronLeft, NotebookPen, Wind, Lock, Route, Fingerprint, Eye, GraduationCap, UserPlus, Feather } from "lucide-react";
 import { clsx } from "clsx";
 import BrandLogo from "./BrandLogo";
-import { supabase } from "@/lib/supabase";
+import { signOutAndForgetKeys } from "@/lib/accountKeys";
 import { useAuth } from "@/lib/auth";
 import PhotoSlideshow from "./PhotoSlideshow";
 
@@ -82,7 +82,7 @@ export default function Sidebar() {
   }, [pathname]);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await signOutAndForgetKeys();
     router.push("/");
   };
 
