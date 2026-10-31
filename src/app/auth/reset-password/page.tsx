@@ -6,6 +6,9 @@ import { Eye, EyeOff } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import PhotoSlideshow from "@/components/PhotoSlideshow";
 import { supabase } from "@/lib/supabase";
+import { PasswordSecrets, unlockWithPassword } from "@/lib/accountKeys";
+import { derivePasswordSecrets } from "@/lib/e2ee";
+import { RecoverAccessStep, RecoveryPhraseStep } from "@/components/KeySteps";
 
 const INPUT_STYLE: React.CSSProperties = {
   background: "rgba(1,4,14,0.9)",
@@ -46,6 +49,11 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState("");
   const [ready, setReady] = useState(false);
   const [isInvite, setIsInvite] = useState(false);
+  const [keyStep, setKeyStep] = useState<
+    | { kind: "phrase"; userId: string; phrase: string }
+    | { kind: "recover"; userId: string; secrets: PasswordSecrets }
+    | null
+  >(null);
 
   useEffect(() => {
     let settled = false;
@@ -92,13 +100,32 @@ export default function ResetPasswordPage() {
     if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
     setLoading(true);
     setError("");
-    const { error } = await supabase.auth.updateUser({ password });
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.email) { setError("This link has expired. Please ask for a new one."); setLoading(false); return; }
+    // Supabase only ever receives the derived auth secret, never the password
+    let secrets: PasswordSecrets;
+    try {
+      secrets = await derivePasswordSecrets(user.email, password);
+    } catch {
+      setError("This browser could not prepare your encryption keys. Please update it and try again.");
+      setLoading(false);
+      return;
+    }
+    const { error } = await supabase.auth.updateUser({ password: secrets.authSecret });
     if (error) {
       setError(error.message);
       setLoading(false);
-    } else {
-      router.replace("/dashboard");
+      return;
     }
+    // New member: create the key. Reset: re-wrap it if this device holds it,
+    // otherwise ask for the recovery phrase.
+    const result = await unlockWithPassword(user.id, secrets);
+    setPassword("");
+    setConfirm("");
+    setLoading(false);
+    if (result.status === "ready" && result.phrase) setKeyStep({ kind: "phrase", userId: user.id, phrase: result.phrase });
+    else if (result.status === "needs-recovery") setKeyStep({ kind: "recover", userId: user.id, secrets });
+    else router.replace("/dashboard");
   };
 
   return (
@@ -184,9 +211,9 @@ export default function ResetPasswordPage() {
               marginBottom: "0.25rem",
             }}
           >
-            {isInvite ? "Welcome to the Collective" : "Set new password"}
+            {keyStep?.kind === "phrase" ? "Keep your key safe" : keyStep ? "One more step" : isInvite ? "Welcome to the Collective" : "Set new password"}
           </h2>
-          <p
+          {!keyStep && <p
             style={{
               fontFamily: "Avenir, Nunito, system-ui, sans-serif",
               color: "rgba(222,211,200,0.55)",
@@ -199,9 +226,19 @@ export default function ResetPasswordPage() {
               : isInvite
                 ? (ready ? "Choose a password to finish setting up your account." : "Verifying your invite link…")
                 : (ready ? "Choose a new password for your account." : "Verifying your reset link…")}
-          </p>
+          </p>}
 
-          {!ready ? (
+          {keyStep?.kind === "phrase" ? (
+            <RecoveryPhraseStep userId={keyStep.userId} phrase={keyStep.phrase} onDone={() => router.replace("/dashboard")} />
+          ) : keyStep?.kind === "recover" ? (
+            <RecoverAccessStep
+              userId={keyStep.userId}
+              secrets={keyStep.secrets}
+              onReady={(phrase) => phrase
+                ? setKeyStep({ kind: "phrase", userId: keyStep.userId, phrase })
+                : router.replace("/dashboard")}
+            />
+          ) : !ready ? (
             <div style={{ textAlign: "center", color: error ? "#f87171" : "rgba(222,211,200,0.4)", fontFamily: "Syne, system-ui, sans-serif", fontSize: "0.8rem", padding: "2rem 0" }}>
               {error || "Loading…"}
               {error && (

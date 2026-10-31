@@ -6,6 +6,14 @@ import { Eye, EyeOff } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import PhotoSlideshow from "@/components/PhotoSlideshow";
 import { supabase } from "@/lib/supabase";
+import {
+  PasswordSecrets, UnlockResult, completeLegacyMigration, forgetDeviceKeys, signInWithDerivedPassword, unlockWithPassword,
+} from "@/lib/accountKeys";
+import { RecoverAccessStep, RecoveryPhraseStep } from "@/components/KeySteps";
+
+type KeyStep =
+  | { kind: "phrase"; userId: string; phrase: string }
+  | { kind: "recover"; userId: string; secrets: PasswordSecrets };
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,6 +28,9 @@ export default function LoginPage() {
   const [mfaStep, setMfaStep] = useState(false);
   const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
+  // Kept in memory only, between the password and any second factor
+  const [pending, setPending] = useState<{ secrets: PasswordSecrets; legacy: boolean } | null>(null);
+  const [keyStep, setKeyStep] = useState<KeyStep | null>(null);
 
   // Redirect if already signed in
   useEffect(() => {
@@ -34,8 +45,13 @@ export default function LoginPage() {
       setMode("forgot");
       return;
     }
+    if (new URLSearchParams(window.location.search).get("unlock") === "1") {
+      setNotice("Sign in once more to open your private content on this device.");
+    }
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) router.replace("/dashboard");
+      // Signed out: no key should stay behind on this device
+      else forgetDeviceKeys();
     });
   }, [router]);
 
@@ -57,11 +73,12 @@ export default function LoginPage() {
       }
       setLoading(false);
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        setError(error.message);
+      const { error, secrets, legacy } = await signInWithDerivedPassword(email, password);
+      if (error || !secrets) {
+        setError(error ?? "Sign in failed.");
         setLoading(false);
       } else {
+        setPending({ secrets, legacy });
         const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
         if (aal?.nextLevel === "aal2" && aal.nextLevel !== aal.currentLevel) {
           const { data: factors } = await supabase.auth.mfa.listFactors();
@@ -73,14 +90,31 @@ export default function LoginPage() {
             return;
           }
         }
-        if (!keepSignedIn) {
-          window.addEventListener("beforeunload", () => {
-            supabase.auth.signOut();
-          });
-        }
-        router.push("/dashboard");
+        await finishSignIn({ secrets, legacy });
       }
     }
+  };
+
+  // Password (and any second factor) accepted: switch legacy accounts to the
+  // derived secret, then open or create the account key.
+  const finishSignIn = async (p: { secrets: PasswordSecrets; legacy: boolean }) => {
+    if (p.legacy) await completeLegacyMigration(p.secrets);
+    if (!keepSignedIn) {
+      window.addEventListener("beforeunload", () => {
+        forgetDeviceKeys();
+        supabase.auth.signOut();
+      });
+    }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setError("Sign in failed."); setLoading(false); return; }
+    const result: UnlockResult = await unlockWithPassword(user.id, p.secrets);
+    setPending(null);
+    setPassword("");
+    setLoading(false);
+    if (result.status === "ready" && result.phrase) setKeyStep({ kind: "phrase", userId: user.id, phrase: result.phrase });
+    else if (result.status === "needs-recovery") setKeyStep({ kind: "recover", userId: user.id, secrets: p.secrets });
+    // On an error the dashboard asks again; never block entry to the portal
+    else router.push("/dashboard");
   };
 
   const handleMfaSubmit = async (e: React.FormEvent) => {
@@ -94,6 +128,9 @@ export default function LoginPage() {
     if (error) {
       setError(error.message);
       setLoading(false);
+    } else if (pending) {
+      setMfaStep(false);
+      await finishSignIn(pending);
     } else {
       router.push("/dashboard");
     }
@@ -215,7 +252,7 @@ export default function LoginPage() {
               marginBottom: "0.25rem",
             }}
           >
-            {mfaStep ? "Two-factor auth" : mode === "signin" ? "Welcome back" : "Reset your password"}
+            {keyStep?.kind === "phrase" ? "Keep your key safe" : keyStep ? "One more step" : mfaStep ? "Two-factor auth" : mode === "signin" ? "Welcome back" : "Reset your password"}
           </h2>
           {!mfaStep && mode === "forgot" && (
             <p
@@ -248,7 +285,20 @@ export default function LoginPage() {
             </p>
           )}
 
-          {mfaStep && (
+          {keyStep?.kind === "phrase" && (
+            <RecoveryPhraseStep userId={keyStep.userId} phrase={keyStep.phrase} onDone={() => router.push("/dashboard")} />
+          )}
+          {keyStep?.kind === "recover" && (
+            <RecoverAccessStep
+              userId={keyStep.userId}
+              secrets={keyStep.secrets}
+              onReady={(phrase) => phrase
+                ? setKeyStep({ kind: "phrase", userId: keyStep.userId, phrase })
+                : router.push("/dashboard")}
+            />
+          )}
+
+          {!keyStep && mfaStep && (
             <form onSubmit={handleMfaSubmit} className="space-y-5">
               <div>
                 <label
@@ -318,7 +368,7 @@ export default function LoginPage() {
             </form>
           )}
 
-          {!mfaStep && <form onSubmit={handleSubmit} className="space-y-5">
+          {!keyStep && !mfaStep && <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label
                 htmlFor="email"
@@ -577,7 +627,7 @@ export default function LoginPage() {
             </button>
           </form>}
 
-          <div
+          {!keyStep && <div
             className="mt-6 pt-6 text-center space-y-3"
             style={{ borderTop: "1px solid rgba(194,159,96,0.1)" }}
           >
@@ -635,7 +685,7 @@ export default function LoginPage() {
                 ← Back to sign in
               </button>
             )}
-          </div>
+          </div>}
         </div>
 
         <p

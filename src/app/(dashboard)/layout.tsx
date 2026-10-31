@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import { AccountKeyProvider } from "@/lib/accountKeyContext";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import FlowerOfLife from "@/components/FlowerOfLife";
@@ -31,6 +32,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!user) return null;
 
   return (
+    <AccountKeyProvider>
     <div className="flex min-h-screen" style={{ background: "transparent" }}>
       <Sidebar />
       <MobileNav />
@@ -64,5 +66,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </main>
     </div>
+    </AccountKeyProvider>
   );
 }
