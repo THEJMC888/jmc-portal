@@ -11,7 +11,7 @@ import { generateMnemonic, mnemonicToEntropy, validateMnemonic } from "@scure/bi
 import { wordlist } from "@scure/bip39/wordlists/english.js";
 import { supabase } from "./supabase";
 import {
-  KDF_ID, PasswordSecrets, contentKeyFor, derivePasswordSecrets, fromB64, keyIdFor, openBytes,
+  KDF_ID, type PasswordSecrets, contentKeyFor, derivePasswordSecrets, fromB64, keyIdFor, openBytes,
   passwordKek, randomBytes, recoveryKek, sealBytes, toB64,
 } from "./e2ee";
 
