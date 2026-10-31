@@ -118,8 +118,10 @@ export async function encryptText(key: CryptoKey, plaintext: string): Promise<st
  * Decrypt a value previously returned by encryptText.
  * If the value doesn't start with "enc:" (i.e. a legacy plain-text entry),
  * it is returned as-is — so old entries remain readable after the key is created.
+ * Returns null when this key cannot open the value. Callers must never store
+ * or upload anything in its place, or the real ciphertext would be lost.
  */
-export async function decryptText(key: CryptoKey, value: string): Promise<string> {
+export async function decryptText(key: CryptoKey, value: string): Promise<string | null> {
   if (!value.startsWith(ENC_PREFIX)) return value; // plain-text fallback
 
   try {
@@ -129,9 +131,15 @@ export async function decryptText(key: CryptoKey, value: string): Promise<string
     const plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ciphertext);
     return new TextDecoder().decode(plaintext);
   } catch {
-    return "[Unable to decrypt — wrong key or corrupted entry]";
+    return null;
   }
 }
+
+/**
+ * Placeholder text that older builds cached locally when decryption failed.
+ * A local entry carrying it is a stale copy, never the member's real writing.
+ */
+export const LEGACY_DECRYPT_PLACEHOLDER = "[Unable to decrypt";
 
 /**
  * Returns true if a stored value is encrypted (has the "enc:" prefix).

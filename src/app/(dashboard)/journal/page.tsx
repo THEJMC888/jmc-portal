@@ -10,6 +10,7 @@ import { useMobile } from "@/hooks/useMobile";
 import { supabase } from "@/lib/supabase";
 import {
   getOrCreateKey, encryptText, decryptText, exportKeyAsBase64, importKeyFromBase64,
+  isEncrypted, LEGACY_DECRYPT_PLACEHOLDER,
 } from "@/lib/journalCrypto";
 import TotemSheet, { TotemLinkedText } from "@/components/TotemSheet";
 import TotemGlyph from "@/components/TotemGlyph";
@@ -77,7 +78,15 @@ interface JournalEntry {
   media: JournalMedia[];
   createdAt: string;
   updatedAt: string;
+  // True when this device cannot decrypt the stored text. A locked entry is
+  // read only and is never saved back to Supabase.
+  locked?: boolean;
 }
+
+// A local copy that must never be trusted or uploaded: either marked locked,
+// or a placeholder cached by an older build after a failed decrypt.
+const isLocked = (e: JournalEntry) =>
+  !!e.locked || e.text.startsWith(LEGACY_DECRYPT_PLACEHOLDER) || isEncrypted(e.text);
 
 // ─── Storage helpers ──────────────────────────────────────────────────────────
 const LIST_KEY = "jmc_journal_list";
@@ -105,6 +114,7 @@ function deleteEntry(id: string) {
 
 // ─── Supabase sync helpers ────────────────────────────────────────────────────
 async function syncToSupabase(entry: JournalEntry, userId: string, cryptoKey: CryptoKey | null) {
+  if (isLocked(entry)) return; // never overwrite real ciphertext with a placeholder
   const text = cryptoKey ? await encryptText(cryptoKey, entry.text) : entry.text;
   await supabase.from("journal_entries").upsert({
     id: entry.id,
@@ -126,15 +136,20 @@ async function fetchFromSupabase(cryptoKey: CryptoKey | null): Promise<JournalEn
     .from("journal_entries")
     .select("*")
     .order("date", { ascending: false });
-  return Promise.all((data ?? []).map(async (row) => ({
-    id: row.id,
-    date: row.date,
-    title: row.title,
-    text: cryptoKey ? await decryptText(cryptoKey, row.text ?? "") : (row.text ?? ""),
-    media: [],
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  })));
+  return Promise.all((data ?? []).map(async (row) => {
+    const raw: string = row.text ?? "";
+    const text = cryptoKey ? await decryptText(cryptoKey, raw) : (isEncrypted(raw) ? null : raw);
+    return {
+      id: row.id,
+      date: row.date,
+      title: row.title,
+      text: text ?? "",
+      media: [],
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      locked: text === null,
+    };
+  }));
 }
 
 function formatDate(d: string) {
@@ -1070,16 +1085,17 @@ export default function JournalPage() {
         // Pull remote → local (remote wins if newer)
         remoteEntries.forEach((remote) => {
           const local = loadEntry(remote.id);
-          if (!local || remote.updatedAt > local.updatedAt) {
-            saveEntry({ ...remote, media: local?.media ?? [] });
-          }
+          // A readable local copy always beats a remote row this device cannot open.
+          // A locked or placeholder local copy is always refreshed from remote.
+          const replace = !local || isLocked(local) || (!remote.locked && remote.updatedAt > local.updatedAt);
+          if (replace) saveEntry({ ...remote, media: local?.media ?? [] });
         });
         // Push local → remote (entries not yet in Supabase)
         const localList = loadList();
         for (const item of localList) {
           if (!remoteMap.has(item.id)) {
             const entry = loadEntry(item.id);
-            if (entry) await syncToSupabase(entry, user.id, key).catch(() => {});
+            if (entry && !isLocked(entry)) await syncToSupabase(entry, user.id, key).catch(() => {});
           }
         }
         setList(loadList());
@@ -1105,6 +1121,7 @@ export default function JournalPage() {
   }, [isMobile]);
 
   const persistEntry = useCallback((updated: JournalEntry) => {
+    if (isLocked(updated)) return; // read only until this device holds the right key
     const e = { ...updated, updatedAt: new Date().toISOString() };
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
@@ -1792,9 +1809,20 @@ export default function JournalPage() {
                     {formatDate(entry.date)}
                   </div>
 
+                  {isLocked(entry) && (
+                    <div style={{
+                      fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 12.5, lineHeight: 1.7,
+                      color: "rgba(222,211,200,0.75)", background: "rgba(194,159,96,0.08)",
+                      border: "1px solid rgba(194,159,96,0.25)", borderRadius: 8, padding: "10px 14px", marginBottom: 14,
+                    }}>
+                      This entry was written on another device and is sealed with that device&apos;s key. It is safe and unchanged. Open it on the device where you wrote it, or import that key here.
+                    </div>
+                  )}
+
                   {/* Title */}
                   <input
                     type="text"
+                    readOnly={isLocked(entry)}
                     value={entry.title}
                     onChange={(e) => updateField("title", e.target.value)}
                     placeholder="Entry title…"
@@ -1896,6 +1924,7 @@ export default function JournalPage() {
                   </div>
                   <textarea
                     value={entry.text}
+                    readOnly={isLocked(entry)}
                     onChange={(e) => updateField("text", e.target.value)}
                     placeholder="Write your thoughts…"
                     rows={8}
