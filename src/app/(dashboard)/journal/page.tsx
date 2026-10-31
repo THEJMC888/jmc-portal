@@ -11,6 +11,9 @@ import { supabase } from "@/lib/supabase";
 import {
   getOrCreateKey, encryptText, decryptText, exportKeyAsBase64, importKeyFromBase64,
 } from "@/lib/journalCrypto";
+import TotemSheet, { TotemLinkedText } from "@/components/TotemSheet";
+import TotemGlyph from "@/components/TotemGlyph";
+import { findTotems, totemFromQuery, TOTEMS_BY_SLUG, type Totem } from "@/lib/totems";
 
 
 // ─── Live dictation hook (Web Speech API) ────────────────────────────────────
@@ -1047,6 +1050,8 @@ export default function JournalPage() {
   const [e2eeReady, setE2eeReady] = useState(false);
   const [showKeyExport, setShowKeyExport] = useState(false);
   const [deleteConfirmPending, setDeleteConfirmPending] = useState(false);
+  const [sheetTotem, setSheetTotem] = useState<Totem | null>(null);
+  const closeSheet = useCallback(() => setSheetTotem(null), []);
 
   useEffect(() => {
     setMounted(true);
@@ -1124,10 +1129,38 @@ export default function JournalPage() {
 
   const dictation = useDictation(appendToNotes);
 
+  // Deep links from the Medicine Animals pages: ?entry=<id> opens an entry,
+  // ?totem=<slug> starts a new entry seeded with that animal's journal prompt.
+  const deepLinkHandled = useRef(false);
+  useEffect(() => {
+    if (!mounted || deepLinkHandled.current) return;
+    deepLinkHandled.current = true;
+    const params = new URLSearchParams(window.location.search);
+    const entryId = params.get("entry");
+    const totem = TOTEMS_BY_SLUG[params.get("totem") ?? ""];
+    if (!entryId && !totem) return;
+    window.history.replaceState(null, "", "/journal");
+    if (entryId) { openEntry(entryId); return; }
+    const now = new Date().toISOString();
+    const seeded: JournalEntry = {
+      id: uid(), date: today(), title: `${totem.name} medicine`, text: `${totem.prompt}\n\n`, media: [],
+      createdAt: now, updatedAt: now,
+    };
+    saveEntry(seeded);
+    setList(loadList());
+    setActiveId(seeded.id);
+    setEntry(seeded);
+    if (isMobile) setShowList(false);
+  }, [mounted, openEntry, isMobile]);
+
+  const entryTotems = useMemo(() => (entry ? findTotems(`${entry.title}\n${entry.text}`) : []), [entry]);
+
   const availableYears = useMemo(() => {
     const years = new Set(list.map(item => new Date(item.date + "T12:00:00").getFullYear()));
     return Array.from(years).sort((a, b) => b - a);
   }, [list]);
+
+  const queryTotem = useMemo(() => totemFromQuery(searchQuery), [searchQuery]);
 
   const filteredList = useMemo(() => {
     return list.filter((item) => {
@@ -1140,11 +1173,13 @@ export default function JournalPage() {
         if (item.title.toLowerCase().includes(q)) return true;
         const full = loadEntry(item.id);
         if (full && full.text.toLowerCase().includes(q)) return true;
+        // "owl medicine" also finds entries that mention owls in any form
+        if (full && queryTotem && findTotems(`${full.title}\n${full.text}`).some((t) => t.slug === queryTotem.slug)) return true;
         return false;
       }
       return true;
     });
-  }, [list, searchQuery, filterMonth, filterWeekday, filterYear]);
+  }, [list, searchQuery, queryTotem, filterMonth, filterWeekday, filterYear]);
 
   const hasActiveFilters = searchQuery.trim() !== "" || filterMonth !== null || filterWeekday !== null || filterYear !== null;
 
@@ -1285,6 +1320,8 @@ export default function JournalPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "transparent", display: "flex", flexDirection: "column" }}>
+
+      <TotemSheet totem={sheetTotem} onClose={closeSheet} />
 
       {/* ── E2EE Key Management Modal ── */}
       {showKeyExport && (
@@ -1550,7 +1587,7 @@ export default function JournalPage() {
                     </h2>
                     {fullEntry.text && (
                       <p style={{ fontFamily: "Lora, Georgia, serif", fontSize: 14, color: "rgba(222,211,200,0.8)", lineHeight: 1.85, whiteSpace: "pre-wrap", marginBottom: photos.length ? 20 : 0 }}>
-                        {fullEntry.text}
+                        <TotemLinkedText text={fullEntry.text} onOpen={setSheetTotem} />
                       </p>
                     )}
                     {photos.length > 0 && (
@@ -1888,6 +1925,30 @@ export default function JournalPage() {
                       (e.target as HTMLTextAreaElement).style.boxShadow = "inset 0 2px 8px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.2)";
                     }}
                   />
+                  {/* Medicine animals named in this entry (matched on device) */}
+                  {entryTotems.length > 0 && (
+                    <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+                      <span style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(194,159,96,0.7)", marginRight: 2 }}>
+                        Medicine
+                      </span>
+                      {entryTotems.map((t) => (
+                        <button
+                          key={t.slug}
+                          type="button"
+                          onClick={() => setSheetTotem(t)}
+                          style={{
+                            display: "inline-flex", alignItems: "center", gap: 6,
+                            padding: "3px 10px 3px 4px", borderRadius: 999, cursor: "pointer",
+                            background: "rgba(194,159,96,0.07)", border: "1px solid rgba(194,159,96,0.3)",
+                            fontFamily: "Lora, Georgia, serif", fontSize: 13, color: "#C29F60",
+                          }}
+                        >
+                          <TotemGlyph totem={t} size={20} />
+                          {t.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* ── Compact media toolbar ── */}
