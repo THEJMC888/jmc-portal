@@ -5,6 +5,7 @@ import { Shield, ShieldCheck, ShieldX, Loader2, QrCode, KeyRound } from "lucide-
 import { supabase } from "@/lib/supabase";
 import type { Factor } from "@supabase/supabase-js";
 import PrivacySettings from "@/components/PrivacySettings";
+import PortalCard, { PORTAL_ICON_COLOR } from "@/components/PortalCard";
 
 type EnrollStep = "idle" | "qr" | "verify" | "done";
 
@@ -105,51 +106,26 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="p-6 md:p-10 max-w-2xl">
-      <div className="mb-8">
-        <h1
-          style={{
-            fontFamily: "Syne, system-ui, sans-serif",
-            fontWeight: 300,
-            fontSize: "clamp(1.5rem, 4vw, 2rem)",
-            color: "#DED3C8",
-            letterSpacing: "0.04em",
-          }}
-        >
+    <div className="max-w-2xl space-y-6 md:space-y-7">
+      <div className="animate-fade-in-up">
+        <p style={{ fontFamily: "Syne, system-ui, sans-serif", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.22em", fontSize: "0.62rem", color: "#C29F60", marginBottom: "0.5rem", opacity: 0.85 }}>
+          Your Account
+        </p>
+        <h1 style={{ fontFamily: '"Lora", Georgia, serif', fontWeight: 600, fontSize: "clamp(1.75rem, 4vw, 2.5rem)", color: "#DED3C8", lineHeight: 1.1, marginBottom: "0.4rem" }}>
           Account Settings
         </h1>
-        <div className="mt-2 h-px w-24" style={{ background: "linear-gradient(to right, #C29F60, transparent)" }} />
       </div>
 
       {/* Two-Factor Authentication */}
-      <div
-        className="rounded-2xl p-6"
-        style={{
-          background: "rgba(8,16,40,0.6)",
-          border: "1px solid rgba(194,159,96,0.18)",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
-          backdropFilter: "blur(24px)",
-        }}
-      >
-        <div className="flex items-center gap-3 mb-5">
-          {hasTotp
-            ? <ShieldCheck size={22} style={{ color: "#4ade80" }} />
-            : <Shield size={22} style={{ color: "rgba(194,159,96,0.7)" }} />
-          }
-          <h2
-            style={{
-              fontFamily: "Syne, system-ui, sans-serif",
-              fontWeight: 600,
-              fontSize: "1rem",
-              color: "#DED3C8",
-              letterSpacing: "0.06em",
-            }}
-          >
-            Two-Factor Authentication
-          </h2>
-          {hasTotp && (
+      <PortalCard
+        className="animate-fade-in-up animate-fade-in-up-delay-1"
+        icon={hasTotp
+          ? <ShieldCheck className="w-4 h-4" style={{ color: "#4ade80" }} />
+          : <Shield className="w-4 h-4" style={{ color: PORTAL_ICON_COLOR }} />}
+        title="Two-Factor Authentication"
+        badge={hasTotp && (
             <span
-              className="ml-auto rounded-full px-3 py-1 text-xs"
+              className="rounded-full px-3 py-1 text-xs"
               style={{
                 background: "rgba(74,222,128,0.12)",
                 border: "1px solid rgba(74,222,128,0.3)",
@@ -162,8 +138,8 @@ export default function SettingsPage() {
             >
               Active
             </span>
-          )}
-        </div>
+        )}
+      >
 
         {loadingFactors ? (
           <div className="flex items-center gap-2" style={{ color: "rgba(222,211,200,0.4)" }}>
@@ -333,7 +309,7 @@ export default function SettingsPage() {
             )}
           </>
         )}
-      </div>
+      </PortalCard>
 
       <PrivacySettings />
     </div>
