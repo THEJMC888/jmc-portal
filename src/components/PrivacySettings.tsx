@@ -12,12 +12,8 @@ import { issueNewRecoveryPhrase, signInWithDerivedPassword, signOutAndForgetKeys
 import { forgetLocalVaultCopies } from "@/lib/vaultSync";
 import { supabase } from "@/lib/supabase";
 import { RecoveryPhraseStep } from "@/components/KeySteps";
+import PortalCard, { PORTAL_ICON_COLOR } from "@/components/PortalCard";
 
-const CARD: React.CSSProperties = {
-  background: "rgba(8,16,40,0.6)", border: "1px solid rgba(194,159,96,0.18)",
-  boxShadow: "0 4px 24px rgba(0,0,0,0.4)", backdropFilter: "blur(24px)",
-};
-const H2: React.CSSProperties = { fontFamily: "Syne, system-ui, sans-serif", fontWeight: 600, fontSize: "1rem", color: "#DED3C8", letterSpacing: "0.06em" };
 const BODY: React.CSSProperties = { fontFamily: "Avenir, Nunito, system-ui, sans-serif", color: "rgba(222,211,200,0.6)", fontSize: "0.9rem", lineHeight: 1.6 };
 const BUTTON: React.CSSProperties = {
   fontFamily: "Syne, system-ui, sans-serif", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", fontSize: "0.72rem",
@@ -37,18 +33,6 @@ const TIMEOUTS = [
   { minutes: 60, label: "After 1 hour" },
   { minutes: 240, label: "After 4 hours" },
 ];
-
-function Section({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-2xl p-6 mt-6" style={CARD}>
-      <div className="flex items-center gap-3 mb-4">
-        {icon}
-        <h2 style={H2}>{title}</h2>
-      </div>
-      {children}
-    </div>
-  );
-}
 
 export default function PrivacySettings() {
   const router = useRouter();
@@ -133,7 +117,7 @@ export default function PrivacySettings() {
 
   return (
     <>
-      <Section icon={<Lock size={22} style={{ color: "rgba(110,231,183,0.8)" }} />} title="Your Privacy">
+      <PortalCard className="animate-fade-in-up animate-fade-in-up-delay-1" icon={<Lock className="w-4 h-4" style={{ color: PORTAL_ICON_COLOR }} />} title="Your Privacy">
         <p style={BODY} className="mb-4">
           Your journal, statements, vision videos, attunements and blueprint are encrypted on your own devices before they are saved.
           The portal holds only sealed copies, so no one at The Journeymen Collective can read them. Your password or your 24 word recovery phrase opens them on every device where you sign in.
@@ -149,16 +133,16 @@ export default function PrivacySettings() {
             {phraseError && <p style={ERROR} className="mt-2">{phraseError}</p>}
           </>
         )}
-      </Section>
+      </PortalCard>
 
-      <Section icon={<Timer size={22} style={{ color: "rgba(194,159,96,0.7)" }} />} title="Sign Out When Idle">
+      <PortalCard className="animate-fade-in-up animate-fade-in-up-delay-1" icon={<Timer className="w-4 h-4" style={{ color: PORTAL_ICON_COLOR }} />} title="Sign Out When Idle">
         <p style={BODY} className="mb-4">On this device, sign out and remove your key after a period without activity.</p>
         <select value={timeout} onChange={(e) => chooseTimeout(Number(e.target.value))} style={{ ...INPUT, maxWidth: 260 }}>
           {TIMEOUTS.map((t) => <option key={t.minutes} value={t.minutes}>{t.label}</option>)}
         </select>
-      </Section>
+      </PortalCard>
 
-      <Section icon={<Download size={22} style={{ color: "rgba(194,159,96,0.7)" }} />} title="Download My Data">
+      <PortalCard className="animate-fade-in-up animate-fade-in-up-delay-1" icon={<Download className="w-4 h-4" style={{ color: PORTAL_ICON_COLOR }} />} title="Download My Data">
         <p style={BODY} className="mb-4">
           A zip of everything you have in the portal: journal entries with their photos and recordings, statements, vision videos, attunements, blueprint and your Journey notes. It is opened here on your device.
         </p>
@@ -167,9 +151,9 @@ export default function PrivacySettings() {
           {exporting ? "Preparing" : "Download my data"}
         </button>
         {exportError && <p style={ERROR} className="mt-2">{exportError}</p>}
-      </Section>
+      </PortalCard>
 
-      <Section icon={<Trash2 size={22} style={{ color: "#fca5a5" }} />} title="Delete My Account">
+      <PortalCard className="animate-fade-in-up animate-fade-in-up-delay-1" icon={<Trash2 className="w-4 h-4" style={{ color: "#fca5a5" }} />} title="Delete My Account">
         {!deleteOpen ? (
           <>
             <p style={BODY} className="mb-4">
@@ -194,7 +178,7 @@ export default function PrivacySettings() {
             </div>
           </form>
         )}
-      </Section>
+      </PortalCard>
     </>
   );
 }
