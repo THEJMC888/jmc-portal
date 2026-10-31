@@ -13,6 +13,7 @@ import {
 } from "@/lib/journalCrypto";
 import { isSealed, openText, sealText } from "@/lib/e2ee";
 import { useAccountKey } from "@/lib/accountKeyContext";
+import { getBlob, putBlob } from "@/lib/vaultSync";
 import TotemSheet, { TotemLinkedText } from "@/components/TotemSheet";
 import TotemGlyph from "@/components/TotemGlyph";
 import { findTotems, totemFromQuery, TOTEMS_BY_SLUG, type Totem } from "@/lib/totems";
@@ -65,11 +66,15 @@ interface JournalMedia {
   id: string;
   type: "audio" | "video" | "image";
   name: string;
-  dataUrl: string;
+  dataUrl: string;  // empty until fetched when the file came from another device
   duration: number; // seconds
   size: number;     // bytes
   createdAt: string;
+  blobId?: string;  // sealed file in the private vault bucket, once uploaded
 }
+
+// What the server keeps per media item (inside the sealed media column)
+type StoredMedia = Omit<JournalMedia, "dataUrl"> & { blobId: string };
 
 interface JournalEntry {
   id: string;
@@ -116,21 +121,58 @@ function deleteEntry(id: string) {
 // ─── Supabase sync helpers ────────────────────────────────────────────────────
 // Title and text are sealed with the account content key before upload, so
 // Supabase only holds ciphertext. The date stays readable for ordering.
-const aad = (id: string, field: "title" | "text") => `journal:${id}:${field}`;
+const aad = (id: string, field: "title" | "text" | "media") => `journal:${id}:${field}`;
+
+/**
+ * Upload each new photo or recording as a sealed file. A file that fails
+ * (offline, too large) stays on this device and is tried again next time.
+ */
+async function uploadMedia(media: JournalMedia[], userId: string, contentKey: CryptoKey): Promise<JournalMedia[]> {
+  const out: JournalMedia[] = [];
+  for (const m of media) {
+    if (m.blobId || !m.dataUrl) { out.push(m); continue; }
+    try { out.push({ ...m, blobId: await putBlob(userId, contentKey, m.dataUrl) }); } catch { out.push(m); }
+  }
+  return out;
+}
+
+// Keep the file ids from an upload without touching anything edited since
+function rememberBlobIds(entryId: string, media: JournalMedia[]) {
+  const ids = new Map(media.filter((m) => m.blobId).map((m) => [m.id, m.blobId!]));
+  const local = loadEntry(entryId);
+  if (!local || !local.media.some((m) => !m.blobId && ids.has(m.id))) return;
+  try { saveEntry({ ...local, media: local.media.map((m) => (m.blobId || !ids.has(m.id) ? m : { ...m, blobId: ids.get(m.id) })) }); } catch { /* storage full */ }
+}
 
 async function syncToSupabase(entry: JournalEntry, userId: string, contentKey: CryptoKey | null) {
   // Never upload plaintext, and never overwrite real ciphertext with a placeholder
   if (!contentKey || !userId || isLocked(entry)) return;
+  const media = await uploadMedia(entry.media, userId, contentKey);
+  const stored: StoredMedia[] = media.filter((m) => m.blobId).map(({ dataUrl, ...m }) => { void dataUrl; return m as StoredMedia; });
   const { error } = await supabase.from("journal_entries").upsert({
     id: entry.id,
     date: entry.date,
     title: await sealText(contentKey, entry.title, aad(entry.id, "title")),
     text: await sealText(contentKey, entry.text, aad(entry.id, "text")),
+    media: await sealText(contentKey, JSON.stringify(stored), aad(entry.id, "media")),
     created_at: entry.createdAt,
     updated_at: entry.updatedAt,
     user_id: userId,
   });
   if (error) throw new Error(error.message);
+  rememberBlobIds(entry.id, media);
+}
+
+/**
+ * Media for a copy pulled from the server: its list wins, reusing the file
+ * this device already holds, plus local files not uploaded yet.
+ */
+function mergeMedia(local: JournalMedia[], remote: StoredMedia[] | null): JournalMedia[] {
+  if (remote === null) return local; // row from before media sync
+  const held = new Map(local.map((m) => [m.id, m]));
+  const merged: JournalMedia[] = remote.map((m) => ({ ...m, dataUrl: held.get(m.id)?.dataUrl ?? "" }));
+  const ids = new Set(remote.map((m) => m.id));
+  return [...merged, ...local.filter((m) => !m.blobId && !ids.has(m.id))];
 }
 
 async function deleteFromSupabase(id: string) {
@@ -140,6 +182,8 @@ async function deleteFromSupabase(id: string) {
 interface RemoteEntry extends JournalEntry {
   /** Opened, but stored in an older format: re-upload sealed by the account key. */
   needsUpgrade: boolean;
+  /** Media list from the server, or null when the row has none yet. */
+  remoteMedia: StoredMedia[] | null;
 }
 
 async function openField(
@@ -163,6 +207,11 @@ async function fetchFromSupabase(contentKey: CryptoKey, legacyKey: CryptoKey | n
   return Promise.all((data ?? []).map(async (row): Promise<RemoteEntry> => {
     const title = await openField(row.title ?? "", row.id, "title", contentKey, legacyKey);
     const text = await openField(row.text ?? "", row.id, "text", contentKey, legacyKey);
+    let remoteMedia: StoredMedia[] | null = null;
+    if (row.media) {
+      const raw = await openText(contentKey, row.media, aad(row.id, "media"));
+      try { remoteMedia = raw === null ? null : (JSON.parse(raw) as StoredMedia[]); } catch { remoteMedia = null; }
+    }
     const locked = title.value === null || text.value === null;
     return {
       id: row.id,
@@ -174,6 +223,7 @@ async function fetchFromSupabase(contentKey: CryptoKey, legacyKey: CryptoKey | n
       updatedAt: row.updated_at,
       locked,
       needsUpgrade: !locked && (title.upgrade || text.upgrade),
+      remoteMedia,
     };
   }));
 }
@@ -193,9 +243,10 @@ async function syncJournal(userId: string, contentKey: CryptoKey): Promise<void>
     // A readable local copy always beats a remote row this device cannot open.
     // A locked or placeholder local copy is always refreshed from remote.
     const replace = !local || isLocked(local) || (!remote.locked && remote.updatedAt > local.updatedAt);
-    const { needsUpgrade, ...entry } = remote;
+    const { needsUpgrade, remoteMedia, ...rest } = remote;
+    const entry = { ...rest, media: mergeMedia(local?.media ?? [], remoteMedia) };
     if (replace) {
-      try { saveEntry({ ...entry, media: local?.media ?? [] }); } catch { /* storage full */ }
+      try { saveEntry(entry); } catch { /* storage full */ }
       if (needsUpgrade) await syncToSupabase(entry, userId, contentKey).catch(() => { failures++; });
     } else if (local && !isLocked(local) && (remote.locked || needsUpgrade || local.updatedAt > remote.updatedAt)) {
       // This device holds the newer or only readable copy
@@ -815,7 +866,27 @@ function useRecorder(type: "audio" | "video") {
 }
 
 // ─── Media player ─────────────────────────────────────────────────────────────
+/** A playable source for a media item, fetching its sealed file when needed. */
+function useMediaSrc(item: JournalMedia): string {
+  const { contentKey, userId } = useAccountKey();
+  const [fetched, setFetched] = useState("");
+  useEffect(() => {
+    if (item.dataUrl || !item.blobId || !contentKey || !userId) return;
+    let live = true;
+    getBlob(userId, contentKey, item.blobId).then((url) => { if (live && url) setFetched(url); });
+    return () => { live = false; };
+  }, [item.dataUrl, item.blobId, contentKey, userId]);
+  return item.dataUrl || fetched;
+}
+
+function MediaImage({ item, style }: { item: JournalMedia; style: React.CSSProperties }) {
+  const src = useMediaSrc(item);
+  // eslint-disable-next-line @next/next/no-img-element
+  return src ? <img src={src} alt={item.name} style={style} /> : <div style={{ ...style, background: "rgba(255,255,255,0.04)" }} />;
+}
+
 function MediaPlayer({ item, onDelete, onTranscribe }: { item: JournalMedia; onDelete: () => void; onTranscribe?: () => Promise<void> }) {
+  const mediaSrc = useMediaSrc(item);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [transcribing, setTranscribing] = useState(false);
@@ -924,7 +995,7 @@ function MediaPlayer({ item, onDelete, onTranscribe }: { item: JournalMedia; onD
       {item.type === "audio" ? (
         <audio
           ref={ref as React.RefObject<HTMLAudioElement>}
-          src={item.dataUrl}
+          src={mediaSrc || undefined}
           onTimeUpdate={() => {
             if (ref.current && ref.current.duration) setProgress(ref.current.currentTime / ref.current.duration);
           }}
@@ -934,7 +1005,7 @@ function MediaPlayer({ item, onDelete, onTranscribe }: { item: JournalMedia; onD
       ) : (
         <video
           ref={ref as React.RefObject<HTMLVideoElement>}
-          src={item.dataUrl}
+          src={mediaSrc || undefined}
           controls
           onTimeUpdate={() => {
             if (ref.current && ref.current.duration) setProgress(ref.current.currentTime / ref.current.duration);
@@ -1216,7 +1287,10 @@ export default function JournalPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) { alert("Not authenticated — please sign in."); return; }
 
-      const res = await fetch(item.dataUrl);
+      const src = item.dataUrl
+        || (item.blobId && cryptoKeyRef.current && userIdRef.current ? await getBlob(userIdRef.current, cryptoKeyRef.current, item.blobId) : null);
+      if (!src) { alert("This recording is still on its way to this device. Please try again in a moment."); return; }
+      const res = await fetch(src);
       const blob = await res.blob();
       const ext = blob.type.includes("mp4") ? "mp4" : blob.type.includes("ogg") ? "ogg" : "webm";
       const form = new FormData();
@@ -1622,8 +1696,7 @@ export default function JournalPage() {
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))", gap: 6, marginTop: 16 }}>
                         {photos.map((p) => (
                           <div key={p.id} style={{ borderRadius: 6, overflow: "hidden", aspectRatio: "1", background: "rgba(0,0,0,0.3)" }}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={p.dataUrl} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                            <MediaImage item={p} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                           </div>
                         ))}
                       </div>
@@ -2135,6 +2208,9 @@ export default function JournalPage() {
                       {entry.media.filter((m) => m.type === "audio").map((item) => (
                         <MediaPlayer key={item.id} item={item} onDelete={() => removeMedia(item.id)} onTranscribe={() => handleTranscribeClip(item)} />
                       ))}
+                      <p style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 11, color: "rgba(222,211,200,0.4)", margin: 0 }}>
+                        To transcribe, a recording is sent unencrypted to our speech service for that one request. It is never logged or stored.
+                      </p>
                     </div>
                   )}
 
@@ -2143,8 +2219,7 @@ export default function JournalPage() {
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))", gap: 8, marginTop: 14 }}>
                       {entry.media.filter((m) => m.type === "image").map((item) => (
                         <div key={item.id} style={{ position: "relative", borderRadius: 8, overflow: "hidden", aspectRatio: "1", background: "rgba(0,0,0,0.3)" }}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={item.dataUrl} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                          <MediaImage item={item} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                           <button
                             onClick={() => removeMedia(item.id)}
                             style={{ position: "absolute", top: 4, right: 4, width: 20, height: 20, borderRadius: "50%", background: "rgba(0,0,0,0.65)", border: "1px solid rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", padding: 0 }}
