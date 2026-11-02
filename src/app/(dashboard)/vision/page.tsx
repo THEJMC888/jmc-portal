@@ -6,7 +6,7 @@ import {
   Plus, Trash2, Play, Upload, Music, X, Download,
   Type, Image as ImageIcon, Bold, Italic, AlignLeft,
   AlignCenter, AlignRight, ChevronUp, ChevronDown,
-  Layers, Sparkles, ImagePlus, FileInput, Send, CheckCircle,
+  Layers, Sparkles, ImagePlus, FileInput, Send, CheckCircle, Timer, Minus,
 } from "lucide-react";
 import type { VisionVideo, VisionSlide, SlideElement, SlideBackground } from "@/types";
 import { parsePptxFile } from "@/lib/parsePptx";
@@ -14,6 +14,7 @@ import { useMobile } from "@/hooks/useMobile";
 import MobileVisionEditor from "@/components/MobileVisionEditor";
 import { PORTAL_PHOTO_BUCKETS, BUCKET_LABELS, type PortalPhotoBucket } from "@/lib/portalPhotos";
 import { useAuth } from "@/lib/auth";
+import { slideSecs, defaultSlideSecs, totalSecs, fmtRuntime, applyDurationToAll, setSlideDuration, MIN_SLIDE_SECS, MAX_SLIDE_SECS } from "@/lib/visionTiming";
 import { useVaultRefresh } from "@/lib/accountKeyContext";
 
 // ─── Virtual canvas ────────────────────────────────────────────────────────
@@ -461,7 +462,7 @@ function bgStyle(bg: SlideBackground): React.CSSProperties {
 
 // ─── Export HTML ───────────────────────────────────────────────────────────
 function generateExportHTML(v: VisionVideo): string {
-  const slides = v.slides;
+  const slides = v.slides.map((s) => ({ ...s, duration: slideSecs(s, v) }));
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -527,7 +528,8 @@ body{background:#000;overflow:hidden;-webkit-font-smoothing:antialiased}
 <script>
 const SLIDES=${JSON.stringify(slides)};
 const MUSIC=${v.musicDataUrl ? JSON.stringify(v.musicDataUrl) : "null"};
-const DUR=${v.slideDuration};
+const DUR=${defaultSlideSecs(v)};
+const dur=i=>(SLIDES[i]&&SLIDES[i].duration)||DUR;
 let cur=0,busy=false,aud=null,htimer=null,timer=null;
 const sc=document.getElementById('sc'),dots=document.getElementById('dots'),
       ttl=document.getElementById('ttl'),ss=document.getElementById('ss'),es=document.getElementById('es');
@@ -555,7 +557,7 @@ function renderBg(slide,container){
     const d=document.createElement('div');d.className='bg-img';
     d.style.backgroundImage='url('+bg.imageDataUrl+')';
     const kbv=(slide.kenBurnsVariant||0)%4;
-    d.style.animation='kb'+kbv+' '+(DUR+2)+'s ease-out forwards';
+    d.style.animation='kb'+kbv+' '+((slide.duration||DUR)+2)+'s ease-out forwards';
     container.appendChild(d);
     const ov=(bg.overlayOpacity??0.4);
     if(ov>0){const o=document.createElement('div');o.className='ov';o.style.background='rgba(0,0,0,'+ov+')';container.appendChild(o);}
@@ -610,20 +612,20 @@ function go(i){
   }
   busy=true;clearTimeout(timer);sc.style.opacity='0';
   setTimeout(()=>{cur=i;render(SLIDES[i]);updDots(i);sc.style.opacity='1';busy=false;
-    timer=setTimeout(()=>go(i+1),DUR*1000);},600);
+    timer=setTimeout(()=>go(i+1),dur(i)*1000);},600);
 }
 
 function start(){
   ss.style.opacity='0';setTimeout(()=>ss.style.display='none',500);
   dots.style.opacity='1';ttl.style.opacity='1';
   if(MUSIC){aud=new Audio(MUSIC);aud.loop=true;aud.volume=0.7;aud.play().catch(()=>{});}
-  render(SLIDES[0]);timer=setTimeout(()=>go(1),DUR*1000);
+  render(SLIDES[0]);timer=setTimeout(()=>go(1),dur(0)*1000);
 }
 ss.onclick=start;
 document.getElementById('rb').onclick=()=>{
   es.style.display='none';dots.style.opacity='1';ttl.style.opacity='1';
   if(aud){aud.currentTime=0;aud.play().catch(()=>{});}
-  sc.style.opacity='1';render(SLIDES[0]);timer=setTimeout(()=>go(1),DUR*1000);
+  sc.style.opacity='1';render(SLIDES[0]);timer=setTimeout(()=>go(1),dur(0)*1000);
 };
 document.addEventListener('mousemove',()=>{
   if(ss.style.display!=='none'||es.style.display==='flex')return;
@@ -674,7 +676,8 @@ export default function VisionPage() {
   const [previewingId, setPreviewingId] = useState<string | null>(null);
   const [jmcBucket, setJmcBucket] = useState<PortalPhotoBucket | "all">("all");
   const [jmcLoadingId, setJmcLoadingId] = useState<string | null>(null);
-  const [controlTab, setControlTab] = useState<"bg" | "style" | "music" | "photos">("bg");
+  const [controlTab, setControlTab] = useState<"bg" | "style" | "timing" | "music" | "photos">("bg");
+  const [allSecsDraft, setAllSecsDraft] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
   const [submitMsg, setSubmitMsg] = useState("");
@@ -1509,10 +1512,9 @@ export default function VisionPage() {
     recorder.start(100);
 
     const totalSlides = vision.slides.length;
-    const durMs = vision.slideDuration * 1000;
-
     for (let si = 0; si < totalSlides; si++) {
       const slide = vision.slides[si];
+      const durMs = slideSecs(slide, vision) * 1000;
       const start = Date.now();
       await new Promise<void>((resolve) => {
         const tick = async () => {
@@ -1882,25 +1884,148 @@ export default function VisionPage() {
     if (vision.musicDataUrl === track.dataUrl) save((v) => ({ ...v, musicDataUrl: undefined, musicName: undefined }));
   };
 
-  const renderMusicPanel = () => (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {/* Slide duration */}
-      <div>
-        <Label>Slide Duration</Label>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <input
-            type="number" min={3} max={30} value={vision.slideDuration}
-            onChange={(e) => save((v) => ({ ...v, slideDuration: Number(e.target.value) }))}
-            style={{
-              width: 52, padding: "5px 8px", borderRadius: 4,
-              background: "rgba(255,255,255,0.06)", border: "1px solid rgba(194,159,96,0.2)",
-              color: "#DED3C8", fontSize: 13, textAlign: "center", outline: "none",
-            }}
-          />
-          <span style={{ fontSize: 11, color: "rgba(222,211,200,0.5)", fontFamily: "Syne,system-ui,sans-serif" }}>seconds per slide</span>
+  // ─── Slide timing ──────────────────────────────────────────────────────────
+  const setDur = (slideId: string, secs: number | null) => save((v) => setSlideDuration(v, slideId, secs));
+
+  // Commits on blur / Enter so typing "12" isn't clamped at "1"
+  const renderSecsInput = (value: number, onCommit: (n: number) => void, size: "sm" | "lg" = "sm") => (
+    <input
+      key={value}
+      type="number" inputMode="numeric" min={MIN_SLIDE_SECS} max={MAX_SLIDE_SECS} defaultValue={value}
+      onBlur={(e) => { const n = Number(e.target.value); if (e.target.value !== "" && n !== value) onCommit(n); else e.target.value = String(value); }}
+      onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+      style={{
+        width: size === "lg" ? 52 : 38, padding: size === "lg" ? "6px 4px" : "3px 2px", borderRadius: 4,
+        background: "rgba(255,255,255,0.06)", border: "1px solid rgba(194,159,96,0.25)",
+        color: "#DED3C8", fontSize: size === "lg" ? 15 : 12, fontWeight: 700, textAlign: "center", outline: "none",
+      }}
+    />
+  );
+
+  const renderStepper = (slideId: string, value: number, size: "sm" | "lg" = "sm") => {
+    const btn: React.CSSProperties = {
+      width: size === "lg" ? 30 : 22, height: size === "lg" ? 30 : 22, borderRadius: 4, flexShrink: 0,
+      border: "1px solid rgba(194,159,96,0.3)", background: "rgba(194,159,96,0.08)", color: "#C29F60",
+      cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+    };
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        <button title="1 second shorter" disabled={value <= MIN_SLIDE_SECS} onClick={() => setDur(slideId, value - 1)} style={{ ...btn, opacity: value <= MIN_SLIDE_SECS ? 0.35 : 1 }}><Minus size={size === "lg" ? 13 : 10} /></button>
+        {renderSecsInput(value, (n) => setDur(slideId, n), size)}
+        <button title="1 second longer" disabled={value >= MAX_SLIDE_SECS} onClick={() => setDur(slideId, value + 1)} style={{ ...btn, opacity: value >= MAX_SLIDE_SECS ? 0.35 : 1 }}><Plus size={size === "lg" ? 13 : 10} /></button>
+        <span style={{ fontSize: size === "lg" ? 11 : 10, color: "rgba(222,211,200,0.5)", fontFamily: "Syne,system-ui,sans-serif" }}>sec</span>
+      </div>
+    );
+  };
+
+  const renderTimingPanel = () => {
+    const def = defaultSlideSecs(vision);
+    const allSecs = allSecsDraft ?? def;
+    const total = totalSecs(vision);
+    const selIdx = Math.max(0, vision.slides.findIndex((s) => s.id === selSlide.id));
+    const selSecs = slideSecs(selSlide, vision);
+    const selCustom = selSlide.duration != null;
+    const cardStyle: React.CSSProperties = { padding: "14px 16px", borderRadius: 12, display: "flex", flexDirection: "column", gap: 10 };
+    const kicker: React.CSSProperties = { fontSize: 9, fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700, letterSpacing: "0.14em", color: "#C29F60", textTransform: "uppercase" };
+    const note: React.CSSProperties = { fontSize: 10, color: "rgba(222,211,200,0.45)", fontFamily: "Syne,system-ui,sans-serif", lineHeight: 1.5 };
+
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
+        {/* Runtime + proportional timeline */}
+        <div>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 6 }}>
+            <Label>Timeline · click a slide to select it</Label>
+            <span style={{ fontSize: 11, color: "#DED3C8", fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700 }}>
+              Total {fmtRuntime(total)} <span style={{ color: "rgba(222,211,200,0.4)", fontWeight: 400 }}>· {vision.slides.length} slide{vision.slides.length === 1 ? "" : "s"}</span>
+            </span>
+          </div>
+          <div style={{ display: "flex", gap: 2, height: 30, borderRadius: 6, overflow: "hidden" }}>
+            {vision.slides.map((slide, idx) => {
+              const secs = slideSecs(slide, vision);
+              const active = slide.id === selSlide.id;
+              return (
+                <button
+                  key={slide.id}
+                  title={`Slide ${idx + 1} · ${secs}s`}
+                  onClick={() => { setSelSlideId(slide.id); setSelElId(null); setEditingElId(null); }}
+                  style={{
+                    flex: secs, minWidth: 14, border: "none", cursor: "pointer", padding: 0,
+                    background: active ? "rgba(194,159,96,0.55)" : slide.duration != null ? "rgba(194,159,96,0.22)" : "rgba(255,255,255,0.08)",
+                    color: active ? "#040d1c" : "rgba(222,211,200,0.75)",
+                    fontSize: 9, fontWeight: 700, fontFamily: "Syne,system-ui,sans-serif", overflow: "hidden", whiteSpace: "nowrap",
+                  }}
+                >{secs}s</button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12 }}>
+          {/* This slide */}
+          <div className="card-luxury" style={cardStyle}>
+            <div style={{ ...kicker, display: "flex", alignItems: "center", gap: 6 }}><Timer size={12} /> Slide {selIdx + 1}</div>
+            {renderStepper(selSlide.id, selSecs, "lg")}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+              <span style={note}>{selCustom ? "Custom length for this slide" : `Using the default (${def}s)`}</span>
+              {selCustom && (
+                <button onClick={() => setDur(selSlide.id, null)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "#C29F60", fontSize: 10, fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700, letterSpacing: "0.06em", textDecoration: "underline" }}>
+                  Reset to {def}s
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* All slides */}
+          <div className="card-luxury" style={cardStyle}>
+            <div style={kicker}>All slides</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              {renderSecsInput(allSecs, (n) => setAllSecsDraft(n), "lg")}
+              <span style={{ fontSize: 11, color: "rgba(222,211,200,0.5)", fontFamily: "Syne,system-ui,sans-serif" }}>sec</span>
+              <button
+                onClick={() => { save((v) => applyDurationToAll(v, allSecs)); setAllSecsDraft(null); }}
+                style={{
+                  marginLeft: "auto", padding: "8px 14px", borderRadius: 6,
+                  border: "1px solid rgba(194,159,96,0.5)", background: "rgba(194,159,96,0.16)", color: "#C29F60",
+                  cursor: "pointer", fontSize: 10, fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+                }}
+              >
+                Apply to all slides
+              </button>
+            </div>
+            <span style={note}>Sets every slide to this length and clears custom timings. New slides use it too.</span>
+          </div>
+        </div>
+
+        {/* Every slide at a glance */}
+        <div>
+          <Label>Each slide</Label>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 6 }}>
+            {vision.slides.map((slide, idx) => {
+              const active = slide.id === selSlide.id;
+              return (
+                <div
+                  key={slide.id}
+                  onClick={() => { setSelSlideId(slide.id); setSelElId(null); setEditingElId(null); }}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6,
+                    padding: "5px 8px", borderRadius: 6, cursor: "pointer",
+                    border: active ? "1px solid rgba(194,159,96,0.6)" : "1px solid rgba(255,255,255,0.06)",
+                    background: active ? "rgba(194,159,96,0.08)" : "rgba(255,255,255,0.03)",
+                  }}
+                >
+                  <span style={{ fontSize: 10, fontWeight: 700, fontFamily: "Syne,system-ui,sans-serif", color: slide.duration != null ? "#C29F60" : "rgba(222,211,200,0.55)" }}>{idx + 1}</span>
+                  <div onClick={(e) => e.stopPropagation()}>{renderStepper(slide.id, slideSecs(slide, vision))}</div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
+    );
+  };
 
+  const renderMusicPanel = () => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {/* Music library */}
       <div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
@@ -2324,6 +2449,18 @@ export default function VisionPage() {
                   fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700,
                   color: "rgba(255,255,255,0.45)", zIndex: 10, pointerEvents: "none",
                 }}>{idx + 1}</span>
+                {/* Duration badge — gold when the slide has its own length */}
+                <span
+                  title={slide.duration != null ? "Custom slide length" : "Default slide length"}
+                  onClick={(e) => { e.stopPropagation(); setSelSlideId(slide.id); setSelElId(null); setEditingElId(null); setControlTab("timing"); }}
+                  style={{
+                    position: "absolute", bottom: 2, right: 2, zIndex: 10, cursor: "pointer",
+                    fontSize: 7, fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700,
+                    padding: "1px 3px", borderRadius: 2,
+                    background: slide.duration != null ? "rgba(194,159,96,0.9)" : "rgba(0,0,0,0.5)",
+                    color: slide.duration != null ? "#040d1c" : "rgba(255,255,255,0.7)",
+                  }}
+                >{slideSecs(slide, vision)}s</span>
                 {/* Statement source badge */}
                 {slide.statementSource && (
                   <span title={slide.statementOverridden ? "Manually edited — out of sync" : "Synced from Statements"} style={{
@@ -2885,6 +3022,7 @@ export default function VisionPage() {
               {([
                 { id: "bg",     label: "Background" },
                 { id: "style",  label: "Style" },
+                { id: "timing", label: "Timing" },
                 { id: "music",  label: "Music" },
                 { id: "photos", label: "Photos" },
               ] as const).map(({ id, label }) => (
@@ -2923,6 +3061,7 @@ export default function VisionPage() {
                   </div>
                 )
               )}
+              {controlTab === "timing" && renderTimingPanel()}
               {controlTab === "music" && renderMusicPanel()}
               {controlTab === "photos" && (
                 <div>
