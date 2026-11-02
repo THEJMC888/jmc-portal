@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { X, Play, Pause, SkipForward, SkipBack, Volume2, VolumeX } from "lucide-react";
 import type { VisionVideo, VisionSlide, SlideBackground, SlideElement } from "@/types";
+import { slideSecs } from "@/lib/visionTiming";
 
 const CURRENT_ID_KEY = "jmc_current_vision_id";
 const visionKey = (id: string) => `jmc_vision_${id}`;
@@ -185,7 +186,7 @@ export default function VisionPlayerPage() {
       }
       setIsTransitioning(true);
       setTimeout(() => { setCurrentIdx(next); setKbKey((k) => k + 1); setIsTransitioning(false); }, 550);
-    }, vision.slideDuration * 1000);
+    }, slideSecs(vision.slides[currentIdx] ?? {}, vision) * 1000);
     return () => clearTimeout(timerRef.current!);
   }, [isPlaying, currentIdx, vision, isTransitioning, ended]);
 
@@ -242,7 +243,7 @@ export default function VisionPlayerPage() {
           {/* Slide content */}
           <div style={{ position: "absolute", inset: 0, opacity: isTransitioning ? 0 : 1, transition: "opacity 0.55s ease" }}>
             {/* Background */}
-            <SlideBg bg={slide.background} kbKey={kbKey} dur={vision.slideDuration} />
+            <SlideBg bg={slide.background} kbKey={kbKey} dur={slideSecs(slide, vision)} />
 
             {/* Ambient teal glow */}
             <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% 50%, rgba(29,116,88,0.1), transparent 60%)", pointerEvents: "none" }} />

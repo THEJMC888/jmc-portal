@@ -76,6 +76,7 @@ export interface VisionSlide {
   background: SlideBackground;
   elements: SlideElement[];
   kenBurnsVariant: number;
+  duration?: number; // seconds; falls back to VisionVideo.slideDuration
   statementSource?: { categoryId: string; beingElId: string; doingElId: string };
   statementOverridden?: boolean;
 }
@@ -86,7 +87,7 @@ export interface VisionVideo {
   slides: VisionSlide[];
   musicDataUrl?: string;
   musicName?: string;
-  slideDuration: number;
+  slideDuration: number; // default seconds per slide
   createdAt: string;
   updatedAt: string;
 }

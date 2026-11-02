@@ -6,10 +6,11 @@ import {
   Play, Plus, Trash2, ChevronLeft, ChevronRight,
   AlignLeft, AlignCenter, AlignRight,
   X, Check, Image as ImageIcon, Pipette,
-  Type, Layers, Music, BookOpen, FolderOpen, LayoutTemplate, Copy,
+  Type, Layers, Music, BookOpen, FolderOpen, LayoutTemplate, Copy, Timer, Minus,
 } from "lucide-react";
 import type { VisionVideo, VisionSlide, SlideElement, SlideBackground } from "@/types";
 import { PORTAL_PHOTO_BUCKETS, BUCKET_LABELS, type PortalPhotoBucket } from "@/lib/portalPhotos";
+import { slideSecs, defaultSlideSecs, totalSecs, fmtRuntime, applyDurationToAll, setSlideDuration, MIN_SLIDE_SECS, MAX_SLIDE_SECS } from "@/lib/visionTiming";
 
 // ── Storage keys (match desktop editor) ──────────────────────────────────────
 const VISIONS_LIST_KEY  = "jmc_visions_list";
@@ -138,7 +139,7 @@ function makeBlankVision(): VisionVideo {
   const id = uid();
   return {
     id, title: "My Vision",
-    slideDuration: 6000,
+    slideDuration: 7,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     slides: [{
@@ -183,7 +184,7 @@ function bgStyle(bg: SlideBackground): React.CSSProperties {
   return { background: "#040d1c" };
 }
 
-type SheetMode = null | "bg" | "elements" | "text-edit" | "templates" | "statements" | "visions" | "music" | "photos";
+type SheetMode = null | "bg" | "elements" | "text-edit" | "templates" | "statements" | "visions" | "timing" | "music" | "photos";
 
 function ColorRow({
   current,
@@ -238,6 +239,7 @@ export default function MobileVisionEditor() {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
   const [photoLibTab, setPhotoLibTab] = useState<"jmc" | "personal">("jmc");
+  const [allSecsDraft, setAllSecsDraft] = useState<number | null>(null);
   const [jmcBucket, setJmcBucket] = useState<PortalPhotoBucket>("morning");
 
   const touchStartX = useRef(0);
@@ -524,6 +526,40 @@ export default function MobileVisionEditor() {
   const SCALE = PREVIEW_W / VW;
 
   // ── Shared button style helpers ─────────────────────────────────────────────
+  // ─── Slide timing ──────────────────────────────────────────────────────────
+  const setDur = (slideId: string, secs: number | null) => save((v) => setSlideDuration(v, slideId, secs));
+
+  // Commits on blur / Enter so typing "12" isn't clamped at "1"
+  const renderSecsInput = (value: number, onCommit: (n: number) => void, big = false) => (
+    <input
+      key={value}
+      type="number" inputMode="numeric" min={MIN_SLIDE_SECS} max={MAX_SLIDE_SECS} defaultValue={value}
+      onBlur={(e) => { const n = Number(e.target.value); if (e.target.value !== "" && n !== value) onCommit(n); else e.target.value = String(value); }}
+      onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+      style={{
+        width: big ? 58 : 44, height: big ? 40 : 34, borderRadius: 8,
+        background: "rgba(255,255,255,0.06)", border: "1px solid rgba(194,159,96,0.3)",
+        color: "#DED3C8", fontSize: 16, fontWeight: 700, textAlign: "center", outline: "none",
+      }}
+    />
+  );
+
+  const renderStepper = (slideId: string, value: number, big = false) => {
+    const btn = (disabled: boolean): React.CSSProperties => ({
+      width: big ? 40 : 34, height: big ? 40 : 34, borderRadius: 8, flexShrink: 0,
+      border: "1px solid rgba(194,159,96,0.35)", background: "rgba(194,159,96,0.1)", color: "#C29F60",
+      cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: disabled ? 0.35 : 1,
+    });
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <button aria-label="1 second shorter" disabled={value <= MIN_SLIDE_SECS} onClick={() => setDur(slideId, value - 1)} style={btn(value <= MIN_SLIDE_SECS)}><Minus size={15} /></button>
+        {renderSecsInput(value, (n) => setDur(slideId, n), big)}
+        <button aria-label="1 second longer" disabled={value >= MAX_SLIDE_SECS} onClick={() => setDur(slideId, value + 1)} style={btn(value >= MAX_SLIDE_SECS)}><Plus size={15} /></button>
+        <span style={{ fontFamily: "Syne, sans-serif", fontSize: 11, color: "rgba(222,211,200,0.55)" }}>sec</span>
+      </div>
+    );
+  };
+
   const actionTabStyle = (active: boolean): React.CSSProperties => ({
     flex: "0 0 auto", padding: "9px 14px",
     background: "none", border: "none", cursor: "pointer",
@@ -750,6 +786,14 @@ export default function MobileVisionEditor() {
             }}>
               {i + 1}
             </div>
+            <div style={{
+              position: "absolute", bottom: 1, right: 1, padding: "0 3px", borderRadius: 2,
+              fontFamily: "Syne, sans-serif", fontSize: 8, fontWeight: 700,
+              background: s.duration != null ? "rgba(194,159,96,0.9)" : "rgba(0,0,0,0.5)",
+              color: s.duration != null ? "#040d1c" : "rgba(255,255,255,0.75)",
+            }}>
+              {slideSecs(s, vision)}s
+            </div>
           </div>
         ))}
         <button
@@ -810,6 +854,7 @@ export default function MobileVisionEditor() {
           { icon: <LayoutTemplate size={15} />, label: "Templates", key: "templates" as SheetMode },
           { icon: <BookOpen size={15} />, label: "Statements", key: "statements" as SheetMode },
           { icon: <FolderOpen size={15} />, label: "My Visions", key: "visions" as SheetMode },
+          { icon: <Timer size={15} />, label: "Timing", key: "timing" as SheetMode },
           { icon: <Music size={15} />, label: "Music", key: "music" as SheetMode },
           { icon: <ImageIcon size={15} />, label: "Photo Lib", key: "photos" as SheetMode },
         ] as { icon: React.ReactNode; label: string; key: SheetMode }[]).map(({ icon, label, key }) => (
@@ -1146,6 +1191,70 @@ export default function MobileVisionEditor() {
             ))}
           </div>
         )}
+
+        {/* ── Timing panel ─────────────────────────────────────────────────── */}
+        {sheet === "timing" && (() => {
+          const def = defaultSlideSecs(vision);
+          const allSecs = allSecsDraft ?? def;
+          const kicker: React.CSSProperties = { fontFamily: "Syne, sans-serif", fontSize: 10, color: "#C29F60", letterSpacing: "0.16em", textTransform: "uppercase", fontWeight: 700 };
+          const note: React.CSSProperties = { fontFamily: "Lora, serif", fontStyle: "italic", fontSize: 11, color: "rgba(222,211,200,0.55)", lineHeight: 1.5 };
+          return (
+            <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <div style={kicker}>Slide Timing</div>
+                <div style={{ fontFamily: "Syne, sans-serif", fontSize: 12, color: "#DED3C8", fontWeight: 700 }}>Total {fmtRuntime(totalSecs(vision))}</div>
+              </div>
+
+              <div className="card-luxury" style={{ padding: "14px 16px", borderRadius: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ ...kicker, display: "flex", alignItems: "center", gap: 6 }}><Timer size={12} /> This slide · {slideIdx + 1}</div>
+                {renderStepper(slide.id, slideSecs(slide, vision), true)}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                  <span style={note}>{slide.duration != null ? "Custom length for this slide" : `Using the default (${def}s)`}</span>
+                  {slide.duration != null && (
+                    <button onClick={() => setDur(slide.id, null)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "#C29F60", fontFamily: "Syne, sans-serif", fontSize: 11, fontWeight: 700, textDecoration: "underline" }}>
+                      Reset to {def}s
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="card-luxury" style={{ padding: "14px 16px", borderRadius: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={kicker}>All slides</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {renderSecsInput(allSecs, (n) => setAllSecsDraft(n), true)}
+                  <span style={{ fontFamily: "Syne, sans-serif", fontSize: 11, color: "rgba(222,211,200,0.55)" }}>sec</span>
+                  <button
+                    onClick={() => { save((v) => applyDurationToAll(v, allSecs)); setAllSecsDraft(null); }}
+                    style={{
+                      marginLeft: "auto", padding: "11px 14px", borderRadius: 8,
+                      border: "1px solid rgba(194,159,96,0.5)", background: "rgba(194,159,96,0.16)", color: "#C29F60",
+                      cursor: "pointer", fontFamily: "Syne, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+                    }}
+                  >
+                    Apply to all
+                  </button>
+                </div>
+                <span style={note}>Sets every slide to this length and clears custom timings.</span>
+              </div>
+
+              <div>
+                <div style={{ ...kicker, marginBottom: 8 }}>Each slide</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {slides.map((s, i) => (
+                    <div key={s.id} onClick={() => setSlideIdx(i)} style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 10px", borderRadius: 8,
+                      border: i === slideIdx ? "1px solid rgba(194,159,96,0.6)" : "1px solid rgba(255,255,255,0.07)",
+                      background: i === slideIdx ? "rgba(194,159,96,0.08)" : "rgba(255,255,255,0.03)",
+                    }}>
+                      <span style={{ fontFamily: "Syne, sans-serif", fontSize: 12, fontWeight: 700, color: s.duration != null ? "#C29F60" : "rgba(222,211,200,0.6)" }}>Slide {i + 1}</span>
+                      <div onClick={(e) => e.stopPropagation()}>{renderStepper(s.id, slideSecs(s, vision))}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ── Music panel ──────────────────────────────────────────────────── */}
         {sheet === "music" && (
