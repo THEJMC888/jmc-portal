@@ -15,6 +15,7 @@ import MobileVisionEditor from "@/components/MobileVisionEditor";
 import { PORTAL_PHOTO_BUCKETS, BUCKET_LABELS, type PortalPhotoBucket } from "@/lib/portalPhotos";
 import { useAuth } from "@/lib/auth";
 import { slideSecs, defaultSlideSecs, totalSecs, fmtRuntime, applyDurationToAll, setSlideDuration, MIN_SLIDE_SECS, MAX_SLIDE_SECS } from "@/lib/visionTiming";
+import { useVaultRefresh } from "@/lib/accountKeyContext";
 
 // ─── Virtual canvas ────────────────────────────────────────────────────────
 const VW = 1600;
@@ -692,6 +693,8 @@ export default function VisionPage() {
   const historyRef = useRef<VisionVideo[]>([initStorage().vision]);
   const historyIdxRef = useRef<number>(0);
   const currentIdRef = useRef<string>(initStorage().id);
+  const visionRef = useRef<VisionVideo>(vision);
+  visionRef.current = vision;
   const visionListRef = useRef<VisionMeta[]>(initStorage().list);
   const slideDragIdRef = useRef<string | null>(null);
   const photoMultiRef = useRef<HTMLInputElement>(null);
@@ -734,6 +737,28 @@ export default function VisionPage() {
   }, []);
 
   useEffect(() => { loadMusicLib().then(setMusicLib); }, []);
+
+  // ─── Changes synced from another device ──────────────────────────────────
+  // Local edits are written to localStorage at once, so a newer stored copy
+  // of the open vision can only have come from another device.
+  useVaultRefresh(["vision", "photo", "music"], useCallback(() => {
+    _initCache = null;
+    try {
+      const list = JSON.parse(localStorage.getItem(VISIONS_LIST_KEY) ?? "[]") as VisionMeta[];
+      if (list.length) { visionListRef.current = list; setVisionList([...list]); }
+      const s = localStorage.getItem(visionKey(currentIdRef.current));
+      const stored = s ? (JSON.parse(s) as VisionVideo) : null;
+      if (stored?.slides?.[0]?.background && stored.updatedAt > visionRef.current.updatedAt) {
+        historyRef.current = [stored];
+        historyIdxRef.current = 0;
+        setVision(stored);
+        setSelSlideId((cur) => (stored.slides.some((sl) => sl.id === cur) ? cur : stored.slides[0].id));
+      }
+      const raw = localStorage.getItem(PHOTO_LIB_KEY);
+      if (raw) setPhotoLibrary(JSON.parse(raw));
+    } catch {}
+    loadMusicLib().then(setMusicLib);
+  }, []));
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
 

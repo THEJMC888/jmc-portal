@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Download, BookOpen, Check, Sparkles, RefreshCw, AlertTriangle, X, ChevronDown } from "lucide-react";
 import { useMobile } from "@/hooks/useMobile";
+import { useVaultRefresh } from "@/lib/accountKeyContext";
 
 const STORAGE_KEY = "jmc_statements_v1";
 const VISIONS_LIST_KEY = "jmc_visions_list";
@@ -346,6 +347,12 @@ export default function StatementsPage() {
     setMounted(true);
     refreshVisionStatus();
   }, [refreshVisionStatus]);
+
+  // Edits made on another device
+  useVaultRefresh(["statement", "vision"], useCallback(() => {
+    setStatements(loadStatements());
+    refreshVisionStatus();
+  }, [refreshVisionStatus]));
 
   const activeCategory = CATEGORIES.find((c) => c.id === activeId)!;
   const activeStatement: CategoryStatement = statements[activeId] ?? { being: "", doing: "" };

@@ -9,8 +9,11 @@ import {
 import { useMobile } from "@/hooks/useMobile";
 import { supabase } from "@/lib/supabase";
 import {
-  getOrCreateKey, encryptText, decryptText, exportKeyAsBase64, importKeyFromBase64,
+  getLegacyKey, deleteLegacyKey, decryptText, importKeyFromBase64, isEncrypted, LEGACY_DECRYPT_PLACEHOLDER,
 } from "@/lib/journalCrypto";
+import { isSealed, openText, sealText } from "@/lib/e2ee";
+import { useAccountKey } from "@/lib/accountKeyContext";
+import { getBlob, putBlob } from "@/lib/vaultSync";
 import TotemSheet, { TotemLinkedText } from "@/components/TotemSheet";
 import TotemGlyph from "@/components/TotemGlyph";
 import { findTotems, totemFromQuery, TOTEMS_BY_SLUG, type Totem } from "@/lib/totems";
@@ -63,11 +66,15 @@ interface JournalMedia {
   id: string;
   type: "audio" | "video" | "image";
   name: string;
-  dataUrl: string;
+  dataUrl: string;  // empty until fetched when the file came from another device
   duration: number; // seconds
   size: number;     // bytes
   createdAt: string;
+  blobId?: string;  // sealed file in the private vault bucket, once uploaded
 }
+
+// What the server keeps per media item (inside the sealed media column)
+type StoredMedia = Omit<JournalMedia, "dataUrl"> & { blobId: string };
 
 interface JournalEntry {
   id: string;
@@ -77,7 +84,15 @@ interface JournalEntry {
   media: JournalMedia[];
   createdAt: string;
   updatedAt: string;
+  // True when this device cannot decrypt the stored text. A locked entry is
+  // read only and is never saved back to Supabase.
+  locked?: boolean;
 }
+
+// A local copy that must never be trusted or uploaded: either marked locked,
+// or a placeholder cached by an older build after a failed decrypt.
+const isLocked = (e: JournalEntry) =>
+  !!e.locked || e.text.startsWith(LEGACY_DECRYPT_PLACEHOLDER) || isEncrypted(e.text) || isSealed(e.text) || isSealed(e.title);
 
 // ─── Storage helpers ──────────────────────────────────────────────────────────
 const LIST_KEY = "jmc_journal_list";
@@ -104,37 +119,151 @@ function deleteEntry(id: string) {
 }
 
 // ─── Supabase sync helpers ────────────────────────────────────────────────────
-async function syncToSupabase(entry: JournalEntry, userId: string, cryptoKey: CryptoKey | null) {
-  const text = cryptoKey ? await encryptText(cryptoKey, entry.text) : entry.text;
-  await supabase.from("journal_entries").upsert({
+// Title and text are sealed with the account content key before upload, so
+// Supabase only holds ciphertext. The date stays readable for ordering.
+const aad = (id: string, field: "title" | "text" | "media") => `journal:${id}:${field}`;
+
+/**
+ * Upload each new photo or recording as a sealed file. A file that fails
+ * (offline, too large) stays on this device and is tried again next time.
+ */
+async function uploadMedia(media: JournalMedia[], userId: string, contentKey: CryptoKey): Promise<JournalMedia[]> {
+  const out: JournalMedia[] = [];
+  for (const m of media) {
+    if (m.blobId || !m.dataUrl) { out.push(m); continue; }
+    try { out.push({ ...m, blobId: await putBlob(userId, contentKey, m.dataUrl) }); } catch { out.push(m); }
+  }
+  return out;
+}
+
+// Keep the file ids from an upload without touching anything edited since
+function rememberBlobIds(entryId: string, media: JournalMedia[]) {
+  const ids = new Map(media.filter((m) => m.blobId).map((m) => [m.id, m.blobId!]));
+  const local = loadEntry(entryId);
+  if (!local || !local.media.some((m) => !m.blobId && ids.has(m.id))) return;
+  try { saveEntry({ ...local, media: local.media.map((m) => (m.blobId || !ids.has(m.id) ? m : { ...m, blobId: ids.get(m.id) })) }); } catch { /* storage full */ }
+}
+
+async function syncToSupabase(entry: JournalEntry, userId: string, contentKey: CryptoKey | null) {
+  // Never upload plaintext, and never overwrite real ciphertext with a placeholder
+  if (!contentKey || !userId || isLocked(entry)) return;
+  const media = await uploadMedia(entry.media, userId, contentKey);
+  const stored: StoredMedia[] = media.filter((m) => m.blobId).map(({ dataUrl, ...m }) => { void dataUrl; return m as StoredMedia; });
+  const { error } = await supabase.from("journal_entries").upsert({
     id: entry.id,
     date: entry.date,
-    title: entry.title,
-    text,
+    title: await sealText(contentKey, entry.title, aad(entry.id, "title")),
+    text: await sealText(contentKey, entry.text, aad(entry.id, "text")),
+    media: await sealText(contentKey, JSON.stringify(stored), aad(entry.id, "media")),
     created_at: entry.createdAt,
     updated_at: entry.updatedAt,
     user_id: userId,
   });
+  if (error) throw new Error(error.message);
+  rememberBlobIds(entry.id, media);
+}
+
+/**
+ * Media for a copy pulled from the server: its list wins, reusing the file
+ * this device already holds, plus local files not uploaded yet.
+ */
+function mergeMedia(local: JournalMedia[], remote: StoredMedia[] | null): JournalMedia[] {
+  if (remote === null) return local; // row from before media sync
+  const held = new Map(local.map((m) => [m.id, m]));
+  const merged: JournalMedia[] = remote.map((m) => ({ ...m, dataUrl: held.get(m.id)?.dataUrl ?? "" }));
+  const ids = new Set(remote.map((m) => m.id));
+  return [...merged, ...local.filter((m) => !m.blobId && !ids.has(m.id))];
 }
 
 async function deleteFromSupabase(id: string) {
   await supabase.from("journal_entries").delete().eq("id", id);
 }
 
-async function fetchFromSupabase(cryptoKey: CryptoKey | null): Promise<JournalEntry[]> {
-  const { data } = await supabase
+interface RemoteEntry extends JournalEntry {
+  /** Opened, but stored in an older format: re-upload sealed by the account key. */
+  needsUpgrade: boolean;
+  /** Media list from the server, or null when the row has none yet. */
+  remoteMedia: StoredMedia[] | null;
+}
+
+async function openField(
+  raw: string, id: string, field: "title" | "text", contentKey: CryptoKey, legacyKey: CryptoKey | null,
+): Promise<{ value: string | null; upgrade: boolean }> {
+  if (isSealed(raw)) return { value: await openText(contentKey, raw, aad(id, field)), upgrade: false };
+  if (isEncrypted(raw)) {
+    const value = legacyKey ? await decryptText(legacyKey, raw) : null;
+    return { value, upgrade: value !== null };
+  }
+  // Plain text from before encryption: readable, and due for sealing
+  return { value: raw, upgrade: true };
+}
+
+async function fetchFromSupabase(contentKey: CryptoKey, legacyKey: CryptoKey | null): Promise<RemoteEntry[]> {
+  const { data, error } = await supabase
     .from("journal_entries")
     .select("*")
     .order("date", { ascending: false });
-  return Promise.all((data ?? []).map(async (row) => ({
-    id: row.id,
-    date: row.date,
-    title: row.title,
-    text: cryptoKey ? await decryptText(cryptoKey, row.text ?? "") : (row.text ?? ""),
-    media: [],
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  })));
+  if (error) throw new Error(error.message);
+  return Promise.all((data ?? []).map(async (row): Promise<RemoteEntry> => {
+    const title = await openField(row.title ?? "", row.id, "title", contentKey, legacyKey);
+    const text = await openField(row.text ?? "", row.id, "text", contentKey, legacyKey);
+    let remoteMedia: StoredMedia[] | null = null;
+    if (row.media) {
+      const raw = await openText(contentKey, row.media, aad(row.id, "media"));
+      try { remoteMedia = raw === null ? null : (JSON.parse(raw) as StoredMedia[]); } catch { remoteMedia = null; }
+    }
+    const locked = title.value === null || text.value === null;
+    return {
+      id: row.id,
+      date: row.date,
+      title: title.value ?? "",
+      text: text.value ?? "",
+      media: [],
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      locked,
+      needsUpgrade: !locked && (title.upgrade || text.upgrade),
+      remoteMedia,
+    };
+  }));
+}
+
+/**
+ * Two way merge by updatedAt, then seal anything still in an older format.
+ * Deletes this device's old key once nothing on the server needs it.
+ */
+async function syncJournal(userId: string, contentKey: CryptoKey): Promise<void> {
+  const legacyKey = await getLegacyKey(userId);
+  const remoteEntries = await fetchFromSupabase(contentKey, legacyKey);
+  const remoteMap = new Map(remoteEntries.map((e) => [e.id, e]));
+  let failures = 0;
+
+  for (const remote of remoteEntries) {
+    const local = loadEntry(remote.id);
+    // A readable local copy always beats a remote row this device cannot open.
+    // A locked or placeholder local copy is always refreshed from remote.
+    const replace = !local || isLocked(local) || (!remote.locked && remote.updatedAt > local.updatedAt);
+    const { needsUpgrade, remoteMedia, ...rest } = remote;
+    const entry = { ...rest, media: mergeMedia(local?.media ?? [], remoteMedia) };
+    if (replace) {
+      try { saveEntry(entry); } catch { /* storage full */ }
+      if (needsUpgrade) await syncToSupabase(entry, userId, contentKey).catch(() => { failures++; });
+    } else if (local && !isLocked(local) && (remote.locked || needsUpgrade || local.updatedAt > remote.updatedAt)) {
+      // This device holds the newer or only readable copy
+      if (!remote.locked || local.updatedAt > remote.updatedAt) {
+        await syncToSupabase(local, userId, contentKey).catch(() => { failures++; });
+      }
+    }
+  }
+
+  // Entries that only exist on this device
+  for (const item of loadList()) {
+    if (remoteMap.has(item.id)) continue;
+    const entry = loadEntry(item.id);
+    if (entry && !isLocked(entry)) await syncToSupabase(entry, userId, contentKey).catch(() => { failures++; });
+  }
+
+  if (legacyKey && failures === 0) await deleteLegacyKey(userId);
 }
 
 function formatDate(d: string) {
@@ -737,7 +866,27 @@ function useRecorder(type: "audio" | "video") {
 }
 
 // ─── Media player ─────────────────────────────────────────────────────────────
+/** A playable source for a media item, fetching its sealed file when needed. */
+function useMediaSrc(item: JournalMedia): string {
+  const { contentKey, userId } = useAccountKey();
+  const [fetched, setFetched] = useState("");
+  useEffect(() => {
+    if (item.dataUrl || !item.blobId || !contentKey || !userId) return;
+    let live = true;
+    getBlob(userId, contentKey, item.blobId).then((url) => { if (live && url) setFetched(url); });
+    return () => { live = false; };
+  }, [item.dataUrl, item.blobId, contentKey, userId]);
+  return item.dataUrl || fetched;
+}
+
+function MediaImage({ item, style }: { item: JournalMedia; style: React.CSSProperties }) {
+  const src = useMediaSrc(item);
+  // eslint-disable-next-line @next/next/no-img-element
+  return src ? <img src={src} alt={item.name} style={style} /> : <div style={{ ...style, background: "rgba(255,255,255,0.04)" }} />;
+}
+
 function MediaPlayer({ item, onDelete, onTranscribe }: { item: JournalMedia; onDelete: () => void; onTranscribe?: () => Promise<void> }) {
+  const mediaSrc = useMediaSrc(item);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [transcribing, setTranscribing] = useState(false);
@@ -846,7 +995,7 @@ function MediaPlayer({ item, onDelete, onTranscribe }: { item: JournalMedia; onD
       {item.type === "audio" ? (
         <audio
           ref={ref as React.RefObject<HTMLAudioElement>}
-          src={item.dataUrl}
+          src={mediaSrc || undefined}
           onTimeUpdate={() => {
             if (ref.current && ref.current.duration) setProgress(ref.current.currentTime / ref.current.duration);
           }}
@@ -856,7 +1005,7 @@ function MediaPlayer({ item, onDelete, onTranscribe }: { item: JournalMedia; onD
       ) : (
         <video
           ref={ref as React.RefObject<HTMLVideoElement>}
-          src={item.dataUrl}
+          src={mediaSrc || undefined}
           controls
           onTimeUpdate={() => {
             if (ref.current && ref.current.duration) setProgress(ref.current.currentTime / ref.current.duration);
@@ -869,49 +1018,30 @@ function MediaPlayer({ item, onDelete, onTranscribe }: { item: JournalMedia; onD
   );
 }
 
-// ─── E2EE Key Management Modal ───────────────────────────────────────────────
+// ─── E2EE Key Modal ──────────────────────────────────────────────────────────
 function KeyManagementModal({
-  cryptoKey,
+  ready,
   userId,
   onKeyImported,
   onClose,
 }: {
-  cryptoKey: CryptoKey | null;
+  ready: boolean;
   userId: string | null;
-  onKeyImported: (key: CryptoKey) => void;
+  onKeyImported: () => void;
   onClose: () => void;
 }) {
-  const [exported, setExported] = useState<string | null>(null);
   const [importValue, setImportValue] = useState("");
   const [importError, setImportError] = useState("");
-  const [copied, setCopied] = useState(false);
-
-  const handleExport = async () => {
-    if (!cryptoKey) return;
-    const b64 = await exportKeyAsBase64(cryptoKey);
-    setExported(b64);
-  };
-
-  const handleCopy = async () => {
-    if (!exported) return;
-    try {
-      await navigator.clipboard.writeText(exported);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // fallback: select the text
-    }
-  };
 
   const handleImport = async () => {
     if (!userId || !importValue.trim()) return;
     setImportError("");
     const key = await importKeyFromBase64(importValue.trim(), userId);
     if (!key) {
-      setImportError("Invalid key — must be a 44-character base64 string from a previous export.");
+      setImportError("That key is not valid. It is the 44 character code from an earlier export.");
       return;
     }
-    onKeyImported(key);
+    onKeyImported();
     onClose();
   };
 
@@ -927,7 +1057,7 @@ function KeyManagementModal({
     <div style={{
       position: "fixed", inset: 0, zIndex: 200,
       background: "rgba(2,8,20,0.88)", backdropFilter: "blur(14px)",
-      display: "flex", alignItems: "center", justifyContent: "center", padding: 24,
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
     }}>
       <div style={{
         width: "100%", maxWidth: 520,
@@ -937,15 +1067,15 @@ function KeyManagementModal({
         borderRight: "1px solid rgba(0,0,0,0.3)",
         borderBottom: "1.5px solid rgba(0,0,0,0.5)",
         borderRadius: 14, boxShadow: "0 24px 80px rgba(0,0,0,0.85)",
-        padding: "28px 32px",
+        padding: "28px 28px",
       }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
           <div>
             <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 9, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(110,231,183,0.7)", marginBottom: 4 }}>
-              🔒 End-to-End Encryption
+              End to End Encryption
             </div>
             <h2 style={{ fontFamily: "Lora, Georgia, serif", fontSize: 20, fontWeight: 600, color: "#DED3C8", margin: 0 }}>
-              Journal Encryption Key
+              Your journal is private
             </h2>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(222,211,200,0.4)", padding: 4 }}>
@@ -953,57 +1083,25 @@ function KeyManagementModal({
           </button>
         </div>
 
-        <p style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 12.5, color: "rgba(222,211,200,0.6)", lineHeight: 1.7, marginBottom: 20 }}>
-          Your journal entries are encrypted in this browser before being stored. Supabase holds only ciphertext — unreadable without your key. Back up your key to access entries on other devices.
+        <p style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 12.5, color: "rgba(222,211,200,0.65)", lineHeight: 1.7, marginBottom: 20 }}>
+          {ready
+            ? "Every entry is encrypted on your device with a key that only your password or your 24 word recovery phrase can open. The portal stores ciphertext alone, so no one at The Journeymen Collective can read what you write. Your journal opens on every device where you sign in."
+            : "Your key is not open on this device yet. Sign in again to open it."}
         </p>
 
-        {/* Export */}
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8.5, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(194,159,96,0.7)", marginBottom: 8 }}>
-            Export Key (Backup)
-          </div>
-          {!exported ? (
-            <button onClick={handleExport} disabled={!cryptoKey} style={{
-              padding: "9px 18px", borderRadius: 7, cursor: cryptoKey ? "pointer" : "not-allowed",
-              fontFamily: "Syne, system-ui, sans-serif", fontSize: 10, fontWeight: 700,
-              letterSpacing: "0.12em", textTransform: "uppercase",
-              background: "rgba(29,116,88,0.15)", border: "1px solid rgba(29,116,88,0.3)",
-              color: "rgba(110,231,183,0.85)", opacity: cryptoKey ? 1 : 0.5,
-            }}>
-              Reveal Key
-            </button>
-          ) : (
-            <div>
-              <div style={{ ...inputStyle, marginBottom: 8, userSelect: "all" as React.CSSProperties["userSelect"] }}>
-                {exported}
-              </div>
-              <button onClick={handleCopy} style={{
-                padding: "7px 14px", borderRadius: 6, cursor: "pointer",
-                fontFamily: "Syne, system-ui, sans-serif", fontSize: 9.5, fontWeight: 700,
-                letterSpacing: "0.1em", textTransform: "uppercase",
-                background: copied ? "rgba(29,116,88,0.2)" : "rgba(194,159,96,0.1)",
-                border: `1px solid ${copied ? "rgba(29,116,88,0.35)" : "rgba(194,159,96,0.25)"}`,
-                color: copied ? "rgba(110,231,183,0.9)" : "rgba(194,159,96,0.85)",
-              }}>
-                {copied ? "✓ Copied" : "Copy to Clipboard"}
-              </button>
-              <p style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 9, color: "rgba(255,150,100,0.7)", marginTop: 8 }}>
-                Save this somewhere safe (password manager). Anyone with this key can decrypt your journal.
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Import */}
+        {/* Import an older per device key */}
         <div>
           <div style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 8.5, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(194,159,96,0.7)", marginBottom: 8 }}>
-            Import Key (Restore on New Device)
+            Import an Older Device Key
           </div>
+          <p style={{ fontFamily: "Lora, Georgia, serif", fontSize: 11.5, color: "rgba(222,211,200,0.5)", lineHeight: 1.6, marginBottom: 8 }}>
+            Only needed if you once exported a journal key from a device you no longer use. Its entries are opened here and moved to your account key.
+          </p>
           <textarea
             style={{ ...inputStyle, minHeight: 60, resize: "vertical", marginBottom: 8 }}
             value={importValue}
             onChange={e => setImportValue(e.target.value)}
-            placeholder="Paste your exported key here…"
+            placeholder="Paste your exported key here"
           />
           {importError && (
             <p style={{ fontFamily: "Syne, system-ui, sans-serif", fontSize: 9.5, color: "rgba(255,100,80,0.8)", marginBottom: 8 }}>{importError}</p>
@@ -1045,47 +1143,46 @@ export default function JournalPage() {
   const audioUploadRef = useRef<HTMLInputElement>(null);
   const videoUploadRef = useRef<HTMLInputElement>(null);
   const photoUploadRef = useRef<HTMLInputElement>(null);
+  const { contentKey, userId } = useAccountKey();
   const userIdRef = useRef<string | null>(null);
   const cryptoKeyRef = useRef<CryptoKey | null>(null);
-  const [e2eeReady, setE2eeReady] = useState(false);
+  userIdRef.current = userId;
+  cryptoKeyRef.current = contentKey;
+  const e2eeReady = !!contentKey;
   const [showKeyExport, setShowKeyExport] = useState(false);
   const [deleteConfirmPending, setDeleteConfirmPending] = useState(false);
   const [sheetTotem, setSheetTotem] = useState<Totem | null>(null);
   const closeSheet = useCallback(() => setSheetTotem(null), []);
+  const [syncNonce, setSyncNonce] = useState(0);
 
   useEffect(() => {
     setMounted(true);
     setList(loadList());
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) return;
-      userIdRef.current = user.id;
-
-      // Initialise encryption key (generates once, persists in IndexedDB)
-      const key = await getOrCreateKey(user.id);
-      cryptoKeyRef.current = key;
-      setE2eeReady(true);
-
-      fetchFromSupabase(key).then(async (remoteEntries) => {
-        const remoteMap = new Map(remoteEntries.map((e) => [e.id, e]));
-        // Pull remote → local (remote wins if newer)
-        remoteEntries.forEach((remote) => {
-          const local = loadEntry(remote.id);
-          if (!local || remote.updatedAt > local.updatedAt) {
-            saveEntry({ ...remote, media: local?.media ?? [] });
-          }
-        });
-        // Push local → remote (entries not yet in Supabase)
-        const localList = loadList();
-        for (const item of localList) {
-          if (!remoteMap.has(item.id)) {
-            const entry = loadEntry(item.id);
-            if (entry) await syncToSupabase(entry, user.id, key).catch(() => {});
-          }
-        }
-        setList(loadList());
-      }).catch(() => {});
-    });
   }, []);
+
+  // Pull and push whenever the key is ready, and again each time the tab
+  // regains focus, so every device shows the same journal
+  useEffect(() => {
+    if (!contentKey || !userId) return;
+    let cancelled = false;
+    const run = () => syncJournal(userId, contentKey)
+      .then(() => {
+        if (cancelled) return;
+        setList(loadList());
+        // Show a newer copy from another device, unless an edit is mid save
+        if (!saveTimer.current) {
+          setEntry((prev) => {
+            const fresh = prev ? loadEntry(prev.id) : null;
+            return fresh && fresh.updatedAt > prev!.updatedAt ? fresh : prev;
+          });
+        }
+      })
+      .catch(() => {});
+    run();
+    const onVisible = () => { if (document.visibilityState === "visible") run(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { cancelled = true; document.removeEventListener("visibilitychange", onVisible); };
+  }, [contentKey, userId, syncNonce]);
 
   const openEntry = useCallback((id: string) => {
     const e = loadEntry(id);
@@ -1105,9 +1202,11 @@ export default function JournalPage() {
   }, [isMobile]);
 
   const persistEntry = useCallback((updated: JournalEntry) => {
+    if (isLocked(updated)) return; // read only until this device holds the right key
     const e = { ...updated, updatedAt: new Date().toISOString() };
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
+      saveTimer.current = null;
       saveEntry(e);
       setList(loadList());
       syncToSupabase(e, userIdRef.current ?? "", cryptoKeyRef.current).catch(() => {});
@@ -1188,7 +1287,10 @@ export default function JournalPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) { alert("Not authenticated — please sign in."); return; }
 
-      const res = await fetch(item.dataUrl);
+      const src = item.dataUrl
+        || (item.blobId && cryptoKeyRef.current && userIdRef.current ? await getBlob(userIdRef.current, cryptoKeyRef.current, item.blobId) : null);
+      if (!src) { alert("This recording is still on its way to this device. Please try again in a moment."); return; }
+      const res = await fetch(src);
       const blob = await res.blob();
       const ext = blob.type.includes("mp4") ? "mp4" : blob.type.includes("ogg") ? "ogg" : "webm";
       const form = new FormData();
@@ -1326,9 +1428,9 @@ export default function JournalPage() {
       {/* ── E2EE Key Management Modal ── */}
       {showKeyExport && (
         <KeyManagementModal
-          cryptoKey={cryptoKeyRef.current}
-          userId={userIdRef.current}
-          onKeyImported={(newKey) => { cryptoKeyRef.current = newKey; }}
+          ready={e2eeReady}
+          userId={userId}
+          onKeyImported={() => setSyncNonce((n) => n + 1)}
           onClose={() => setShowKeyExport(false)}
         />
       )}
@@ -1370,7 +1472,7 @@ export default function JournalPage() {
         {/* E2EE lock badge + key export */}
         <button
           onClick={() => setShowKeyExport(v => !v)}
-          title={e2eeReady ? "End-to-end encrypted — click to manage key" : "Encryption key not available (private window?)"}
+          title={e2eeReady ? "End to end encrypted" : "Your key is not open on this device yet"}
           style={{
             display: "flex", alignItems: "center", gap: 4,
             padding: "4px 9px", borderRadius: 5, cursor: "pointer",
@@ -1594,8 +1696,7 @@ export default function JournalPage() {
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))", gap: 6, marginTop: 16 }}>
                         {photos.map((p) => (
                           <div key={p.id} style={{ borderRadius: 6, overflow: "hidden", aspectRatio: "1", background: "rgba(0,0,0,0.3)" }}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={p.dataUrl} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                            <MediaImage item={p} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                           </div>
                         ))}
                       </div>
@@ -1792,9 +1893,20 @@ export default function JournalPage() {
                     {formatDate(entry.date)}
                   </div>
 
+                  {isLocked(entry) && (
+                    <div style={{
+                      fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 12.5, lineHeight: 1.7,
+                      color: "rgba(222,211,200,0.75)", background: "rgba(194,159,96,0.08)",
+                      border: "1px solid rgba(194,159,96,0.25)", borderRadius: 8, padding: "10px 14px", marginBottom: 14,
+                    }}>
+                      This entry is sealed with a key this device does not hold yet. It is safe and unchanged, and it opens here once the device where you wrote it signs in to the portal again.
+                    </div>
+                  )}
+
                   {/* Title */}
                   <input
                     type="text"
+                    readOnly={isLocked(entry)}
                     value={entry.title}
                     onChange={(e) => updateField("title", e.target.value)}
                     placeholder="Entry title…"
@@ -1896,6 +2008,7 @@ export default function JournalPage() {
                   </div>
                   <textarea
                     value={entry.text}
+                    readOnly={isLocked(entry)}
                     onChange={(e) => updateField("text", e.target.value)}
                     placeholder="Write your thoughts…"
                     rows={8}
@@ -2095,6 +2208,9 @@ export default function JournalPage() {
                       {entry.media.filter((m) => m.type === "audio").map((item) => (
                         <MediaPlayer key={item.id} item={item} onDelete={() => removeMedia(item.id)} onTranscribe={() => handleTranscribeClip(item)} />
                       ))}
+                      <p style={{ fontFamily: "Lora, Georgia, serif", fontStyle: "italic", fontSize: 11, color: "rgba(222,211,200,0.4)", margin: 0 }}>
+                        To transcribe, a recording is sent unencrypted to our speech service for that one request. It is never logged or stored.
+                      </p>
                     </div>
                   )}
 
@@ -2103,8 +2219,7 @@ export default function JournalPage() {
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))", gap: 8, marginTop: 14 }}>
                       {entry.media.filter((m) => m.type === "image").map((item) => (
                         <div key={item.id} style={{ position: "relative", borderRadius: 8, overflow: "hidden", aspectRatio: "1", background: "rgba(0,0,0,0.3)" }}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={item.dataUrl} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                          <MediaImage item={item} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                           <button
                             onClick={() => removeMedia(item.id)}
                             style={{ position: "absolute", top: 4, right: 4, width: 20, height: 20, borderRadius: "50%", background: "rgba(0,0,0,0.65)", border: "1px solid rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", padding: 0 }}

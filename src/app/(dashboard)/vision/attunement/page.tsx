@@ -7,6 +7,7 @@ import {
   Trash2, Star, Check, RefreshCw, Pencil, X,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { useVaultRefresh } from "@/lib/accountKeyContext";
 import type { AttunementCard, VisionVideo } from "@/types";
 
 // ─── Storage ─────────────────────────────────────────────────────────────────
@@ -485,6 +486,9 @@ function Creator({ onSave, onClose, editCard }: CreatorProps) {
                 <p style={{ color: "rgba(222,211,200,0.4)", fontSize: 11, marginTop: 6, fontFamily: "Syne,system-ui,sans-serif", lineHeight: 1.4 }}>
                   Uses your Being/Doing Statements and Vision Video content.
                 </p>
+                <p style={{ color: "rgba(222,211,200,0.4)", fontSize: 11, marginTop: 4, fontFamily: "Syne,system-ui,sans-serif", lineHeight: 1.4 }}>
+                  To write your card, these words are sent unencrypted to our AI provider for this one request. They are never logged or stored.
+                </p>
               </div>
             )}
 
@@ -680,10 +684,13 @@ export default function AttunementPage() {
   const [showCreator, setShowCreator] = useState(false);
   const [editCard, setEditCard] = useState<AttunementCard | undefined>();
 
-  useEffect(() => {
+  const reloadFromStorage = useCallback(() => {
     setCards(loadCards());
     setActiveId(loadActive());
   }, []);
+  useEffect(reloadFromStorage, [reloadFromStorage]);
+  // Cards made or changed on another device
+  useVaultRefresh(["attunement"], reloadFromStorage);
 
   const handleSave = useCallback((card: AttunementCard) => {
     setCards(prev => {
