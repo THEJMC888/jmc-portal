@@ -14,7 +14,7 @@ import { useMobile } from "@/hooks/useMobile";
 import MobileVisionEditor from "@/components/MobileVisionEditor";
 import { PORTAL_PHOTO_BUCKETS, BUCKET_LABELS, type PortalPhotoBucket } from "@/lib/portalPhotos";
 import { useAuth } from "@/lib/auth";
-import { slideSecs, defaultSlideSecs, totalSecs, fmtRuntime, applyDurationToAll, setSlideDuration, MIN_SLIDE_SECS, MAX_SLIDE_SECS } from "@/lib/visionTiming";
+import { slideSecs, defaultSlideSecs, totalSecs, fmtRuntime, applyDurationToAll, setSlideDuration, evenSplitSecs, loadAudioSecs, MIN_SLIDE_SECS, MAX_SLIDE_SECS } from "@/lib/visionTiming";
 import { useVaultRefresh } from "@/lib/accountKeyContext";
 
 // ─── Virtual canvas ────────────────────────────────────────────────────────
@@ -678,6 +678,18 @@ export default function VisionPage() {
   const [jmcLoadingId, setJmcLoadingId] = useState<string | null>(null);
   const [controlTab, setControlTab] = useState<"bg" | "style" | "timing" | "music" | "photos">("bg");
   const [allSecsDraft, setAllSecsDraft] = useState<number | null>(null);
+  const [musicSecs, setMusicSecs] = useState<number | null>(null);
+  const [fitNote, setFitNote] = useState<string | null>(null);
+  // Length of the vision's track, for "Fit to music"
+  useEffect(() => {
+    setFitNote(null);
+    const url = vision.musicDataUrl;
+    if (!url) { setMusicSecs(null); return; }
+    let live = true;
+    loadAudioSecs(url).then((secs) => { if (live) setMusicSecs(secs); });
+    return () => { live = false; };
+  }, [vision.musicDataUrl]);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
   const [submitMsg, setSubmitMsg] = useState("");
@@ -1884,6 +1896,18 @@ export default function VisionPage() {
     if (vision.musicDataUrl === track.dataUrl) save((v) => ({ ...v, musicDataUrl: undefined, musicName: undefined }));
   };
 
+  const fitToMusic = () => {
+    if (!vision || !musicSecs) return;
+    const { secs, capped } = evenSplitSecs(musicSecs, vision.slides.length);
+    save((v) => applyDurationToAll(v, secs));
+    setAllSecsDraft(null);
+    setFitNote(
+      capped === "max" ? `Slides max out at ${MAX_SLIDE_SECS}s, so the music will keep playing after the last slide. Add slides to fill it.`
+      : capped === "min" ? `The track is too short for ${vision.slides.length} slides at ${MIN_SLIDE_SECS}s minimum, so the music will loop. Remove slides or use a longer track.`
+      : `Every slide is now ${secs}s, so the slideshow ends with the music.`
+    );
+  };
+
   // ─── Slide timing ──────────────────────────────────────────────────────────
   const setDur = (slideId: string, secs: number | null) => save((v) => setSlideDuration(v, slideId, secs));
 
@@ -1891,11 +1915,11 @@ export default function VisionPage() {
   const renderSecsInput = (value: number, onCommit: (n: number) => void, size: "sm" | "lg" = "sm") => (
     <input
       key={value}
-      type="number" inputMode="numeric" min={MIN_SLIDE_SECS} max={MAX_SLIDE_SECS} defaultValue={value}
+      type="number" inputMode="decimal" step="any" min={MIN_SLIDE_SECS} max={MAX_SLIDE_SECS} defaultValue={value}
       onBlur={(e) => { const n = Number(e.target.value); if (e.target.value !== "" && n !== value) onCommit(n); else e.target.value = String(value); }}
       onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
       style={{
-        width: size === "lg" ? 52 : 38, padding: size === "lg" ? "6px 4px" : "3px 2px", borderRadius: 4,
+        width: size === "lg" ? 60 : 46, padding: size === "lg" ? "6px 4px" : "3px 2px", borderRadius: 4,
         background: "rgba(255,255,255,0.06)", border: "1px solid rgba(194,159,96,0.25)",
         color: "#DED3C8", fontSize: size === "lg" ? 15 : 12, fontWeight: 700, textAlign: "center", outline: "none",
       }}
@@ -1930,7 +1954,7 @@ export default function VisionPage() {
     const note: React.CSSProperties = { fontSize: 10, color: "rgba(222,211,200,0.45)", fontFamily: "Syne,system-ui,sans-serif", lineHeight: 1.5 };
 
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 980 }}>
         {/* Runtime + proportional timeline */}
         <div>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 6 }}>
@@ -1960,7 +1984,7 @@ export default function VisionPage() {
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
           {/* This slide */}
           <div className="card-luxury" style={cardStyle}>
             <div style={{ ...kicker, display: "flex", alignItems: "center", gap: 6 }}><Timer size={12} /> Slide {selIdx + 1}</div>
@@ -1993,6 +2017,33 @@ export default function VisionPage() {
               </button>
             </div>
             <span style={note}>Sets every slide to this length and clears custom timings. New slides use it too.</span>
+          </div>
+
+          {/* Fit to music */}
+          <div className="card-luxury" style={cardStyle}>
+            <div style={{ ...kicker, display: "flex", alignItems: "center", gap: 6 }}><Music size={12} /> Fit to music</div>
+            {vision.musicDataUrl && musicSecs ? (
+              <>
+                <div style={{ fontSize: 12, color: "#DED3C8", fontFamily: "Syne,system-ui,sans-serif" }}>
+                  {fmtRuntime(musicSecs)} of music ÷ {vision.slides.length} slide{vision.slides.length === 1 ? "" : "s"} = <strong style={{ color: "#C29F60" }}>{evenSplitSecs(musicSecs, vision.slides.length).secs}s</strong> each
+                </div>
+                <button
+                  onClick={fitToMusic}
+                  style={{
+                    alignSelf: "flex-start", padding: "8px 14px", borderRadius: 6,
+                    border: "1px solid rgba(194,159,96,0.5)", background: "rgba(194,159,96,0.16)", color: "#C29F60",
+                    cursor: "pointer", fontSize: 10, fontFamily: "Syne,system-ui,sans-serif", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+                  }}
+                >
+                  Spread evenly across the music
+                </button>
+                <span style={note}>{fitNote ?? "Every slide gets the same length so the slideshow ends when the track does."}</span>
+              </>
+            ) : (
+              <span style={note}>
+                {vision.musicDataUrl ? "Couldn't read this track's length." : "Choose a track in the Music tab, then come back to spread the slides evenly across it."}
+              </span>
+            )}
           </div>
         </div>
 
