@@ -10,6 +10,7 @@ import { useAuth } from "./auth";
 import {
   type PasswordSecrets, checkDeviceKey, forgetDeviceKeys, signInWithDerivedPassword, signOutAndForgetKeys, unlockWithPassword,
 } from "./accountKeys";
+import { claimDeviceCache } from "./deviceCache";
 import { supabase } from "./supabase";
 import { VAULT_EVENT, syncVault } from "./vaultSync";
 
@@ -48,6 +49,8 @@ export function AccountKeyProvider({ children }: { children: ReactNode }) {
 
   const check = useCallback(async () => {
     if (!userId) return;
+    // Before any sync can start, so nothing from another account gets uploaded
+    if (await claimDeviceCache(userId)) { window.location.reload(); return; }
     const r = await checkDeviceKey(userId);
     setNeedsRewrap(r.needsRewrap);
     setState((prev) => {
