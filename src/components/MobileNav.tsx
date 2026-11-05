@@ -5,24 +5,32 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, GraduationCap, NotebookPen, Sparkles, Sun,
-  Wind, Users, X, Menu, LogOut, BookOpen, Route, Fingerprint, Eye, UserPlus, Feather,
+  Wind, Users, X, Menu, LogOut, BookOpen, Route, Fingerprint, Eye, UserPlus, Feather, ChevronRight, Lock,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { signOutAndForgetKeys } from "@/lib/accountKeys";
 import { useAuth } from "@/lib/auth";
+import StatementsFirstPrompt from "./StatementsFirstPrompt";
+import { useStatementsReady } from "@/hooks/useStatementsReady";
 
 const ADMIN_EMAIL = "rng@thejourneymencollective.com";
 
-type NavItem = { label: string; href: string; icon: React.ElementType; comingSoon?: boolean; soonBadge?: boolean };
+type NavChild = { label: string; href: string; icon: React.ElementType };
+type NavItem = { label: string; href: string; icon: React.ElementType; comingSoon?: boolean; soonBadge?: boolean; children?: NavChild[] };
 
-// Same destinations as the desktop Sidebar (Vision's sub-pages listed flat).
+// Same destinations and Vision group as the desktop Sidebar.
 // soonBadge: shows the "Soon" tag but stays clickable (the page itself explains)
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard",       href: "/dashboard",         icon: LayoutDashboard },
   { label: "Course Library",  href: "/library",           icon: GraduationCap, soonBadge: true },
-  { label: "Vision Video",    href: "/vision",            icon: Sparkles },
-  { label: "My Statements",   href: "/statements",        icon: BookOpen },
-  { label: "My Attunements",  href: "/vision/attunement", icon: Sun },
+  {
+    label: "Vision Video", href: "/vision", icon: Sparkles,
+    children: [
+      { label: "My Statements",  href: "/statements",        icon: BookOpen },
+      { label: "Editor",         href: "/vision",            icon: Sparkles },
+      { label: "My Attunements", href: "/vision/attunement", icon: Sun },
+    ],
+  },
   { label: "Journal",         href: "/journal",           icon: NotebookPen },
   { label: "Medicine Animals", href: "/totems",          icon: Feather },
   { label: "My Journey",      href: "/journey",           icon: Route },
@@ -36,6 +44,19 @@ const ADMIN_ITEMS: NavItem[] = [
   { label: "Course Access",  href: "/admin/courses",       icon: GraduationCap },
   { label: "Invite Members", href: "/admin/members",       icon: UserPlus },
 ];
+
+function rowStyle(isActive: boolean): React.CSSProperties {
+  return isActive ? {
+    background: "linear-gradient(135deg, rgba(194,159,96,0.15), rgba(194,159,96,0.06))",
+    border: "1px solid rgba(194,159,96,0.22)",
+    color: "#C29F60",
+    boxShadow: "0 0 12px rgba(194,159,96,0.1)",
+  } : {
+    background: "transparent",
+    border: "1px solid transparent",
+    color: "rgba(222,211,200,0.7)",
+  };
+}
 
 export function MobileMenuButton({ onClick }: { onClick: () => void }) {
   return (
@@ -64,11 +85,18 @@ export default function MobileNav() {
   const items = isAdmin ? [...NAV_ITEMS, ...ADMIN_ITEMS] : NAV_ITEMS;
   // Longest matching href wins, so /vision/attunement doesn't also light up Vision Video
   const activeHref = items
+    .flatMap((i) => i.children ?? [i])
     .filter((i) => pathname === i.href || pathname.startsWith(i.href + "/"))
     .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+  const statementsReady = useStatementsReady();
+  const [visionOpen, setVisionOpen] = useState(false);
+  const [showEditorPrompt, setShowEditorPrompt] = useState(false);
 
-  // Close drawer on route change
-  useEffect(() => { setOpen(false); }, [pathname]);
+  // Close drawer on route change, leaving the group open while inside it
+  useEffect(() => {
+    setOpen(false);
+    setVisionOpen(!!activeHref && ["/vision", "/statements"].some((h) => activeHref.startsWith(h)));
+  }, [pathname, activeHref]);
 
   const handleSignOut = async () => {
     setOpen(false);
@@ -157,8 +185,56 @@ export default function MobileNav() {
         {/* Nav items */}
         <div style={{ flex: 1, overflowY: "auto", padding: "12px 10px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {items.map(({ label, href, icon: Icon, comingSoon, soonBadge }) => {
+            {items.map(({ label, href, icon: Icon, comingSoon, soonBadge, children }) => {
               const isActive = href === activeHref;
+              if (children) {
+                return (
+                  <div key={href}>
+                    <button
+                      onClick={() => setVisionOpen((v) => !v)}
+                      aria-expanded={visionOpen}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", cursor: "pointer",
+                        padding: "12px 14px", borderRadius: 10,
+                        fontFamily: "Syne, system-ui, sans-serif", fontSize: "0.88rem", fontWeight: 400,
+                        ...rowStyle(false),
+                      }}
+                    >
+                      <Icon size={18} style={{ flexShrink: 0 }} />
+                      <span style={{ flex: 1 }}>{label}</span>
+                      <ChevronRight size={14} style={{ transform: visionOpen ? "rotate(90deg)" : "none", transition: "transform 0.2s" }} />
+                    </button>
+                    {visionOpen && (
+                      <div style={{ margin: "2px 0 6px 22px", paddingLeft: 10, borderLeft: "1px solid rgba(194,159,96,0.18)", display: "flex", flexDirection: "column", gap: 2 }}>
+                        {children.map(({ label: childLabel, href: childHref, icon: ChildIcon }) => {
+                          const childStyle: React.CSSProperties = {
+                            display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left",
+                            padding: "10px 12px", borderRadius: 10, textDecoration: "none",
+                            fontFamily: "Syne, system-ui, sans-serif", fontSize: "0.82rem",
+                            fontWeight: childHref === activeHref ? 700 : 400,
+                            ...rowStyle(childHref === activeHref),
+                          };
+                          return childHref === "/vision" && !statementsReady ? (
+                            <button
+                              key={childHref}
+                              onClick={() => { setOpen(false); setShowEditorPrompt(true); }}
+                              style={{ ...childStyle, cursor: "pointer", color: "rgba(222,211,200,0.38)" }}
+                            >
+                              <Lock size={13} style={{ flexShrink: 0 }} />
+                              {childLabel}
+                            </button>
+                          ) : (
+                            <Link key={childHref} href={childHref} onClick={() => setOpen(false)} style={childStyle}>
+                              <ChildIcon size={15} style={{ flexShrink: 0 }} />
+                              {childLabel}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
               return (
                 <div key={href}>
                 {href === ADMIN_ITEMS[0].href && (
@@ -182,16 +258,7 @@ export default function MobileNav() {
                     textDecoration: "none",
                     opacity: comingSoon ? 0.35 : 1,
                     transition: "all 0.15s",
-                    ...(isActive ? {
-                      background: "linear-gradient(135deg, rgba(194,159,96,0.15), rgba(194,159,96,0.06))",
-                      border: "1px solid rgba(194,159,96,0.22)",
-                      color: "#C29F60",
-                      boxShadow: "0 0 12px rgba(194,159,96,0.1)",
-                    } : {
-                      background: "transparent",
-                      border: "1px solid transparent",
-                      color: "rgba(222,211,200,0.7)",
-                    }),
+                    ...rowStyle(isActive),
                   }}
                 >
                   <Icon size={18} style={{ flexShrink: 0 }} />
@@ -232,6 +299,8 @@ export default function MobileNav() {
           </button>
         </div>
       </nav>
+
+      {showEditorPrompt && <StatementsFirstPrompt onClose={() => setShowEditorPrompt(false)} />}
     </>
   );
 }
