@@ -1889,7 +1889,7 @@ export default function JournalPage() {
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
                   >
-                    <Plus size={14} /> Create First Entry
+                    <Plus size={14} /> {list.length > 0 ? "Create Next Entry" : "Create First Entry"}
                   </button>
                 </div>
               </div>
