@@ -11,7 +11,9 @@ import {
 import type { VisionVideo, VisionSlide, SlideElement, SlideBackground } from "@/types";
 import { parsePptxFile } from "@/lib/parsePptx";
 import { useMobile } from "@/hooks/useMobile";
+import { useStatementsReady } from "@/hooks/useStatementsReady";
 import MobileVisionEditor from "@/components/MobileVisionEditor";
+import StatementsFirstPrompt from "@/components/StatementsFirstPrompt";
 import { PORTAL_PHOTO_BUCKETS, BUCKET_LABELS, type PortalPhotoBucket } from "@/lib/portalPhotos";
 import { useAuth } from "@/lib/auth";
 import { slideSecs, defaultSlideSecs, totalSecs, fmtRuntime, applyDurationToAll, setSlideDuration, evenSplitSecs, loadAudioSecs, MIN_SLIDE_SECS, MAX_SLIDE_SECS } from "@/lib/visionTiming";
@@ -661,6 +663,7 @@ export default function VisionPage() {
   // Below 1024px (phones and portrait tablets beside the sidebar) the desktop
   // editor doesn't fit, so use the touch editor
   const isMobile = useMobile(1024);
+  const statementsReady = useStatementsReady();
   const [showMobileProps, setShowMobileProps] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
@@ -2222,7 +2225,7 @@ export default function VisionPage() {
   };
 
   // ─── Render ───────────────────────────────────────────────────────────────
-  if (isMobile) return <MobileVisionEditor />;
+  if (isMobile) return statementsReady ? <MobileVisionEditor /> : <StatementsFirstPrompt />;
 
   return (
     <div style={{
