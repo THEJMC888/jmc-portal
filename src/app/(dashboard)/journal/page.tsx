@@ -159,7 +159,7 @@ async function syncToSupabase(entry: JournalEntry, userId: string, contentKey: C
     updated_at: entry.updatedAt,
     user_id: userId,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw Object.assign(new Error(error.message), { code: error.code });
   rememberBlobIds(entry.id, media);
 }
 
@@ -228,6 +228,14 @@ async function fetchFromSupabase(contentKey: CryptoKey, legacyKey: CryptoKey | n
   }));
 }
 
+const RLS_DENIED = "42501";
+
+// An expired session reads as an empty journal, so confirm before dropping copies
+async function signedInAs(userId: string) {
+  const { data } = await supabase.auth.getUser();
+  return data.user?.id === userId;
+}
+
 /**
  * Two way merge by updatedAt, then seal anything still in an older format.
  * Deletes this device's old key once nothing on the server needs it.
@@ -260,7 +268,18 @@ async function syncJournal(userId: string, contentKey: CryptoKey): Promise<void>
   for (const item of loadList()) {
     if (remoteMap.has(item.id)) continue;
     const entry = loadEntry(item.id);
-    if (entry && !isLocked(entry)) await syncToSupabase(entry, userId, contentKey).catch(() => { failures++; });
+    if (!entry) continue;
+    if (isLocked(entry)) {
+      // Unreadable here and not on this account: it is not this member's entry
+      if (await signedInAs(userId)) deleteEntry(item.id);
+      continue;
+    }
+    await syncToSupabase(entry, userId, contentKey).catch(async (err) => {
+      // The server refuses this id because another account owns the row, so
+      // this is a leftover copy of that account's entry, safe on the server
+      if ((err as { code?: string }).code === RLS_DENIED && await signedInAs(userId)) deleteEntry(item.id);
+      else failures++;
+    });
   }
 
   if (legacyKey && failures === 0) await deleteLegacyKey(userId);
